@@ -1,118 +1,120 @@
 # 🤠 TripSheriff AI
-### Autonomous Group Travel Treasury & Escalating Debt Enforcement Agent
-*Built for the **PayPal AI Hackathon 2026***
+### Autonomous Group Travel Treasury & Debt Enforcement Agent
+*Built for the **PayPal AI Hackathon 2026** (Devpost)*
 
 [![PayPal Developer](https://img.shields.io/badge/PayPal-Sandbox%20Integrated-blue.svg)](https://developer.paypal.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-brightgreen.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![AG Grid](https://img.shields.io/badge/AG%20Grid-Enabled-red.svg)](https://www.ag-grid.com/)
+[![Render](https://img.shields.io/badge/Hosted%20on-Render-46E3B7.svg)](https://render.com/)
 
 ---
 
 ## 🌟 Overview
 
-**TripSheriff AI** is an autonomous agent that lives in your group travel chat (Telegram). It acts as the trip's automated CFO and debt collector:
-
-- 🧾 **Multimodal Expense Ingestion:** Drop receipt photos or send 5-second voice notes; AI extracts items, tax, and tip.
-- 🧮 **Double-Entry Ledger & Debt Simplification:** Mathematically optimizes circular debts and maintains net balances.
-- 💳 **Instant PayPal Checkout:** Generates 1-click payment links using the **PayPal Orders API**.
-- 💸 **Consolidated Batch Settlements:** Reimburses fronted costs in seconds using the **PayPal Batch Payouts API**.
-- 🔔 **Closed-Loop Real-Time Webhooks:** Listens to `PAYMENT.CAPTURE.COMPLETED` events to celebrate payments and clear debts instantly in chat.
-- 🎭 **The Escalating Debt Collector Matrix:** When friends drag their feet, the agent autonomously escalates through 5 comedic psychological enforcement tiers:
-  1. *Tier 1: Polite Concierge* (Gentle reminder + checkout link)
-  2. *Tier 2: Passive-Aggressive Roommate* ("Must be nice enjoying that rooftop drink while Dave fronts your hotel...")
-  3. *Tier 3: Disappointed Parent* ("Alex beta, we didn't raise you to dodge a $42 paella split")
-  4. *Tier 4: Public Roast Mode* (Generates custom meme/roast card in group chat)
-  5. *Tier 5: Itinerary Embargo* ("Sanction applied: Demoted to sleeping on the pull-out couch")
+**TripSheriff AI** solves the painful, awkward social debt friction of group travel. It operates across **two synchronized interfaces**:
+1. **A live Telegram group bot** where friends naturally converse, drop photo receipts, and settle debts with 1-click PayPal buttons.
+2. **A Hosted Web Simulator & Organizer Dashboard** enabling hackathon judges and organizers to test the entire agentic loop, ledger, and PayPal sandbox transactions in a single browser window without configuring Telegram.
 
 ---
 
-## 📋 Comprehensive Implementation Plan
+## 🚀 Key Features
 
-The complete, battle-tested architectural specification, contract schemas, task breakdowns, claims ledger, and video storyboard are documented in:
-
-👉 **[Master Implementation Plan (`docs/IMPLEMENTATION_PLAN.md`)](docs/IMPLEMENTATION_PLAN.md)**
-
-### Key Highlights from the Plan:
-- **Four Shared Locked Contracts:** Expense & Ledger Schema, Escalation Matrix State Machine, PayPal API/Webhook Contract, and Chat Gateway Interface.
-- **Priority Build Tasks (A through M):** From core math and PayPal Orders/Payouts to AG Grid Dashboard and Render Deployment.
-- **Strict Claims Ledger:** What is proven, what is measured, and clear boundaries that guarantee honest, credible hackathon judging.
-- **Live 3-Minute Demo Video Storyboard:** Timed to the second for maximum humor, technical clarity, and prize qualification.
+- 🧾 **Multimodal Receipt Itemizer:** Snap a crumpled restaurant receipt $\rightarrow$ AI extracts line items, tax, and tip $\rightarrow$ renders interactive buttons for friends to claim their items.
+- 🧮 **Double-Entry Integer-Cent Ledger:** Zero rounding drift with bipartite minimum-cash-flow debt simplification.
+- 💳 **PayPal Orders API (v2) with Two-Step Capture:** Generates 1-click payment links with `experience_context` and captures upon buyer approval via both redirect capture (`/payment/success`) and the `CHECKOUT.ORDER.APPROVED` webhook.
+- 💸 **PayPal Batch Payouts API (v1):** Reimburses organizers or settles multi-party balances with 1-click Human-in-the-Loop confirmation.
+- 🔔 **Cryptographic Real-Time Webhooks:** Listens to `PAYMENT.CAPTURE.COMPLETED` to celebrate payments and clear debts instantly in chat.
+- 🤖 **Agentic Tool-Calling Loop:** An autonomous decision coordinator that evaluates trip status, balances, and overdue days to choose its next action (`create_payment_order`, `escalate_reminder`, `propose_payout_batch`).
+- 🎭 **Consensual Escalating Personality Matrix:** Opt-in comedic escalation (`MILD`, `SPICY`, or `NO_ROAST`):
+  - *Tier 1: Polite Concierge* (Gentle reminder + checkout link)
+  - *Tier 2: Passive-Aggressive Roommate* ("Must be nice enjoying that rooftop drink while Sarah fronts your bed...")
+  - *Tier 3: Disappointed Parent* ("Alex beta, is this how we raised you? Leaving Sarah to carry your hotel costs?")
+  - *Tier 4: Public Roast Mode* (Generates custom meme/roast card in group chat)
+  - *Tier 5: Itinerary Embargo* ("Trip sanction: Demoted to the pull-out couch until the $80 clears")
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-                       ┌────────────────────────────┐
-                       │   Telegram / Group Chat    │
-                       └─────────────┬──────────────┘
-                                     │ (Voice, Photo Receipts, Text)
-                                     ▼
-                       ┌────────────────────────────┐
-                       │   FastAPI Webhook Gateway  │
-                       └──────┬──────────────┬──────┘
-                              │              │
-             ┌────────────────┘              └────────────────┐
-             ▼                                                ▼
-┌──────────────────────────┐                    ┌──────────────────────────┐
-│ Multimodal AI Extractor  │                    │ Double-Entry Trip Ledger │
-│ (Gemini 1.5 / Whisper)   │                    │ (Debt Simplification)    │
-└────────────┬─────────────┘                    └─────────────┬────────────┘
-             │                                                │
-             └────────────────┬───────────────────────────────┘
-                              ▼
-               ┌─────────────────────────────┐
-               │    PayPal Sandbox Suite     │
-               ├─────────────────────────────┤
-               │ • Orders API (v2)           │
-               │ • Batch Payouts API (v1)    │
-               │ • Invoicing API (v2)        │
-               │ • Real-time Webhooks        │
-               └──────────────┬──────────────┘
-                              │
-                              ▼
-               ┌─────────────────────────────┐
-               │  AG Grid Organizer Portal   │
-               │  (Live Multi-Currency View) │
-               └─────────────────────────────┘
+                                  ┌──────────────────────────────┐
+                                  │      Incoming Triggers       │
+                                  ├──────────────┬───────────────┤
+                                  │ Telegram Bot │ Web Simulator │
+                                  └──────┬───────┴───────┬───────┘
+                                         │               │
+                                         ▼               ▼
+                              ┌───────────────────────────────────┐
+                              │     FastAPI Gateway Engine        │
+                              └──────┬─────────────────────┬──────┘
+                                     │                     │
+                     ┌───────────────┘                     └────────────────┐
+                     ▼                                                      ▼
+       ┌───────────────────────────┐                         ┌───────────────────────────┐
+       │   Agentic AI Coordinator  │                         │ Double-Entry Trip Ledger  │
+       │   (Gemini 2.0 Tool-Loop)  │                         │ (Integer-Cent Math Core)  │
+       └─────────────┬─────────────┘                         └──────────────┬────────────┘
+                     │                                                      │
+                     └──────────────────────┬───────────────────────────────┘
+                                            ▼
+                             ┌──────────────────────────────┐
+                             │    PayPal Sandbox Suite      │
+                             ├──────────────────────────────┤
+                             │ • Orders API (v2) + Capture  │
+                             │ • Batch Payouts API (v1)     │
+                             │ • Webhook Verification       │
+                             └──────────────┬───────────────┘
+                                            │
+                                            ▼
+                             ┌──────────────────────────────┐
+                             │   AG Grid Organizer Portal   │
+                             │   (Live WebSocket Updates)   │
+                             └──────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Getting Started
+## 📋 Comprehensive Implementation Plan
 
-### 1. Prerequisites
-- Python 3.11+
-- A [PayPal Developer Sandbox](https://developer.paypal.com/) account (Client ID & Secret)
-- A Telegram Bot Token from [@BotFather](https://t.me/BotFather)
-- Gemini or OpenAI API Key
+The complete engineering specification, locked schemas, task breakdowns, claims ledger, and timed video storyboard are documented in:
 
-### 2. Setup
-```bash
-git clone https://github.com/saroshkumar-ops/PayPal-Hack.git
-cd PayPal-Hack
+👉 **[Master Implementation Plan (v2.0) (`docs/IMPLEMENTATION_PLAN.md`)](docs/IMPLEMENTATION_PLAN.md)**
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+---
 
-# Install dependencies (once generated)
-pip install -r requirements.txt
-```
+## ⚖️ Honest Platform & Custody Disclosure
 
-### 3. Environment Variables
-Copy `.env.example` to `.env` and fill in your keys:
-```env
-PAYPAL_CLIENT_ID=your_sandbox_client_id
-PAYPAL_CLIENT_SECRET=your_sandbox_client_secret
-PAYPAL_MODE=sandbox
-PAYPAL_WEBHOOK_ID=your_sandbox_webhook_id
+In this hackathon demonstration, incoming member payments are collected into the prototype's PayPal sandbox platform account as a pooled escrow proxy, and outbound settlements are disbursed using the PayPal Batch Payouts API. 
 
-TELEGRAM_BOT_TOKEN=your_botfather_token
-GEMINI_API_KEY=your_gemini_api_key
-DATABASE_URL=sqlite:///./tripsheriff.db
-```
+TripSheriff operates as a **platform-mediated prototype**. In a production commercial release, direct multi-party funds routing would be implemented using **PayPal Complete Payments / PayPal Commerce Platform (Marketplace Payee Routing)** with custom payee declarations in `purchase_units` or licensed third-party custodial rails. We do not claim to be an independent non-custodial bank.
+
+---
+
+## 🛠️ Quickstart (For Hackathon Judges)
+
+### Option 1: Instant Web Simulator Mode (Zero Telegram Config)
+1. Clone the repo and install dependencies:
+   ```bash
+   git clone https://github.com/saroshkumar-ops/PayPal-Hack.git
+   cd PayPal-Hack
+   python -m venv venv
+   source venv/bin/activate  # Windows: .\venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+2. Run the application:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+3. Open `http://localhost:8000/simulator` in your browser.
+4. Click **[Simulate Expense]**, **[Simulate Time +24h]**, and **[Test PayPal Checkout]** to evaluate the entire agentic loop without needing Telegram.
+
+### Option 2: Live Telegram Group Bot
+1. Disable privacy mode in [@BotFather](https://t.me/BotFather): `/setprivacy` $\rightarrow$ `Disable`.
+2. Add the bot to your test Telegram group.
+3. Invite friends and type `/newtrip Bali 2026 USD`.
+4. Tap the deep-link button to join and set your roast consent.
 
 ---
 

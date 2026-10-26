@@ -1,156 +1,208 @@
-# TripSheriff AI - Autonomous Group Travel Treasury & Escalating Debt Enforcement Agent
-## Master Implementation Plan (v1.0) — PayPal AI Hackathon 2026
+# TripSheriff AI - Autonomous Group Travel Treasury & Debt Enforcement Agent
+## Master Implementation Plan (v2.0 - Production & Judge-Hardened)
+### Target: PayPal AI Hackathon 2026 (Devpost) | Deadline: Nov 12, 2026
 
-This is not an abstract brainstorming sheet. It is a **priority-ordered, contract-first build plan** designed to take the project from zero to a winning submission for the **PayPal AI Hackathon** ($69,750+ prize pool). 
+This is an engineering-first, contract-locked implementation plan for **TripSheriff AI**. 
 
-Every task is modular and can be implemented in parallel against mock contracts before end-to-end integration. Tasks near the top are **load-bearing**: without them, there is no working demo. Tasks near the bottom are high-value differentiators (sponsor prizes, dashboard, video storyboard).
+Version 2.0 incorporates critical architectural fixes addressing PayPal Orders capture mechanics, platform fund routing realities, judge accessibility (dual-mode Telegram + Web Simulator), AI tool-calling agent loops, Render cold-start mitigations, and an aggressive, de-risked 16-day scope pruning schedule.
 
 ---
 
 ## 1. What We Are Actually Building, Stated Honestly
 
-**The Problem:** Group travel is a $1.2 Trillion social nightmare. One or two organizers inevitably front thousands of dollars for villas, rental cars, and group dinners on their personal credit cards. Afterward begins the agonizing "chasing friends" phase: awkward DMs, forgotten Venmo requests, manual math over who had drinks vs. who didn't, and lingering resentment. Over 43% of group travelers report damaged friendships or unrecovered debts.
+**The Problem:** Group trips inevitably create awkward social debt friction. One person fronts hundreds or thousands of dollars for accommodations, rental cars, and shared meals. Following the trip comes the painful manual collection process: tracking who ate or drank what, manually reminding friends across chat threads, and waiting weeks for people to settle up. Consumer financial studies (e.g. Bankrate, CreditCards.com) consistently show that over a third of adults experience ruined social relationships or unpaid debts from group travel.
 
-**The Solution:** **TripSheriff AI** is an autonomous agentic group trip treasurer that lives directly inside the group chat (Telegram/WhatsApp). It:
-1. **Tracks and itemizes expenses** through natural chat text, voice notes, and photo receipts (Multimodal AI).
-2. **Maintains a mathematically verified double-entry group ledger** with smart debt-simplification algorithms.
-3. **Dispatches instant 1-click PayPal payment links** via the **PayPal Orders API**.
-4. **Executes automated multi-party settlements and vendor payments** in seconds via the **PayPal Batch Payouts API**.
-5. **Chases deadbeat friends with an escalating psychological enforcement matrix** (Polite Concierge $\rightarrow$ Passive-Aggressive Roommate $\rightarrow$ Disappointed Parent $\rightarrow$ Public Roast Mode $\rightarrow$ Itinerary Embargo).
-6. **Listens to real-time PayPal Webhooks** to dynamically celebrate payments, adjust debt scores, and close the loop.
+**The Solution:** **TripSheriff AI** is an autonomous group travel treasury agent that operates across two synchronized interfaces:
+1. **A live Telegram group bot** where friends naturally converse, drop photo receipts, and settle debts with 1-click PayPal buttons.
+2. **A Hosted Web Simulator & Organizer Dashboard** enabling hackathon judges and organizers to test and inspect the entire agentic loop, ledger, and PayPal sandbox transactions in a single browser window without configuring Telegram.
 
-**Honest Framing for Judges:** TripSheriff does not custody fiat money itself as an unregulated bank; it acts as an **orchestration and enforcement layer** delegating all money transmission, authentication, and regulatory compliance to **PayPal's global sandbox rails (Orders, Payouts, Invoicing)**. Frame it as: *"The autonomous CFO and social enforcer for consumer group spending."*
+**The Technical Core:**
+- **Double-Entry Ledger:** Stores integer cents (`int`), handles itemized receipt splits, and runs bipartite minimum-cash-flow debt simplification.
+- **Agentic Decision Loop:** An LLM-powered tool-calling coordinator that evaluates trip status, ledger balances, and overdue days to choose its next action (`create_payment_order`, `escalate_reminder`, `propose_payout_batch`).
+- **Two-Step PayPal Orders Lifecycle:** Creates orders with `experience_context` and captures upon buyer approval via either immediate redirect capture (`/payment/success`) or the `CHECKOUT.ORDER.APPROVED` webhook.
+- **PayPal Batch Payouts API:** Disburses pooled reimbursements to organizers and participants with mandatory Human-in-the-Loop confirmation.
+- **Closed-Loop Real-Time Webhooks:** Signature-verified PayPal webhooks (`PAYMENT.CAPTURE.COMPLETED`, `PAYOUTSBATCH.SUCCESS`) that instantly trigger in-chat celebrations and ledger updates.
+- **Consensual Escalating Personality Matrix:** Opt-in comedic escalation (Polite $\rightarrow$ Passive-Aggressive $\rightarrow$ Disappointed Parent $\rightarrow$ Public Roast Card $\rightarrow$ Itinerary Embargo).
+
+**Honest Framing on Custody & Commercial Architecture (Mandatory for Judges):**
+> [!IMPORTANT]
+> **Regulatory & Platform Routing Disclosure:**
+> In this hackathon demonstration, incoming member payments are collected into the prototype's PayPal sandbox platform account as a pooled escrow proxy, and outbound settlements are disbursed using the PayPal Batch Payouts API. 
+> 
+> We explicitly state to judges that **TripSheriff operates as a platform-mediated prototype**. In a production commercial release, direct multi-party funds routing would be implemented using **PayPal Complete Payments / PayPal Commerce Platform (Marketplace Payee Routing)** with custom payee declarations in `purchase_units` or licensed third-party custodial rails. We do **not** claim to be an independent non-custodial bank.
 
 ---
 
 ## 2. Hackathon Prize Alignment Strategy
 
-This project is explicitly engineered to contend across three distinct prize surfaces:
-
 | Target Category | Prize | Why This Architecture Wins It |
 |---|---|---|
-| **1st Place Grand Prize** | $12,000 | Combines serious commercial fintech viability (group travel treasury, Payouts API, Invoicing) with viral appeal, multi-currency handling, and production-grade architecture. |
-| **Best Use of Agentic Commerce** | $5,000 | An AI agent with real tool-calling autonomy that creates PayPal orders, monitors webhook lifecycle, decides when to trigger payouts, and gates trip access based on ledger state. |
-| **Best Demo Delivery** | $5,000 | The escalating debtor personality matrix (especially the "Disappointed Parent" voice/text and the Public Roast card) creates an unforgettable, laugh-out-loud 3-minute video that judges will remember. |
-| **Sponsor Prize: Render** | Cash / Credits | Backend, Redis queue, and Telegram Webhooks containerized and hosted live on Render. |
-| **Sponsor Prize: AG Grid** | Cash / Award | Trip Organizer Web Portal featuring a rich, interactive AG Grid enterprise ledger table with multi-currency sorting, receipt preview, and batch payout triggers. |
+| **1st Place Grand Prize** | $12,000 | Production-grade PayPal depth (Orders capture, Batch Payouts, Webhook verification), dual-mode interface (Telegram + Web Simulator), rigorous math, and commercial viability. |
+| **Best Use of Agentic Commerce** | $5,000 | True LLM tool-calling agent loop that autonomously evaluates debt aging, selects payment actions, requests Human-in-the-Loop approvals, and drives commerce on PayPal rails. |
+| **Best Demo Delivery** | $5,000 | The hilarious, consensual escalating debt collector matrix (featuring the "Disappointed Parent" voice/text and dynamic Roast Cards), backed by a timed 3-minute video storyboard with zero dead air. |
+| **Sponsor Prize: AG Grid** | Cash / Award | Interactive AG Grid Enterprise/Community table powering the Trip Organizer Dashboard with real-time WebSocket updates, multi-currency formatting, and settlement triggers. |
+| **Sponsor Prize: Render** | Cash / Credits | Complete containerized deployment on Render with keep-alive worker configuration preventing webhook sleep drops. |
 
 ---
 
-## 3. The Four Shared Contracts
+## 3. The Four Shared Locked Contracts
 
-Before writing any implementation code, the team locks these four JSON/API contracts. Anyone can write mock data and build their component (bot frontend, payment backend, AI personality engine) without waiting for others.
+These contracts must be locked on Day 1. Every component (bot, web simulator, payment backend, agent loop) can be built against these JSON schemas in isolation using mocks.
 
 ### Contract 1: Expense & Ledger Schema (`contracts/ledger.json`)
+*Note: All monetary values are strictly stored as integer cents to eliminate floating-point rounding errors.*
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "trip_id": "trip_bali_2026",
   "currency": "USD",
   "members": [
-    {"user_id": "user_01", "name": "Sarah", "handle": "@sarah_c", "paypal_email": "sarah.buyer@sandbox.paypal.com", "role": "organizer"},
-    {"user_id": "user_02", "name": "Alex", "handle": "@alex_travels", "paypal_email": "alex.debtor@sandbox.paypal.com", "role": "member"},
-    {"user_id": "user_03", "name": "Dave", "handle": "@dave_k", "paypal_email": "dave.payer@sandbox.paypal.com", "role": "member"}
+    {
+      "user_id": "user_01",
+      "name": "Sarah",
+      "handle": "@sarah_c",
+      "paypal_email": "sarah.organizer@personal.example.com",
+      "role": "organizer",
+      "roast_consent": "SPICY"
+    },
+    {
+      "user_id": "user_02",
+      "name": "Alex",
+      "handle": "@alex_travels",
+      "paypal_email": "alex.debtor@personal.example.com",
+      "role": "member",
+      "roast_consent": "SPICY"
+    },
+    {
+      "user_id": "user_03",
+      "name": "Dave",
+      "handle": "@dave_k",
+      "paypal_email": "dave.payer@personal.example.com",
+      "role": "member",
+      "roast_consent": "MILD"
+    }
   ],
   "expenses": [
     {
       "expense_id": "exp_8821",
       "paid_by": "user_01",
-      "amount": 240.00,
-      "description": "Villa Sunset Deposit",
+      "amount_cents": 24000,
+      "description": "Sunset Villa Deposit",
       "category": "LODGING",
       "timestamp": "2026-10-26T14:30:00Z",
       "split_type": "EQUAL",
       "splits": [
-        {"user_id": "user_01", "owes": 80.00, "paid_status": "SETTLED"},
-        {"user_id": "user_02", "owes": 80.00, "paid_status": "PENDING", "paypal_order_id": "ORD-9912048", "payment_url": "https://www.sandbox.paypal.com/checkoutnow?token=TOKEN1"},
-        {"user_id": "user_03", "owes": 80.00, "paid_status": "PENDING", "paypal_order_id": "ORD-9912049", "payment_url": "https://www.sandbox.paypal.com/checkoutnow?token=TOKEN2"}
+        {"user_id": "user_01", "owes_cents": 8000, "paid_status": "SETTLED"},
+        {
+          "user_id": "user_02",
+          "owes_cents": 8000,
+          "paid_status": "PENDING",
+          "paypal_order_id": "5O190127TN364715T",
+          "payment_url": "https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T"
+        },
+        {
+          "user_id": "user_03",
+          "owes_cents": 8000,
+          "paid_status": "PENDING",
+          "paypal_order_id": "7P281039TN364716U",
+          "payment_url": "https://www.sandbox.paypal.com/checkoutnow?token=7P281039TN364716U"
+        }
       ]
     }
   ],
-  "net_balances": {
-    "user_01": 160.00,
-    "user_02": -80.00,
-    "user_03": -80.00
+  "net_balances_cents": {
+    "user_01": 16000,
+    "user_02": -8000,
+    "user_03": -8000
   }
 }
 ```
 
-### Contract 2: Escalation & Personality State (`contracts/escalation.json`)
+### Contract 2: Agentic Tool-Calling & Escalation State (`contracts/agent_state.json`)
 ```json
 {
-  "user_id": "user_02",
+  "debtor_id": "user_02",
   "trip_id": "trip_bali_2026",
-  "total_overdue": 80.00,
+  "total_overdue_cents": 8000,
   "currency": "USD",
   "unpaid_since_hours": 36,
   "reminders_sent": 2,
   "current_tier": "DISAPPOINTED_PARENT",
   "debt_heat_score": 75,
-  "tone_policy": {
-    "tier_1_hours": 0,
-    "tier_2_hours": 12,
-    "tier_3_hours": 24,
-    "tier_4_hours": 48,
-    "tier_5_hours": 72
-  },
-  "last_prompt_output": "Alex beta, I see the photos from the rooftop bar you posted 2 hours ago. Beautiful cocktail. But Sarah is still waiting for the $80 villa split from yesterday. We didn't raise you to drink top-shelf gin while your friend fronts your bed.",
-  "paypal_quick_pay_url": "https://www.sandbox.paypal.com/checkoutnow?token=TOKEN1"
+  "roast_consent": "SPICY",
+  "agent_decision": {
+    "action": "ESCALATE_AND_REMIND",
+    "target_channel": "GROUP_CHAT",
+    "selected_tool": "send_escalated_message",
+    "parameters": {
+      "tier": "DISAPPOINTED_PARENT",
+      "tone": "Comedic, guilt-inducing, family elder voice",
+      "generated_text": "Alex beta, I see your Instagram stories from the beach club. Very nice. But Sarah is still waiting on the $80 villa deposit from yesterday. We did not raise you to drink craft mango mojitos while your friend fronts your bed.",
+      "checkout_url": "https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T"
+    }
+  }
 }
 ```
 
 ### Contract 3: PayPal Order & Payout Contract (`contracts/paypal_ops.json`)
 ```json
 {
-  "order_request": {
+  "create_order_payload": {
     "intent": "CAPTURE",
     "purchase_units": [{
-      "reference_id": "exp_8821_user_02",
-      "description": "TripSheriff: Villa Sunset Deposit share for Alex",
+      "reference_id": "trip_bali_2026_exp_8821_user_02",
+      "description": "TripSheriff: Villa Deposit share for Alex",
       "custom_id": "trip_bali_2026|user_02|exp_8821",
-      "amount": {"currency_code": "USD", "value": "80.00"}
+      "amount": {
+        "currency_code": "USD",
+        "value": "80.00"
+      }
     }],
-    "application_context": {
-      "brand_name": "TripSheriff AI",
-      "user_action": "PAY_NOW",
-      "return_url": "https://tripsheriff.onrender.com/payment/success",
-      "cancel_url": "https://tripsheriff.onrender.com/payment/cancel"
+    "payment_source": {
+      "paypal": {
+        "experience_context": {
+          "brand_name": "TripSheriff AI",
+          "locale": "en-US",
+          "landing_page": "LOGIN",
+          "user_action": "PAY_NOW",
+          "return_url": "https://tripsheriff.onrender.com/api/payment/success",
+          "cancel_url": "https://tripsheriff.onrender.com/api/payment/cancel"
+        }
+      }
     }
   },
-  "batch_payout_request": {
+  "batch_payout_payload": {
     "sender_batch_header": {
       "sender_batch_id": "batch_payout_trip_bali_2026_settle_01",
-      "email_subject": "TripSheriff Settlement: You've received your trip reimbursement!",
-      "email_message": "The trip ledger has been settled. Here is your consolidated reimbursement."
+      "email_subject": "TripSheriff: Your Trip Reimbursement is Here!",
+      "email_message": "The trip ledger has been settled. Funds have been disbursed to your account."
     },
     "items": [
       {
         "recipient_type": "EMAIL",
         "amount": {"value": "160.00", "currency": "USD"},
-        "receiver": "sarah.buyer@sandbox.paypal.com",
-        "note": "Reimbursement for Villa Sunset fronted expense",
-        "sender_item_id": "settle_user_01"
+        "receiver": "sarah.organizer@personal.example.com",
+        "note": "TripSheriff: Net reimbursement for fronted villa costs",
+        "sender_item_id": "settle_sarah_01"
       }
     ]
   }
 }
 ```
 
-### Contract 4: Chat Gateway Message Contract (`contracts/chat_message.json`)
+### Contract 4: Chat Gateway & Web Simulator Event Contract (`contracts/chat_event.json`)
 ```json
 {
-  "chat_id": "-100293847291",
-  "platform": "telegram",
-  "thread_id": null,
-  "sender": {"id": "user_01", "name": "Sarah", "handle": "sarah_c"},
+  "event_id": "evt_991823",
+  "source": "TELEGRAM_OR_SIMULATOR",
+  "trip_id": "trip_bali_2026",
+  "sender": {"id": "user_01", "name": "Sarah", "handle": "@sarah_c"},
   "message_type": "TEXT",
-  "content": "Paid $150 for seafood dinner split between @alex_travels and me",
-  "media_url": null,
-  "reply_to_message_id": null,
+  "content": "Paid $150 for seafood dinner split with @alex_travels",
   "bot_response": {
-    "text": "🍽️ Logged **$150.00 Seafood Dinner** by Sarah!\n\n• Sarah: $75.00 (Paid)\n• Alex: $75.00 (Pending)\n\nAlex, tap below to settle instantly via PayPal:",
+    "text": "🍽️ **Logged $150.00 Seafood Dinner** paid by Sarah!\n\n• Sarah: $75.00 (Fronted)\n• Alex: $75.00 (Pending)\n\nAlex, settle instantly via PayPal:",
     "buttons": [
-      {"text": "💳 Pay $75 via PayPal", "url": "https://www.sandbox.paypal.com/checkoutnow?token=xyz123"},
+      {"text": "💳 Pay $75.00 via PayPal", "url": "https://www.sandbox.paypal.com/checkoutnow?token=TOKEN_XYZ"},
       {"text": "📊 View Trip Ledger", "url": "https://tripsheriff.onrender.com/trips/trip_bali_2026"}
     ]
   }
@@ -159,405 +211,345 @@ Before writing any implementation code, the team locks these four JSON/API contr
 
 ---
 
-## 4. Priority Build Tasks (A through M)
+## 4. Prioritized & De-risked Build Tasks
+
+To ensure guaranteed submission before the **November 12** deadline, tasks are divided into **Tier 1 (Core Backbone)**, **Tier 2 (Sponsor & AI Differentiators)**, and **Deferred/Stretch**.
 
 ```
-[Task A: Chat Gateway] ───► [Task B: Double-Entry Ledger] ───► [Task C: PayPal Orders API]
-         │                              │                               │
-         ▼                              ▼                               ▼
-[Task F: Escalating AI Matrix]  [Task G: Receipt OCR]         [Task D: Batch Payouts API]
-         │                              │                               │
-         ▼                              ▼                               ▼
-[Task E: Webhook Engine] ◄──────────────┴───────────────────────────────┘
-         │
-         ▼
-[Task I: AG Grid Dashboard] ───► [Task J: Vendor Agent] ───► [Task L: Live Demo & Video]
+[Phase 1: Days 1-5]  Task B (Ledger Math) ──► Task C (Orders + Capture) ──► Task E (Webhooks)
+                               │                           │                        │
+                               ▼                           ▼                        ▼
+                     Task F (Agent & Matrix) ◄──── Task A (Bot & Web Simulator Gateway)
+                               │
+[Phase 2: Days 6-10] Task D (Payouts API) ──► Task G (Receipt OCR) ──► Task I (AG Grid Web Portal)
+                               │
+[Phase 3: Days 11-13] Task K (Render Hosting + Keep-Alive) ──► Task M (Safety Guardrails)
+                               │
+[Phase 4: Days 14-16] Task L (Live Rehearsal, 3-Min Video Storyboard & Devpost Submission)
 ```
 
 ---
 
-### Task A: Telegram Bot Gateway & Session State Machine (Must-Have, Foundation)
+### Task B: Double-Entry Group Ledger & Debt Simplification (Must-Have, Core Math)
 
-**What it is:** The primary user interface where the trip lives. Listens to group messages, handles commands, maintains trip membership, and sends rich formatting with inline PayPal checkout buttons.
+**What it is:** The mathematical heart of the system. Maintains an immutable log of transactions in integer cents, splits expenses, and optimizes multi-party net balances.
 
 **Technical build:**
-- Stack: Python 3.11+ using `python-telegram-bot` (v20+ async) or `aiogram`.
-- Webhook Mode for Render deployment with local long-polling fallback for instant development (`TELEGRAM_POLLING=True`).
-- Command handlers:
-  - `/newtrip <trip_name> <currency>`: Creates trip context in SQLite/PostgreSQL.
-  - `/join`: Registers user's Telegram ID, handle, and collects their PayPal sandbox email via a secure private 1:1 bot DM.
-  - `/status` or `/ledger`: Prints net balance summary table directly in chat.
-  - `/remind`: Manually triggers the agent's debt collection sweep.
-  - `/settle`: Organizer command to initiate end-of-trip settlement via PayPal Payouts.
-- Natural Language Ingestion: Any non-command message in the group is passed to the Agent Router (Task B/F) to determine if it's an expense report ("Paid $60 for gas"), a dispute, or casual chat (which the bot ignores unless tagged).
-
-**End result:** A responsive bot running in a real Telegram group that correctly tracks participants, associates their PayPal sandbox emails, and responds with interactive inline keyboards.
+- Store all amounts as integer cents (`amount_cents = int(round(val * 100))`). Output formatted strings `f"{amount_cents / 100:.2f}"` only when interfacing with PayPal API or rendering chat messages.
+- Implement the **Bipartite Minimum Cash Flow algorithm** (Greedy matching of max net debtor to max net creditor) to reduce $O(N^2)$ debts to at most $N-1$ settlement transactions.
+- Split types: Equal split (with remainder cents assigned deterministically), exact dollar split, and itemized split (from Task G).
+- Persistence: SQLite / SQLAlchemy database with models for `Trip`, `User`, `Expense`, `ExpenseSplit`, `Settlement`.
 
 **Benchmark to pass:**
-- Responds to `/newtrip` and registers 3 users within 30 seconds.
-- Inline keyboard buttons correctly direct the user to an external link.
+- 100% test coverage on split calculations with zero floating-point drift.
+- Circular debt test: A owes B \$20, B owes C \$20, C owes A \$20 simplifies to exactly \$0 net for all three.
 
 ---
 
-### Task B: Double-Entry Group Ledger & Dynamic Split Math (Must-Have, Financial Core)
+### Task C: PayPal Orders API & Two-Step Capture Flow (Must-Have, Payment Backbone)
 
-**What it is:** The mathematical engine that prevents rounding errors, simplifies circular debts (Greedy Debt Simplification algorithm), and computes accurate net balances.
+**What it is:** Generates real PayPal sandbox checkout links and **guarantees payment capture**.
+
+> [!IMPORTANT]
+> **The PayPal Capture Rule:** When creating an order with `intent: "CAPTURE"`, buyer approval alone does **not** transfer money. The application backend **must** execute `POST /v2/checkout/orders/{id}/capture` to complete the transaction and release funds.
 
 **Technical build:**
-- Do not store floating point numbers for currency; store integer cents (`int` in cents or `Decimal` with strict 2-decimal quantize).
-- Split Algorithms supported:
-  1. **Equal Split:** `amount // N` with remainder cents distributed deterministically to the payer or first member.
-  2. **Custom / Exact Split:** Specified dollar amounts per user.
-  3. **Itemized Split:** Mapping specific items from receipt extraction (Task G) to specific consumers.
-- **Debt Simplification Algorithm:** Given a directed graph of who owes whom, apply bipartite minimum cash-flow reduction (Greedy max-creditor to max-debtor matching) so a group of 6 people settles in at most 5 transactions instead of 15.
-- Persistence: SQLite / SQLAlchemy database with tables: `trips`, `trip_members`, `expenses`, `expense_splits`, `settlements`, `escalation_logs`.
-
-**End result:** A deterministic Python module `ledger_engine.py` with 100% test coverage over split calculations, zero rounding discrepancies, and graph simplification.
+1. **Order Creation:** `POST /v2/checkout/orders`
+   - Use `payment_source.paypal.experience_context` (modern PayPal format) with `user_action: "PAY_NOW"`.
+   - Embed custom tracking string in `purchase_units[0].custom_id`: `trip_id|debtor_user_id|expense_id`.
+   - Parse the response for links where `rel == "approve"` OR `rel == "payer-action"`.
+2. **Primary Capture Path (Redirect):**
+   - The user finishes PayPal checkout and returns to `return_url`: `https://tripsheriff.onrender.com/api/payment/success?token={order_id}`.
+   - The endpoint immediately executes `POST /v2/checkout/orders/{order_id}/capture`.
+   - Marks the expense split as `SETTLED` in the ledger.
+3. **Secondary Capture Path (Webhook Fallback):**
+   - In case the user closes their browser before redirect completes, listen for webhook `CHECKOUT.ORDER.APPROVED` $\rightarrow$ server automatically triggers the capture call.
+4. **Environment Time-Warp Setting:**
+   - Include `DEMO_TIME_SCALE` (or command `/sim_time +24h`) so the agent's time-based logic can simulate 72 hours of debt age in 5 seconds during demo recording.
 
 **Benchmark to pass:**
-- 10 unit test scenarios including weird numbers ($100 split 3 ways = $33.34, $33.33, $33.33; total exactly equals $100.00).
-- Debt simplification reduces a 4-way circular debt (`A->B $20, B->C $20, C->A $20`) to $0 net.
+- Order creation returns a valid sandbox checkout URL in under 700ms.
+- Executing payment in sandbox triggers immediate capture, updates ledger status, and returns a verified `COMPLETED` capture status.
 
 ---
 
-### Task C: PayPal Orders & Instant Checkout Integration (Must-Have, Payment Backbone)
+### Task E: PayPal Webhook Ingestion & Event Dispatcher (Must-Have, Closed Loop)
 
-**What it is:** Generates real PayPal sandbox payment links for individual debts so debtors can click one button on their phone and pay via credit card, debit card, or PayPal balance.
-
-**Technical build:**
-- SDK / API: Direct REST calls to `https://api-m.sandbox.paypal.com/v2/checkout/orders` using OAuth2 Client Credentials (`/v1/oauth2/token`).
-- Token Caching: Secure in-memory token cache with TTL refresh before 9-hour expiry.
-- Payload Generation:
-  - `intent`: `CAPTURE`
-  - `custom_id`: Encodes `trip_id|debtor_user_id|expense_id` for zero-ambiguity webhook reconciliation.
-  - `description`: "TripSheriff Settlement: {Expense Description}".
-- Deep Link Extraction: Parse `links` where `rel == "approve"` to generate the immediate user checkout URL.
-- Local capture verification endpoint: `/payment/success?token={order_id}` which calls `/v2/checkout/orders/{order_id}/capture` if webhooks have a slight network lag.
-
-**End result:** Clicking the Telegram button opens the PayPal Sandbox checkout page, allows logging in as `buyer@personal.example.com`, and successfully completes payment.
-
-**Benchmark to pass:**
-- Order generated in under 800ms from chat trigger.
-- Full end-to-end sandbox payment completes with a verified `COMPLETED` capture status.
-
----
-
-### Task D: PayPal Batch Payouts & Invoicing Integration (Must-Have, Commercial Depth)
-
-**What it is:** When the trip ends or when an organizer needs immediate reimbursement for fronted costs, TripSheriff triggers **PayPal Payouts API** to disburse funds to multiple members in a single API call. It also creates formal **PayPal Invoices** for shared rentals.
-
-**Technical build:**
-- **Batch Payouts Endpoint:** `POST /v1/payments/payouts`
-  - Headers: `PayPal-Request-Id: {unique_idempotency_uuid}` (crucial: guarantees no double-payouts on retries).
-  - Body: `sender_batch_header` + array of `items` containing `receiver` (email), `amount`, and `note`.
-  - Polling / Webhook status: Listen to `PAYMENT.PAYOUTS-ITEM.SUCCEEDED` or query `GET /v1/payments/payouts/{batch_id}`.
-- **PayPal Invoicing Endpoint:** `POST /v2/invoicing/invoices` + `POST /v2/invoicing/invoices/{id}/send`
-  - Generates formal PDF invoices for Airbnb host deposits or yacht charter vendor splits, including line-item tax and breakdown.
-- **Safety Guard (Human-in-the-Loop):** The bot *never* executes a batch payout autonomously without an explicit organizer confirmation click (`Organizer clicks: [Confirm Batch Payout of $320.00 to 2 members]`).
-
-**End result:** An organizer taps `/settle` in Telegram $\rightarrow$ bot previews net payouts $\rightarrow$ organizer approves $\rightarrow$ bot calls PayPal Payouts API $\rightarrow$ sandbox funds land in members' accounts within seconds.
-
-**Benchmark to pass:**
-- Successfully dispatches a batch payout to at least 2 distinct sandbox email accounts in one request.
-- Idempotency key prevents duplicate execution on double-click.
-
----
-
-### Task E: Real-Time PayPal Webhook Ingestion & Event Dispatcher (Must-Have, Closed Loop)
-
-**What it is:** The event bridge that makes TripSheriff feel magical. The instant a friend pays on PayPal, PayPal fires a webhook to our server, which verifies the cryptographic signature, updates the ledger, and **immediately posts a celebration message in the Telegram group**.
+**What it is:** Listens to incoming PayPal webhook notifications, validates signatures against PayPal's verification endpoint, and drives the real-time celebration feedback loop.
 
 **Technical build:**
 - Endpoint: `POST /api/paypal/webhook` (FastAPI).
-- Webhook Verification: Verify using PayPal's Webhook Signature Verification API (`POST /v1/notifications/verify-webhook-signature`) checking `auth_algo`, `cert_url`, `transmission_id`, `transmission_sig`, `transmission_time`, and `webhook_id`.
-- Events to Handle:
-  - `PAYMENT.CAPTURE.COMPLETED`: Unpacks `custom_id` $\rightarrow$ marks `expense_split.paid_status = 'SETTLED'` $\rightarrow$ drops user's Debt Heat Score to 0 $\rightarrow$ posts: *"🎉 HALLELUJAH! Alex has paid $80.00 for Villa Sunset! His name is cleared from the shame board."*
-  - `PAYMENT.CAPTURE.DENIED` / `FAILED`: Alerts user in private DM to retry.
-  - `PAYOUTSBATCH.SUCCESS`: Notifies group that trip reimbursements are complete.
-- Local dev bridge: Use `ngrok` or `localtunnel` during development to route PayPal sandbox webhooks to `localhost:8000`.
-
-**End result:** Zero-delay reactive feedback loop from PayPal checkout completion straight into the group chat.
+- Signature Verification: Calls PayPal API `POST /v1/notifications/verify-webhook-signature` using incoming transmission headers (`paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`) and registered `PAYPAL_WEBHOOK_ID`.
+- Event Handlers:
+  - `PAYMENT.CAPTURE.COMPLETED`: Decodes `custom_id` $\rightarrow$ marks ledger debt as `SETTLED` $\rightarrow$ resets user's Debt Heat Score to 0 $\rightarrow$ dispatches celebratory message with celebration GIF/emoji to the group chat and web dashboard.
+  - `CHECKOUT.ORDER.APPROVED`: Automatically triggers capture if redirect capture hasn't completed.
+  - `PAYOUTSBATCH.SUCCESS`: Dispatches notification that group trip reimbursements have successfully landed in members' accounts.
 
 **Benchmark to pass:**
 - Webhook signature verification passes with valid PayPal test headers.
-- Telegram announcement delivers within 3 seconds of sandbox payment capture.
+- Telegram message and Web Dashboard row flash green within 2 seconds of payment capture.
 
 ---
 
-### Task F: The Escalating Debt Enforcement Matrix ("Psychological Collector") (Centerpiece Feature)
+### Task F: Agentic Tool-Calling Loop & Consensual Escalation Matrix (Centerpiece Feature)
 
-**What it is:** The viral, hilarious, and psychologically effective core of the bot. As debt sits unpaid, the agent autonomously escalates its communication style across 5 distinct tiers.
+**What it is:** An autonomous AI coordinator that reasons over the trip ledger, evaluates debt age, selects the appropriate action using real tool calling, and generates tone-calibrated debt collection messages.
 
-**The 5 Escalation Tiers:**
+**The Tool-Calling Architecture:**
+The agent runs an autonomous loop over a suite of declared tools:
+- `query_ledger_balances(trip_id)`: Inspects who owes what.
+- `create_paypal_order(trip_id, debtor_id, amount_cents)`: Creates PayPal Orders link.
+- `escalate_debtor_status(debtor_id, current_tier, hours_overdue)`: Evaluates escalation policy.
+- `propose_batch_payout(trip_id)`: Generates settlement payout preview for organizer confirmation.
 
-```
-[Tier 1: 0-12h]   Polite Concierge  ──► "Hey Alex! Quick link for your $80 villa split 🏖️"
-       │
-[Tier 2: 12-24h]  Passive-Aggressive ──► "Must be nice enjoying that rooftop sunset while Dave fronts your bed 👀"
-       │
-[Tier 3: 24-48h]  Disappointed Parent ──► "Alex beta, I'm not angry, just disappointed. Is this how we raised you?"
-       │
-[Tier 4: 48-72h]  Public Roast Mode ──► Posts generated meme card & ranks them #1 on the 'Deadbeat Leaderboard'
-       │
-[Tier 5: >72h]    Itinerary Embargo ──► "Sanction applied: Alex has been demoted to sleeping on the inflatable mattress"
-```
+**The 5 Consensual Escalation Tiers:**
+To prevent harassment and eliminate judge concerns, **every member selects their Roast Consent level on joining (`MILD`, `SPICY`, or `NO_ROAST`)**:
 
-**Technical build:**
-- LLM Integration: OpenAI (`gpt-4o-mini`) or Google Gemini 1.5 Flash via structured prompt templates.
-- Context injection: Inject actual trip context (recent expense description, debtor name, organizer name, days overdue, recent chat topics).
-- Tone Safety Guardrails (Non-Negotiable):
-  - Must remain comedic, playful, and socially relatable.
-  - Hard guardrails against: hate speech, profanity, threats of violence, real-world personal harassment, or actual legal deception.
-  - Debtor can type `/pause_reminders` or `/dispute` to immediately freeze escalation for manual review.
-- Dynamic Card Generator: For Tier 4 (Public Roast), generate a quick SVG/Pillow image card: *"WANTED: Alex | For: $80 Villa Debt | Last seen: Ordering craft cocktails"* with a QR code directly linking to the PayPal Order.
+| Tier | Window | Persona / Voice | Sample Generated Output |
+|---|---|---|---|
+| **1** | 0–12h | Polite Concierge | *"Hey Alex! Quick link for your $80 villa split 🏖️ Hope you're enjoying the trip!"* |
+| **2** | 12–24h | Passive-Aggressive Roommate | *"Must be nice watching the sunset from the terrace while Sarah fronts your bed... 👀"* |
+| **3** | 24–48h | Disappointed Parent | *"Alex beta, I am not angry, just hurt. Is this how we raised you? Leaving Sarah to carry your hotel costs?"* |
+| **4** | 48–72h | Public Roast Mode | Generates a custom meme card in chat: *"WANTED: Alex | Bounty: $80 | Crime: Ordering wagyu on someone else's card."* |
+| **5** | >72h | Itinerary Embargo | Applies in-chat social sanction: *"Trip sanction applied: Alex has been demoted to sleeping on the pull-out couch until the $80 clears."* |
 
-**End result:** An autonomous reminder engine that generates personalized, context-aware, hilarious collection messages that friends actually laugh at and immediately pay.
+**Rate Limits & Safety Rules:**
+- Max 1 automated prompt per 12 hours. Maximum 4 total automated messages; Tier 5 is a single status update in chat, not repeated pings.
+- Any participant can type `/pause` or `/dispute` to instantly freeze all automated prompts.
 
 **Benchmark to pass:**
-- Produces distinct, high-quality responses for all 5 tiers given the same underlying ledger state.
-- Strictly adheres to safety constraints (0 vulgarity, 100% comedy-first).
+- Tool-calling agent correctly selects `escalate_debtor_status` when simulated time passes 24 hours.
+- Strict comedic safety guardrails: zero profanity, zero real threats, 100% playful social comedy.
 
 ---
 
-### Task G: Multimodal Receipt OCR & Interactive Itemizer (High Priority, AI Capability)
+### Task A: Dual Gateway — Telegram Bot + Hosted Judge Web Simulator (Must-Have, Accessibility)
 
-**What it is:** Users snap a photo of a restaurant receipt or grocery bill and drop it into the group chat. TripSheriff extracts the merchant, line items, prices, tax, and tip, then provides interactive buttons for members to claim what they ate/ordered.
+**What it is:** Ensures both the viral chat experience AND an instant, zero-friction testing experience for hackathon judges who cannot configure a Telegram bot.
+
+**1. The Telegram Bot:**
+- Framework: `python-telegram-bot` (v20+ async).
+- **Critical Telegram Configurations:**
+  - **BotFather Privacy Mode:** Must run `/setprivacy` $\rightarrow$ `Disable` in BotFather so the bot can read natural language group messages ("Paid $60 for gas split with Alex").
+  - **1:1 Deep-Link Onboarding:** Telegram bots cannot DM users first. When joining, the bot provides a deep link: `t.me/TripSheriffBot?start=join_trip_bali`. The user taps it to open a private DM where they submit their PayPal sandbox email and select their Roast Consent (`MILD`/`SPICY`).
+
+**2. The Hosted Judge Web Simulator (Crucial for Evaluation):**
+- A split-screen browser portal:
+  - **Left Pane:** A realistic, interactive web-based chat interface simulating group members (Sarah, Alex, Dave).
+  - **Right Pane:** The live trip ledger, Debt Heat Scores, and PayPal transaction log.
+- Judges can click:
+  - `[Simulate Expense: $150 Dinner]`
+  - `[Simulate Time +24h]` (triggers Tier 3 Disappointed Parent message instantly)
+  - `[Test PayPal Checkout]` (opens sandbox checkout)
+  - `[Trigger Settlement Payout]`
+- Eliminates 100% of judge setup friction.
+
+**Benchmark to pass:**
+- Both Telegram and Web Simulator speak to the exact same backend ledger and database.
+- A judge can complete a full split $\rightarrow$ remind $\rightarrow$ pay $\rightarrow$ settle loop in the browser in under 60 seconds.
+
+---
+
+### Task D: PayPal Batch Payouts API & Settlement Engine (Must-Have, Financial Depth)
+
+**What it is:** Settles net debts at trip conclusion by reimbursing organizers or members via **PayPal Batch Payouts API**.
 
 **Technical build:**
-- Input: Image message received in Telegram.
-- Vision Model: Gemini 1.5 Flash or GPT-4o Vision API with structured JSON output schema:
+- Endpoint: `POST /v1/payments/payouts`
+- Headers: `PayPal-Request-Id: {idempotency_uuid}` (strictly prevents double-payouts on retries).
+- Body: `sender_batch_header` + array of `items` containing `receiver` (email), `amount`, and `note`.
+- **Human-in-the-Loop Confirmation:** The bot **never** disburses funds without explicit organizer approval:
+  - In Telegram: Bot posts summary table with inline button: `[✅ Confirm Payout of $160.00 to Sarah]`.
+  - In Web Dashboard: An explicit confirmation modal.
+
+**Benchmark to pass:**
+- Successfully initiates a batch payout to at least 2 distinct sandbox email accounts in one request.
+- Idempotency key prevents duplicate execution on repeated clicks.
+
+---
+
+### Task G: Multimodal Receipt OCR & Interactive Itemizer (High Priority, AI Differentiator)
+
+**What it is:** Snap a photo of a restaurant receipt and drop it into chat or the web simulator. AI extracts the merchant, items, prices, tax, and tip, and generates interactive claim buttons.
+
+**Technical build:**
+- Vision Model: Gemini 2.0 Flash (`gemini-2.0-flash` or `gemini-1.5-flash-latest`) via structured JSON schema:
   ```json
   {
-    "merchant": "La Boheme Bistro",
-    "date": "2026-10-26",
-    "subtotal": 142.50,
-    "tax": 12.50,
-    "tip": 25.00,
-    "total": 180.00,
+    "merchant": "Sunset Bistro",
+    "subtotal_cents": 12000,
+    "tax_cents": 1000,
+    "tip_cents": 2000,
+    "total_cents": 15000,
     "items": [
-      {"name": "Ribeye Steak", "qty": 1, "price": 45.00},
-      {"name": "Truffle Pasta", "qty": 2, "price": 48.00},
-      {"name": "Cocktails", "qty": 3, "price": 49.50}
+      {"name": "Steak", "qty": 1, "price_cents": 4000},
+      {"name": "Pasta", "qty": 2, "price_cents": 4000},
+      {"name": "Cocktails", "qty": 3, "price_cents": 4000}
     ]
   }
   ```
-- Itemizer Logic: Pro-rates tax and tip proportionately across claimed items so alcohol consumers pay their fair share of the 20% gratuity.
-- Interactive UX: The bot posts the receipt breakdown with Telegram Inline Callback Buttons:
-  - `[🥩 Claim Ribeye ($45)]`
-  - `[🍝 Claim Truffle Pasta ($24)]`
-  - `[🍸 Claim Cocktails ($16.50)]`
-  - `[✅ Done / Split Remainder Equal]`
-
-**End result:** No more manual receipt math after a 12-person dinner. A single photo becomes a verified, itemized split in 10 seconds.
+- Proportional Tax & Tip Allocation: Automatically distributes tax and tip proportionately across claimed items so alcohol consumers pay their fair share of gratuity.
+- Interactive UX: Inline buttons allow members to tap items to claim them, then click `[Done / Split Remaining]`.
 
 **Benchmark to pass:**
-- Correctly parses a sample crumpled restaurant receipt image into valid JSON with math balancing within $0.05.
+- Successfully extracts line items from a sample receipt image with total cents balancing within 1 cent.
 
 ---
 
-### Task H: Voice Note Expense Ingestion Engine (High Priority, Conversational AI)
+### Task I: Trip Organizer Dashboard with AG Grid (High Priority, Sponsor Prize)
 
-**What it is:** While walking out of a taxi or store, the organizer holds the mic and sends a 5-second voice note: *"Hey Sheriff, just paid thirty-four dollars and fifty cents for the airport taxi, split between me, Alex, and Dave."* The bot logs it instantly.
-
-**Technical build:**
-- Telegram voice note (`.ogg` audio container) downloaded via Telegram Bot API.
-- Audio pipeline: Transcribed via Whisper API or Gemini Audio into text.
-- Tool-Calling Extractor: An LLM function-calling schema `log_expense(amount, currency, description, paid_by, split_with)` parses spoken intent into the ledger transaction.
-- Confirmation Message: Bot replies in chat: *"🚕 Logged $34.50 Airport Taxi paid by Sarah. Split 3 ways ($11.50 each)."*
-
-**End result:** Hands-free expense logging that removes all friction of opening an app or typing while traveling.
-
-**Benchmark to pass:**
-- Accurately processes spoken audio with background street noise into the correct amounts and member handles.
-
----
-
-### Task I: Live Trip Dashboard with AG Grid (High Priority, Sponsor Prize & Organizer UX)
-
-**What it is:** A clean, responsive web dashboard for the trip organizer, featuring an **AG Grid Enterprise/Community table** displaying real-time expenses, live settlement matrix, debt status, and receipt drill-downs.
+**What it is:** An interactive web portal for trip organizers featuring an **AG Grid Enterprise/Community table**, proving commercial UI readiness and qualifying for the **AG Grid Sponsor Prize**.
 
 **Technical build:**
-- Frontend: Single-page React / Next.js or lightweight Vite + Tailwind application.
+- Frontend: React / Vite + Tailwind CSS.
 - **AG Grid Integration:**
-  - Column definitions: Date, Category Icon, Description, Amount (with currency formatter), Paid By, Split Breakdown, Settlement Status (Colored Badges: `Paid`, `Pending`, `Escalated`).
-  - AG Grid Features used: Column Filtering, Quick Search, Grouping by Category (Dining, Lodging, Transport), and custom Cell Renderers for PayPal Status.
-- Live Updates: WebSocket or SSE (Server-Sent Events) from the FastAPI backend so whenever someone pays via PayPal, the AG Grid row flashes green and updates live without page reload.
-- One-Click Actions: "Trigger Batch Payout" button and "Send Escalated Reminder" button right from the grid.
-
-**End result:** A professional web portal that proves commercial viability and directly qualifies for the **AG Grid Sponsor Prize**.
+  - Columns: Date, Category Icon, Description, Amount, Paid By, Split Details, Payment Status Badge (`Paid`, `Pending`, `Escalated`).
+  - Interactive Features: Sorting, Quick Filter, Category Grouping, Custom Status Cell Renderers.
+- Real-time updates: WebSocket connection to FastAPI backend; rows highlight and update live when PayPal webhooks fire.
 
 **Benchmark to pass:**
-- AG Grid renders seamlessly with 20+ mock expenses, supports instant sorting/filtering, and updates via WebSocket on payment event.
+- AG Grid renders seamlessly with smooth sorting/filtering and updates via WebSocket without page refresh.
 
 ---
 
-### Task J: Autonomous Vendor Booking Agent (High Priority, Agentic Commerce Track)
+### Task K: Cloud Infrastructure on Render with Keep-Alive (Must-Have, Deployment)
 
-**What it is:** Bridges the gap between group collection and actual commercial payment. When pooled funds for a planned activity (e.g., Catamaran Charter: $600) reach 100% collection, the agent autonomously generates a formal PayPal Payout / invoice settlement to the tour vendor's business account.
+**What it is:** Containerized cloud deployment on Render for public accessibility and submission requirements.
 
-**Technical build:**
-- Target milestone tracking: Organizer sets a target (`/target Catamaran 600 vendor@balitours.com`).
-- The bot pools individual member contributions into a virtual trip treasury.
-- Real-time funding progress bar displayed in chat: `[████████░░] 80% ($480 / $600 collected)`.
-- When the final payment clears via PayPal Webhook, the agent triggers an **Agentic Action**:
-  - Prepares vendor Payout / Order.
-  - Prompts organizer: *"🎯 Target Reached! All 6 members have paid for Catamaran Charter. Authorize instant $600 disbursement to Bali Tours?"*
-  - On 1-click organizer biometric/chat confirmation, dispatches funds immediately via PayPal Payouts API.
-
-**End result:** Direct qualification for the **"Best Use of Agentic Commerce" ($5,000)** prize by demonstrating autonomous goal-seeking agent behavior tied directly to PayPal rails.
-
-**Benchmark to pass:**
-- State machine successfully transitions from `COLLECTING` $\rightarrow$ `FUNDED` $\rightarrow$ `DISBURSED` with full audit logs.
-
----
-
-### Task K: Cloud Deployment on Render (Medium Priority, Render Sponsor Prize)
-
-**What it is:** Containerized cloud deployment of the FastAPI backend, PostgreSQL database, and Redis queue on Render.
+> [!WARNING]
+> **Render Cold-Start / Free Tier Webhook Trap:** Render free services spin down after 15 minutes of inactivity, causing incoming PayPal webhooks to fail or time out.
+> **Fix:** Either deploy on Render Starter (\$7/mo) OR implement a lightweight internal keep-alive cron job (e.g. UptimeRobot or scheduled worker pinging `/api/health` every 9 minutes) to guarantee zero webhook drops.
 
 **Technical build:**
-- `render.yaml` Blueprint file configuring:
-  - `web` service: FastAPI server running on Uvicorn.
-  - `worker` service: Celery/RQ or background task loop for scheduled escalation sweeps.
-  - `redis`: Render Key-Value store for rate limits and webhook message queues.
-- Environment variable management for PayPal Sandbox credentials (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`).
-- Custom domain / Render public URL configured as the PayPal Webhook listener.
-
-**End result:** Fully live, publicly accessible URL ready to be demoed to judges anywhere without local tunnels. Directly qualifies for the **Render Sponsor Prize**.
+- `render.yaml` Blueprint configuring:
+  - `web` service: FastAPI Uvicorn server.
+  - `redis`: Render Key-Value store for task queuing.
+- Environment variables configured for PayPal Sandbox credentials and AI API keys.
+- Public URL registered in PayPal Developer Dashboard as the Webhook Listener.
 
 **Benchmark to pass:**
-- Zero 500 errors on health check `/api/health`.
-- Render logs show successful SSL webhook reception from PayPal Sandbox.
+- Public HTTPS endpoint returns `200 OK` on `/api/health`.
+- PayPal Sandbox sends test webhooks with successful 200 responses logged on Render.
 
 ---
 
 ### Task L: Centerpiece Live Demo Script & 3-Minute Video Storyboard (Critical for "Best Demo Delivery")
 
-**What it is:** The exact scene-by-scene script and rehearsal plan for the 3-minute video that judges watch. A brilliant technical project loses if the video is boring. This script guarantees maximum entertainment and technical credibility.
+**What it is:** The scene-by-scene rehearsal plan for the 3-minute Devpost demo video.
 
-**3-Minute Video Storyboard (Timed to the Second):**
+**Rules for Submission:** Strictly under 3:00 minutes. No copyrighted music. No unauthorized third-party trademark logos in thumbnail.
 
-| Timestamp | Visual on Screen | Audio / Narration | Key Hackathon Hook |
+| Timestamp | Visual on Screen | Audio / Narration | Hackathon Goal |
 |---|---|---|---|
-| **0:00 - 0:30** | Split screen: A group beach selfie vs. a frantic organizer staring at a mountain of credit card bills. | *"Group trips are amazing... until someone has to collect the money. Meet Alex. Alex is on the beach in Bali. Alex has 'forgotten' his $80 villa split for two days."* | Hooks the audience with universal pain point. |
-| **0:30 - 1:00** | Telegram group chat live screen. Organizer sends receipt photo $\rightarrow$ TripSheriff parses items instantly $\rightarrow$ Generates PayPal Orders link. | *"Instead of ruined friendships, meet TripSheriff AI. You drop a receipt or voice note. It itemizes the bill and spins up instant PayPal checkout links."* | Shows Multimodal OCR + PayPal Orders API. |
-| **1:00 - 1:45** | The Escalation Sequence: Watch the bot send Tier 1, then fast-forward to Tier 3 (Disappointed Parent message), and Tier 4 (Generated Roast Card). | *"Alex ignores the polite reminder. So TripSheriff activates the Escalation Matrix. Level 3: Disappointed Parent. 'Alex beta, we didn't raise you to drink top-shelf gin while Sarah fronts your bed.' And when he still doesn't pay: The Public Deadbeat Roast Card."* | **The Viral Demo Hook.** Guaranteed to make judges laugh. |
-| **1:45 - 2:15** | Alex taps "Pay via PayPal" on his phone. Instant biometric approval in Sandbox. Screen switches to Telegram: Bot instantly celebrates. AG Grid updates live. | *"Defeated by social psychology, Alex taps Pay. Behind the scenes, PayPal Sandbox captures the order. Webhook fires in 400ms. TripSheriff announces his redemption and clears his debt."* | Shows PayPal Checkout + Real-time Webhooks + AG Grid. |
-| **2:15 - 2:45** | Trip finishes. Organizer types `/settle`. Bot aggregates balances and executes Batch Payouts to 2 members. | *"End of trip? One click triggers the PayPal Batch Payouts API. Everyone is reimbursed in seconds, with zero math and zero awkwardness."* | Shows PayPal Payouts API & Agentic Commerce. |
-| **2:45 - 3:00** | Architectural diagram + GitHub repo link + Team sign-off. | *"Built with PayPal Developer Platform, Gemini 1.5, Render, and AG Grid. TripSheriff: Saving group trips, one debt at a time."* | Clean finish, sponsor shout-outs, credible closing. |
+| **0:00 - 0:25** | Split screen: Beach selfie vs. stressed organizer looking at a messy spreadsheet. | *"Group trips are unforgettable... until someone has to collect the money. Meet Alex. He's relaxing in Bali, but he's 'forgotten' his $80 villa deposit for 2 days."* | Hook: Universal relatable pain point. |
+| **0:25 - 0:55** | Telegram chat: Organizer drops receipt photo $\rightarrow$ OCR extracts items $\rightarrow$ Bot generates 1-click PayPal checkout button. | *"Meet TripSheriff AI. You drop a receipt in chat. Multimodal AI itemizes the bill and spins up instant PayPal Orders links."* | Shows Multimodal AI + PayPal Orders API. |
+| **0:55 - 1:40** | Fast-forward using `/sim_time +24h`. Watch the bot escalate: Polite $\rightarrow$ Disappointed Parent $\rightarrow$ Public Roast Card. | *"Alex ignores the polite prompt. So TripSheriff activates the Escalation Matrix. Level 3: Disappointed Parent. 'Alex beta, is this how we raised you?' And when he still drags his feet: The Public Deadbeat Roast Card."* | **Viral Demo Hook.** Unforgettable humor that judges remember. |
+| **1:40 - 2:10** | Alex clicks "Pay via PayPal" on his phone. Completes sandbox checkout. Telegram celebrates; AG Grid updates live. | *"Defeated by guilt, Alex taps Pay. Behind the scenes, our server captures the PayPal order. Webhooks fire in 500ms, TripSheriff clears his debt, and AG Grid flashes green."* | Shows PayPal Orders Capture + Webhooks + AG Grid. |
+| **2:10 - 2:40** | Organizer types `/settle`. Bot aggregates balances and dispatches Batch Payouts to 2 members. | *"Trip ends? One click triggers the PayPal Batch Payouts API. Everyone gets reimbursed in seconds on compliant PayPal rails."* | Shows PayPal Batch Payouts & Agentic Commerce. |
+| **2:40 - 3:00** | Architectural diagram + GitHub repo link + Team sign-off. | *"Built with PayPal Developer Platform, Gemini, Render, and AG Grid. TripSheriff: Saving friendships, one debt at a time."* | Sponsor credit, clean finish. |
 
 ---
 
-### Task M: Safety, Anti-Harassment Rails & Ethics Compliance (Critical for Technical Scrutiny)
+### Task M: Safety, Ethics & Consent Guardrails (Judicial Defense)
 
-**What it is:** Judges evaluate AI safety and practical viability. An automated collection bot that goes rogue or bullies users is a disqualification risk. This task establishes explicit, unbreachable safety fences.
+**What it is:** Explicit policies and code-level guardrails preventing harassment and protecting user privacy.
 
 **Technical build:**
-- **Rate Limiting:** Max 1 automated reminder per 12 hours per debtor; maximum 4 total automated pings before defaulting to silent flag for the organizer.
-- **Opt-Out & Dispute Protocol:** Any member can type `/optout`, `/pause`, or `/dispute` to immediately silence all automated bot messages and revert to manual organizer control.
-- **Content Moderation Layer:** All LLM outputs pass through a regex + classification check blocking vulgarities, body shaming, racial/ethnic slurs, threats of physical harm, or genuine extortion terminology.
-- **Financial Sandbox Separation:** Strict credential partitioning between Sandbox and live credentials; demo runs exclusively on PayPal Developer Sandbox with zero real-world financial risk.
-
-**End result:** An ironclad safety policy that defends the project against any judge questions regarding harassment or liability.
-
-**Benchmark to pass:**
-- Adversarial test cases (prompt injections attempting to make the bot swear or threaten) are caught and replaced with a fallback comedic prompt.
+- **Explicit Consent:** Every member opts in upon joining (`/join` $\rightarrow$ select `MILD`, `SPICY`, or `NO_ROAST`).
+- **Instant Opt-Out:** Typing `/pause`, `/optout`, or `/dispute` freezes all automated reminders immediately.
+- **Content Filter:** All generated messages pass through a strict regex + safety filter banning profanity, slurs, threats, or genuine harassment.
+- **Sandbox Safeguard:** Demo operates strictly on PayPal Developer Sandbox with test funds.
 
 ---
 
-## 5. Claims Ledger
+## 5. Scope Pruning & Timeline to Nov 12
 
-Read this before recording the demo or writing the Devpost description. Every claim must fit strictly into these three tiers:
+With approximately 16 days to the deadline (November 12 at 12:00 PM PST / Nov 13 at 1:30 AM IST), execution is strictly prioritized:
 
-### Safe to Say Without Further Measurement:
-- "TripSheriff integrates PayPal Orders API for inbound checkout and PayPal Batch Payouts API for outbound settlement."
-- "The agent enforces payment through dynamic conversational escalation with human-in-the-loop safety rails."
-- "All fiat currency movement and authentication are executed entirely within PayPal's compliant payment infrastructure."
-- "Receipts are parsed using multimodal LLM vision with itemized proportional tax/tip allocation."
-
-### Allowed Only After You Have Actually Verified It:
-- "End-to-end webhook reaction latency is under [X] seconds" (measure your actual Render deployment).
-- "Debt simplification reduces N transactions to [Y] transactions" (cite your exact benchmark run).
-- "Successfully processed a batch payout across [Z] sandbox recipient accounts simultaneously."
-
-### Never Claim, Regardless of How the Demo Goes:
-- Never claim: "TripSheriff acts as a licensed bank, escrow provider, or registered money transmitter."
-- Never claim: "100% autonomous vendor booking without human consent" (always maintain the human-in-the-loop approval step).
-- Never claim: "Completely eliminates group travel debt" (it eliminates the social friction and manual tracking, but cannot physically force a user to have funds).
-- Never claim: "Zero hallucinations" in receipt OCR (always present the interactive claim buttons as a user verification step).
-
----
-
-## 6. Quick Reference: Tech Stack & API Matrix
-
-### Backend & AI Stack:
-- **Language / Framework:** Python 3.11+, FastAPI (REST + Webhook handling), `python-telegram-bot` (v20+ async)
-- **Database:** SQLite (local dev) / PostgreSQL (Render production via SQLAlchemy 2.0)
-- **AI Models:** 
-  - Vision OCR: Google Gemini 1.5 Flash (receipt extraction)
-  - Escalation Personality: GPT-4o-mini or Gemini 1.5 Flash (structured prompt templates)
-  - Audio Transcription: Whisper API or Gemini Audio (voice note parsing)
-- **Frontend / Dashboard:** React / Vite, Tailwind CSS, **AG Grid Community/Enterprise** (Sponsor Prize)
-- **Deployment:** **Render** Web Service + Managed Redis (Sponsor Prize)
-
-### PayPal Developer Platform APIs Used:
-| PayPal API | Endpoint / Tool | Sandbox Use Case |
-|---|---|---|
-| **OAuth 2.0** | `POST /v1/oauth2/token` | Authenticates backend requests with Client ID & Secret |
-| **Orders API (v2)** | `POST /v2/checkout/orders` | Creates individual payment orders for debt shares |
-| **Batch Payouts API (v1)**| `POST /v1/payments/payouts` | Disburses consolidated reimbursements to multiple members |
-| **Invoicing API (v2)** | `POST /v2/invoicing/invoices` | Generates auditable invoices for deposits and rentals |
-| **Webhooks API** | `POST /v1/notifications/webhooks` | Subscribes to `PAYMENT.CAPTURE.COMPLETED`, `PAYOUTSBATCH.SUCCESS` |
-| **Webhook Verification** | `POST /v1/notifications/verify-webhook-signature` | Cryptographically validates incoming PayPal webhook payloads |
-
-### Required Environment Variables (`.env.example`):
-```env
-# PayPal Sandbox Credentials
-PAYPAL_CLIENT_ID=your_sandbox_client_id_here
-PAYPAL_CLIENT_SECRET=your_sandbox_client_secret_here
-PAYPAL_MODE=sandbox
-PAYPAL_WEBHOOK_ID=your_registered_webhook_id_here
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_from_botfather
-
-# AI Provider Keys
-OPENAI_API_KEY=your_openai_key
-# OR
-GEMINI_API_KEY=your_gemini_api_key
-
-# App Configuration
-BASE_URL=https://tripsheriff.onrender.com
-DATABASE_URL=sqlite:///./tripsheriff.db
-SECRET_KEY=super_secure_random_key_here
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ MUST BUILD (Days 1–8):                                                 │
+│ • Task B: Double-entry integer-cent ledger & simplification             │
+│ • Task C: PayPal Orders API + redirect & webhook capture               │
+│ • Task E: PayPal Webhook verification & celebration engine             │
+│ • Task F: Agentic tool-calling loop & 5-tier escalation matrix         │
+│ • Task A: Telegram Bot + Hosted Judge Web Simulator                    │
+│ • Task D: PayPal Batch Payouts with organizer confirmation             │
+├────────────────────────────────────────────────────────────────────────┤
+│ SHOULD BUILD (Days 9–13):                                              │
+│ • Task G: Receipt photo OCR itemizer (Gemini Vision)                   │
+│ • Task I: AG Grid Organizer Dashboard (for AG Grid Sponsor Prize)      │
+│ • Task K: Render deployment with keep-alive                            │
+├────────────────────────────────────────────────────────────────────────┤
+│ DEFERRED / CUT (Out of scope for hackathon):                          │
+│ ❌ Voice notes transcription (cool, but low judging delta vs OCR)       │
+│ ❌ Standalone Invoicing API (redundant with Orders + Payouts)          │
+│ ❌ Complex external vendor booking (replaced by in-app target tracker)│
+├────────────────────────────────────────────────────────────────────────┤
+│ BUFFER & SUBMISSION (Days 14–16):                                      │
+│ • Full dry run on live Render environment                              │
+│ • Record and edit 3-minute video (strict storyboard)                   │
+│ • Devpost submission finalized 24 hours ahead of deadline              │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 7. Recommended Team Execution Order
+## 6. The Claims Ledger
 
-If building in a team or solo sprint, execute in this exact sequence:
+Every line spoken in the demo video or written on Devpost must adhere to these three tiers:
 
-1. **Sprint Day 1 (Contracts & Core Loop):**
-   - Lock the four schemas in Section 3.
-   - Implement Task B (`ledger_engine.py`) and Task C (PayPal Orders client in sandbox).
-   - Set up basic Telegram Bot (Task A) that generates a working PayPal payment link on command.
+### Safe to Say Without Further Measurement:
+- "TripSheriff orchestrates group expenses using the PayPal Developer Platform (Orders API for inbound checkout, Batch Payouts API for outbound settlement)."
+- "All monetary storage is calculated in integer cents with bipartite minimum-cash-flow debt simplification."
+- "The agent enforces settlement through an opt-in, consensual escalating psychological matrix."
+- "A web-based simulator is provided so judges can evaluate the entire agentic loop without configuring Telegram."
 
-2. **Sprint Day 2 (Webhooks & The Escalation Engine):**
-   - Connect Task E (PayPal Webhooks) with local `ngrok` so payments in sandbox announce in Telegram.
-   - Build Task F (Escalating Personality Matrix with the 5 prompt templates).
-   - Test the live "Disappointed Parent" reminder and "Payment Received" celebration loop.
+### Allowed Only After Verification on Deployed Instance:
+- "End-to-end webhook reaction latency is under [X] seconds."
+- "Batch Payout successfully reimbursed [N] members in a single API call."
+- "Receipt OCR accurately parsed line items with 100% mathematical balance."
 
-3. **Sprint Day 3 (Multimodal Inputs & Payouts):**
-   - Add Task G (Receipt photo OCR with itemizer buttons) and Task D (Batch Payouts on `/settle`).
-   - Add Task H (Voice note expense logger).
+### Never Claim, Regardless of How the Demo Goes:
+- Never claim: "TripSheriff is a licensed non-custodial escrow bank." (Acknowledge that this prototype uses a platform sandbox pooling model).
+- Never claim: "Telegram has biometric authentication." (Say: "1-click confirmation button in chat").
+- Never claim: "100% autonomous money transfers without human consent." (Always emphasize the Human-in-the-Loop organizer authorization).
+- Never claim: "Eliminates all group debt forever." (State: "Removes social awkwardness and friction from collection").
 
-4. **Sprint Day 4 (Sponsor Prizes, UI & Polish):**
-   - Build Task I (AG Grid organizer dashboard).
-   - Deploy backend to Render (Task K).
-   - Run full safety checks (Task M).
+---
 
-5. **Sprint Day 5 (Demo Recording & Devpost Submission):**
-   - Follow the 3-minute video storyboard (Task L) strictly.
-   - Record high-quality screen captures with natural comedic pacing.
-   - Publish YouTube video, finalize Devpost write-up, and link the public GitHub repository.
+## 7. Quick Reference: Tech Stack & Sandbox Configuration
+
+### Tech Stack:
+- **Backend:** Python 3.11+, FastAPI, `python-telegram-bot` (v20+ async), SQLAlchemy 2.0
+- **AI Models:** Google Gemini 2.0 Flash (`gemini-2.0-flash` or `gemini-1.5-flash-latest`), OpenAI `gpt-4o-mini`
+- **Frontend / Dashboard:** React / Vite, Tailwind CSS, AG Grid Community
+- **Hosting:** Render Web Service + Managed Redis (with keep-alive worker)
+
+### PayPal Developer Sandbox APIs:
+- **Orders API (v2):** `POST /v2/checkout/orders`, `POST /v2/checkout/orders/{id}/capture`
+- **Batch Payouts API (v1):** `POST /v1/payments/payouts`
+- **Webhooks API:** `POST /v1/notifications/webhooks`, `POST /v1/notifications/verify-webhook-signature`
+
+### Required Environment Variables (`.env.example`):
+```env
+# PayPal Sandbox Credentials
+PAYPAL_CLIENT_ID=your_sandbox_client_id
+PAYPAL_CLIENT_SECRET=your_sandbox_client_secret
+PAYPAL_MODE=sandbox
+PAYPAL_WEBHOOK_ID=your_registered_webhook_id
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_botfather_token
+
+# AI Configuration
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your_gemini_api_key
+AI_MODEL_NAME=gemini-2.0-flash
+
+# App & Environment
+BASE_URL=https://tripsheriff.onrender.com
+DATABASE_URL=sqlite:///./tripsheriff.db
+SECRET_KEY=super_secure_random_key_here
+DEMO_TIME_SCALE=1
+```
