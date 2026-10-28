@@ -76,11 +76,15 @@
 
 ---
 
-## 📋 Comprehensive Implementation Plan
+## 📋 Documentation & Team Collaboration
 
-The complete engineering specification, locked schemas, task breakdowns, claims ledger, and timed video storyboard are documented in:
+The architecture, locked cross-service contracts, role execution plans, and hackathon strategy are fully documented:
 
-👉 **[Master Implementation Plan (v2.0) (`docs/IMPLEMENTATION_PLAN.md`)](docs/IMPLEMENTATION_PLAN.md)**
+👉 **[Cross-Task Team Collaboration & Interface Guide (`docs/TEAM_COLLABORATION_GUIDE.md`)](docs/TEAM_COLLABORATION_GUIDE.md)**  
+*Detailed microservice topology, frozen REST schemas between Java Backend & Python AI, and zero-blocker parallel roadmap.*
+
+👉 **[Master Implementation Plan (v2.0) (`docs/IMPLEMENTATION_PLAN.md`)](docs/IMPLEMENTATION_PLAN.md)**  
+*Comprehensive architectural specification, locked contracts, claims ledger, and timed 3-minute video storyboard.*
 
 ---
 
