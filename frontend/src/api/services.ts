@@ -76,14 +76,14 @@ export const ledgerService = {
         sender_handle: '@TripSheriffBot',
         is_bot: true,
         timestamp: 'Just now',
-        badge: '🧾 EXPENSE RECORDED',
-        text: `🍽️ **Logged $${(expensePayload.amount_cents / 100).toFixed(2)} ${expensePayload.description}** fronted by ${payer.name}!\n\nSplit ${splitUsers.length} ways ($${(splitAmount / 100).toFixed(2)}/person). Settle via PayPal:`,
+        badge: 'EXPENSE RECORDED',
+        text: `**Logged $${(expensePayload.amount_cents / 100).toFixed(2)} ${expensePayload.description}** fronted by ${payer.name}!\n\nSplit ${splitUsers.length} ways ($${(splitAmount / 100).toFixed(2)}/person). Settle via PayPal:`,
         buttons: splitUsers
           .filter(uid => uid !== payer.user_id)
           .map(uid => {
             const m = mockLedger.members.find(mem => mem.user_id === uid);
             return {
-              text: `💳 Pay $${(splitAmount / 100).toFixed(2)} (${m?.name.split(' ')[0]})`,
+              text: `Pay $${(splitAmount / 100).toFixed(2)} (${m?.name.split(' ')[0]})`,
               action: `PAY_${uid}`,
               payload: { userId: uid, amountCents: splitAmount },
             };
@@ -176,20 +176,20 @@ export const simulatorService = {
 
       if (mockLedger.hours_elapsed >= 72) {
         tier = 'ITINERARY_EMBARGO';
-        badge = '⛔ TIER 5: ITINERARY EMBARGO';
-        text = '🚨 **TRIP SANCTION ENFORCED:** Alex has ignored 4 reminders over 72 hours for the $80.00 Villa split.\n\nDemoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.';
+        badge = 'TIER 5: ITINERARY EMBARGO';
+        text = '**TRIP SANCTION ENFORCED:** Alex has ignored 4 reminders over 72 hours for the $80.00 Villa split.\n\nDemoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.';
       } else if (mockLedger.hours_elapsed >= 48) {
         tier = 'PUBLIC_ROAST';
-        badge = '🎭 TIER 4: PUBLIC DEADBEAT ROAST';
-        text = '🤠 **WANTED FOR SOCIAL DEBT: Alex Rivera**\n\nBounty: $80.00 USD | Crime: Drinking mango craft mojitos on rooftop terraces while Sarah carries his accommodation debt.\n\nConsensus roast active. Settle up to clear your name:';
+        badge = 'TIER 4: PUBLIC DEADBEAT ROAST';
+        text = '**WANTED FOR SOCIAL DEBT: Alex Rivera**\n\nBounty: $80.00 USD | Crime: Drinking mango craft mojitos on rooftop terraces while Sarah carries his accommodation debt.\n\nConsensus roast active. Settle up to clear your name:';
       } else if (mockLedger.hours_elapsed >= 24) {
         tier = 'DISAPPOINTED_PARENT';
-        badge = '🎭 TIER 3: DISAPPOINTED PARENT';
+        badge = 'TIER 3: DISAPPOINTED PARENT';
         text = 'Alex beta, I see your Instagram stories from Potato Head Beach Club 2 hours ago. Very glamorous. But Sarah is still waiting on your $80.00 villa share from yesterday. Is this how we raised you? To sip craft mezcal while your friend fronts your roof?';
       } else {
         tier = 'PASSIVE_AGGRESSIVE';
-        badge = '👀 TIER 2: PASSIVE AGGRESSIVE';
-        text = 'Must be nice watching the sunset from the rooftop deck while Sarah fronts your bed... 👀 Quick link to settle before dinner!';
+        badge = 'TIER 2: PASSIVE AGGRESSIVE';
+        text = 'Must be nice watching the sunset from the rooftop deck while Sarah fronts your bed... Quick link to settle before dinner!';
       }
 
       // Update debtor heat score
@@ -211,7 +211,7 @@ export const simulatorService = {
         text,
         buttons: [
           {
-            text: '💳 Settle $80.00 via PayPal Sandbox',
+            text: 'Settle $80.00 via PayPal Sandbox',
             action: 'PAY_ALEX',
             payload: { userId: 'user_02', amountCents: 8000 },
           },
@@ -275,8 +275,8 @@ export const paymentService = {
         sender_handle: '@TripSheriffBot',
         is_bot: true,
         timestamp: 'Just now',
-        badge: '🎉 PAYMENT CAPTURED',
-        text: `🎉 **HALLELUJAH!** ${member.name} just settled **$${(amountCents / 100).toFixed(2)} USD** via PayPal!\n\n✅ Debt Cleared\n✅ Heat Score reset to 0\n✅ Sanctions lifted\n\nLedger updated in real-time.`,
+        badge: 'PAYMENT CAPTURED',
+        text: `**PAYMENT CONFIRMED:** ${member.name} just settled **$${(amountCents / 100).toFixed(2)} USD** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Sanctions lifted\n\nLedger updated in real-time.`,
       };
       mockChat.push(chatAnnouncement);
 
@@ -328,8 +328,8 @@ export const paymentService = {
         sender_handle: '@TripSheriffBot',
         is_bot: true,
         timestamp: 'Just now',
-        badge: '💸 BATCH PAYOUT DISBURSED',
-        text: `💸 **Trip Treasury Settled!**\n\nReimbursed **$${(payoutCents / 100).toFixed(2)} USD** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced! 🏖️🍹`,
+        badge: 'BATCH PAYOUT DISBURSED',
+        text: `**Trip Treasury Settled!**\n\nReimbursed **$${(payoutCents / 100).toFixed(2)} USD** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced!`,
       };
       mockChat.push(chatAnnouncement);
 

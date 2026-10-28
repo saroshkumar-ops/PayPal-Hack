@@ -2,7 +2,7 @@ import type { TripLedger, ChatMessage, PayPalEventLog } from '../types';
 
 export const INITIAL_LEDGER: TripLedger = {
   trip_id: 'trip_bali_2026',
-  trip_name: 'Bali Reunion 2026 🌴',
+  trip_name: 'Bali Reunion 2026',
   currency: 'USD',
   hours_elapsed: 36,
   members: [
@@ -96,7 +96,7 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
     sender_handle: '@sarah_c',
     is_bot: false,
     timestamp: '2 days ago',
-    text: 'Hey crew! Just put down $240 for our Sunset Villa in Canggu 🌅🌴',
+    text: 'Hey crew! Just put down $240 for our Sunset Villa in Canggu.',
   },
   {
     id: 'msg_02',
@@ -105,11 +105,11 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
     sender_handle: '@TripSheriffBot',
     is_bot: true,
     timestamp: '2 days ago',
-    badge: '🧾 EXPENSE LOGGED',
-    text: '🏡 **Logged $240.00 Sunset Villa Deposit** paid by Sarah!\n\n• Sarah: $80.00 (Fronted)\n• Alex: $80.00 (Pending)\n• Dave: $80.00 (Pending)\n\nSettle your share via 1-click PayPal sandbox links below:',
+    badge: 'EXPENSE LOGGED',
+    text: '**Logged $240.00 Sunset Villa Deposit** paid by Sarah!\n\n• Sarah: $80.00 (Fronted)\n• Alex: $80.00 (Pending)\n• Dave: $80.00 (Pending)\n\nSettle your share via 1-click PayPal sandbox links below:',
     buttons: [
-      { text: '💳 Pay $80.00 (Alex)', action: 'PAY_ALEX', payload: { userId: 'user_02', amountCents: 8000 } },
-      { text: '💳 Pay $80.00 (Dave)', action: 'PAY_DAVE', payload: { userId: 'user_03', amountCents: 8000 } },
+      { text: 'Pay $80.00 (Alex)', action: 'PAY_ALEX', payload: { userId: 'user_02', amountCents: 8000 } },
+      { text: 'Pay $80.00 (Dave)', action: 'PAY_DAVE', payload: { userId: 'user_03', amountCents: 8000 } },
     ],
   },
   {
@@ -128,12 +128,12 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
     sender_handle: '@TripSheriffBot',
     is_bot: true,
     timestamp: 'Just now (Simulated +36h)',
-    badge: '🎭 TIER 3: DISAPPOINTED PARENT',
+    badge: 'TIER 3: DISAPPOINTED PARENT',
     roast_tier: 'DISAPPOINTED_PARENT',
     text: 'Alex beta, I see the stories you posted from Potato Head Beach Club 2 hours ago. Very glamorous. But Sarah is still waiting on your $80.00 villa share from yesterday. We did not raise you to drink craft mango mojitos while your friend fronts your bed.',
     buttons: [
       {
-        text: '💳 Settle $80.00 via PayPal Now',
+        text: 'Settle $80.00 via PayPal Now',
         action: 'PAY_ALEX',
         payload: { userId: 'user_02', amountCents: 8000 },
       },

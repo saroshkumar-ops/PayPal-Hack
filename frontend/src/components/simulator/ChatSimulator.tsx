@@ -7,7 +7,9 @@ import {
   Utensils, 
   CreditCard, 
   Paperclip, 
-  Flame 
+  Flame,
+  Shield,
+  AlertTriangle 
 } from 'lucide-react';
 import type { ChatMessage, EscalationTier } from '../../types';
 import { BadgePill } from '../bits/BadgePill';
@@ -72,14 +74,14 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07] bg-[#111420]/70">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md shadow-blue-500/25 text-lg">
-              🤠
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md shadow-blue-500/25">
+              <Shield className="w-5 h-5 text-white" />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-[#0C0F17]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white m-0">Bali Reunion 2026 🌴</h3>
+              <h3 className="text-sm font-bold text-white m-0">Bali Reunion 2026</h3>
               <BadgePill status="INFO" label="Telegram Bot" />
             </div>
             <p className="text-xs text-zinc-400 m-0">3 active travelers • Auto-monitoring debts</p>
@@ -180,8 +182,8 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
                 {/* Deadbeat Roast Poster (Tier 4 Showcase) */}
                 {msg.roast_tier === 'PUBLIC_ROAST' && (
                   <div className="mt-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 to-rose-950/40 border border-amber-500/30 flex items-center gap-3.5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/20 text-2xl border border-amber-500/30 shrink-0">
-                      🏜️
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/20 border border-amber-500/30 shrink-0">
+                      <AlertTriangle className="w-6 h-6 text-amber-400" />
                     </div>
                     <div>
                       <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">

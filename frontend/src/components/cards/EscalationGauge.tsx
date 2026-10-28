@@ -23,15 +23,15 @@ export const EscalationGauge: React.FC<EscalationGaugeProps> = ({
   const getTierDisplay = (tier: EscalationTier) => {
     switch (tier) {
       case 'POLITE_CONCIERGE':
-        return { name: 'Tier 1: Polite Concierge', icon: '🏖️', quote: 'Hey Alex! Quick link for your $80 villa split.' };
+        return { name: 'Tier 1: Polite Concierge', icon: '1', quote: 'Hey Alex! Quick link for your $80 villa split.' };
       case 'PASSIVE_AGGRESSIVE':
-        return { name: 'Tier 2: Passive-Aggressive', icon: '👀', quote: 'Must be nice watching sunset while Sarah fronts your bed...' };
+        return { name: 'Tier 2: Passive-Aggressive', icon: '2', quote: 'Must be nice watching sunset while Sarah fronts your bed...' };
       case 'DISAPPOINTED_PARENT':
-        return { name: 'Tier 3: Disappointed Parent', icon: '👵', quote: 'Alex beta, is this how we raised you? Sipping mojitos while friends carry debt?' };
+        return { name: 'Tier 3: Disappointed Parent', icon: '3', quote: 'Alex beta, is this how we raised you? Sipping mojitos while friends carry debt?' };
       case 'PUBLIC_ROAST':
-        return { name: 'Tier 4: Public Deadbeat Roast', icon: '🤠', quote: 'WANTED: Alex Rivera | Bounty: $80 | Crime: Wagyu on borrowed card' };
+        return { name: 'Tier 4: Public Deadbeat Roast', icon: '4', quote: 'WANTED: Alex Rivera | Bounty: $80 | Crime: Wagyu on borrowed card' };
       case 'ITINERARY_EMBARGO':
-        return { name: 'Tier 5: Itinerary Embargo', icon: '⛔', quote: 'Trip sanction: Demoted to sleeping on the pull-out couch.' };
+        return { name: 'Tier 5: Itinerary Embargo', icon: '5', quote: 'Trip sanction: Demoted to sleeping on the pull-out couch.' };
     }
   };
 
@@ -85,7 +85,7 @@ export const EscalationGauge: React.FC<EscalationGaugeProps> = ({
         <div>
           <div className="flex justify-between text-[11px] mb-1">
             <span className="text-zinc-400 font-medium">Debt Heat Level</span>
-            <span className="font-mono font-bold text-orange-400">{heat}% 🔥</span>
+            <span className="font-mono font-bold text-orange-400">{heat}%</span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
             <div

@@ -62,7 +62,7 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
         .map((s) => {
           const m = ledger.members.find((mem) => mem.user_id === s.user_id);
           const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? '✓' : 'Pending'})`;
+          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
         })
         .join(' • ');
 
@@ -97,16 +97,16 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => {
-          const icons: Record<string, string> = {
-            LODGING: '🏠 Lodging',
-            TRANSPORT: '🚗 Transport',
-            FOOD: '🍽️ Food & Drinks',
-            ACTIVITIES: '🎟️ Activities',
-            OTHER: '📦 Other',
+          const labels: Record<string, string> = {
+            LODGING: 'Lodging',
+            TRANSPORT: 'Transport',
+            FOOD: 'Food & Drinks',
+            ACTIVITIES: 'Activities',
+            OTHER: 'Other',
           };
           return (
             <span className="text-xs font-semibold text-zinc-300">
-              {icons[params.value] || params.value}
+              {labels[params.value] || params.value}
             </span>
           );
         },

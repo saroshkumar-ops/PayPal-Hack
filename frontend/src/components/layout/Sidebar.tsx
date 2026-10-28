@@ -48,8 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-2 py-3 mb-6">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#0070E0] via-indigo-600 to-amber-500 p-0.5 shadow-lg shadow-blue-500/20">
-            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-[#0A0D14] text-xl">
-              🤠
+            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-[#0A0D14]">
+              <ShieldCheck className="w-5 h-5 text-blue-400" />
             </div>
           </div>
           <div>

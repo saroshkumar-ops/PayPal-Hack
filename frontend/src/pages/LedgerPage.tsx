@@ -21,7 +21,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         .map((s) => {
           const m = ledger.members.find((mem) => mem.user_id === s.user_id);
           const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? '✓' : 'Pending'})`;
+          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
         })
         .join(' • ');
 
