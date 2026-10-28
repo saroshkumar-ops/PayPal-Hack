@@ -33,7 +33,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[#33475A] bg-[#1F2C38] p-6 shadow-xl"
+          className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#33475A]">

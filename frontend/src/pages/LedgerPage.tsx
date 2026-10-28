@@ -123,7 +123,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto py-2">
+    <div className="space-y-6 w-full py-1">
       {/* Title & Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#33475A]">
         <div>
@@ -139,21 +139,21 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         </div>
 
         {/* Search */}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full sm:w-72">
           <Search className="w-3.5 h-3.5 text-[#8199AE] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search expenses..."
+            placeholder="Search expenses, payers, tags..."
             value={quickFilterText}
             onChange={(e) => setQuickFilterText(e.target.value)}
-            className="w-full bg-[#1F2C38] border border-[#33475A] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83]"
+            className="w-full bg-[#1F2C38] border border-[#33475A] rounded-xl pl-8 pr-3 py-2 text-xs text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83]"
           />
         </div>
       </div>
 
       {/* AG Grid Table Container */}
-      <div className="rounded-2xl border border-[#33475A] bg-[#1F2C38] p-4 shadow-sm">
-        <div className="ag-theme-quartz-dark w-full h-[450px] rounded-xl overflow-hidden border border-[#33475A]">
+      <div className="rounded-2xl border border-[#33475A] bg-[#1F2C38] p-3 sm:p-4 shadow-sm overflow-hidden">
+        <div className="ag-theme-quartz-dark w-full h-[440px] lg:h-[calc(100vh-330px)] min-h-[420px] max-h-[720px] rounded-xl overflow-hidden border border-[#33475A]">
           <AgGridReact
             rowData={rowData}
             columnDefs={colDefs}

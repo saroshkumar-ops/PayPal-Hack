@@ -17,7 +17,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto py-2">
+    <div className="space-y-6 w-full py-1">
       {/* Title */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#33475A]">
         <div>
@@ -31,16 +31,16 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
 
         <button
           onClick={onOpenPayoutModal}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-xs font-semibold transition-all cursor-pointer shadow-sm"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-xs font-semibold transition-all cursor-pointer shadow-sm w-full sm:w-auto justify-center"
         >
           <ShieldCheck className="w-3.5 h-3.5" />
           Authorize Batch Payout
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Left: Batch Payout Authorization Card (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 flex flex-col justify-between shadow-sm">
+        <div className="lg:col-span-5 rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 flex flex-col justify-between shadow-sm lg:h-[calc(100vh-210px)] min-h-[460px]">
           <div>
             <div className="flex items-center gap-2 pb-3 mb-3 border-b border-[#33475A]">
               <ShieldCheck className="w-4 h-4 text-[#8199AE]" />
@@ -85,7 +85,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
         </div>
 
         {/* Right: Verified Webhook Stream (7 cols) */}
-        <div className="lg:col-span-7 rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 shadow-sm flex flex-col">
+        <div className="lg:col-span-7 rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-sm flex flex-col lg:h-[calc(100vh-210px)] min-h-[460px]">
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#33475A]">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-[#8199AE]" />
@@ -98,7 +98,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
             </span>
           </div>
 
-          <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
+          <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[420px] lg:max-h-none">
             {paypalLogs.map((log) => (
               <div
                 key={log.id}

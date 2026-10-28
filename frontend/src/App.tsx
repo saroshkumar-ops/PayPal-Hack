@@ -186,7 +186,7 @@ export function App() {
         />
 
         {/* Multi-Page Routes */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 pb-24 md:pb-8 flex flex-col">
           <Routes>
             <Route
               path="/"
@@ -234,8 +234,8 @@ export function App() {
         </main>
 
         {/* Minimalist Footer */}
-        <footer className="border-t border-[#33475A] bg-[#10161C] px-6 py-4 text-xs text-[#8199AE]">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+        <footer className="border-t border-[#33475A] bg-[#10161C] px-4 sm:px-6 lg:px-8 xl:px-10 py-4 text-xs text-[#8199AE]">
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <span>TripSheriff AI — Group Travel Treasury & Debt Enforcement Agent</span>
             <span className="font-mono text-[11px] text-[#8199AE]">
               PayPal AI Hackathon 2026 • Integer Cents Math Core

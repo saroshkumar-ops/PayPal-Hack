@@ -66,7 +66,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-[#33475A] bg-[#1F2C38] p-6 shadow-xl"
+          className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#33475A] pb-3.5 mb-4">
