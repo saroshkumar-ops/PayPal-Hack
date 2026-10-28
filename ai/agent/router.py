@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas import AgentDecideRequest, AgentDecideResponse
-from app.services.agent_router import AgentRouterService
+from core.schemas import AgentDecideRequest, AgentDecideResponse
+from agent.agent_service import AgentRouterService
 
 router = APIRouter(prefix="/ai/agent", tags=["agent"])
 
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/ai/agent", tags=["agent"])
 @router.post("/decide", response_model=AgentDecideResponse)
 async def decide_action(request: AgentDecideRequest):
     """
-    Parses conversational chat text and selects tool/action.
+    Contract 1.1: Parses conversational chat text and selects tool/action.
     """
     try:
         return await AgentRouterService.decide_intent(request)

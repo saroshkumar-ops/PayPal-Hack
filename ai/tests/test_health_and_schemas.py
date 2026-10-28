@@ -1,6 +1,16 @@
+import io
+import base64
+from PIL import Image
 import pytest
 from httpx import AsyncClient, ASGITransport
-from app.main import app
+from main import app
+
+
+def get_valid_b64_img() -> str:
+    img = Image.new("RGB", (32, 32), color="blue")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 @pytest.mark.asyncio
@@ -60,7 +70,7 @@ async def test_escalate_roast_mock():
 async def test_receipt_parse_mock():
     payload = {
         "trip_id": "trip_bali_2026",
-        "image_base64": "dummy_base64_string",
+        "image_base64": get_valid_b64_img(),
         "currency": "USD"
     }
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:

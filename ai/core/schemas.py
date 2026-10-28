@@ -14,7 +14,7 @@ class HealthResponse(BaseModel):
 
 
 # -------------------------------------------------------------
-# Contract 1.1: Intent Parsing & Tool-Calling (/ai/agent/decide)
+# Task F - Agent Models (/ai/agent/decide)
 # -------------------------------------------------------------
 class MemberSummary(BaseModel):
     user_id: str
@@ -47,34 +47,7 @@ class AgentDecideResponse(BaseModel):
 
 
 # -------------------------------------------------------------
-# Contract 1.2: Multimodal Receipt OCR (/ai/receipt/parse)
-# -------------------------------------------------------------
-class ReceiptItem(BaseModel):
-    name: str
-    qty: int = 1
-    price_cents: int
-
-
-class ReceiptParseRequest(BaseModel):
-    trip_id: Optional[str] = None
-    image_base64: str
-    currency: str = "USD"
-
-
-class ReceiptParseResponse(BaseModel):
-    status: Literal["SUCCESS", "FAILED"]
-    merchant: str
-    date: Optional[str] = None
-    subtotal_cents: int
-    tax_cents: int = 0
-    tip_cents: int = 0
-    total_cents: int
-    items: List[ReceiptItem] = Field(default_factory=list)
-    suggested_reply: str
-
-
-# -------------------------------------------------------------
-# Contract 1.3: Escalation & Roast Generator (/ai/escalate/roast)
+# Task F - Escalation & Roast Models (/ai/escalate/roast)
 # -------------------------------------------------------------
 class ButtonItem(BaseModel):
     text: str
@@ -107,3 +80,57 @@ class EscalateRoastResponse(BaseModel):
     generated_text: str
     image_card_base64: Optional[str] = None
     call_to_action_buttons: List[ButtonItem] = Field(default_factory=list)
+
+
+# -------------------------------------------------------------
+# Task G - Multimodal Receipt OCR Models (/ai/receipt/parse & /split)
+# -------------------------------------------------------------
+class ReceiptItem(BaseModel):
+    index: Optional[int] = None
+    name: str
+    qty: int = 1
+    price_cents: int
+
+
+class ReceiptParseRequest(BaseModel):
+    trip_id: Optional[str] = None
+    image_base64: str
+    currency: str = "USD"
+
+
+class ReceiptParseResponse(BaseModel):
+    status: Literal["SUCCESS", "FAILED"]
+    merchant: str
+    date: Optional[str] = None
+    subtotal_cents: int
+    tax_cents: int = 0
+    tip_cents: int = 0
+    total_cents: int
+    items: List[ReceiptItem] = Field(default_factory=list)
+    suggested_reply: str
+
+
+class MemberSplitShare(BaseModel):
+    user_id: str
+    claimed_item_names: List[str] = Field(default_factory=list)
+    items_subtotal_cents: int
+    proportional_tax_cents: int
+    proportional_tip_cents: int
+    unclaimed_pool_share_cents: int = 0
+    total_cents: int
+    breakdown_text: str
+
+
+class ItemizerSplitRequest(BaseModel):
+    receipt: ReceiptParseResponse
+    claims: Dict[str, List[int]] = Field(default_factory=dict)
+    all_members: List[str] = Field(default_factory=list)
+    split_unclaimed_equally: bool = True
+
+
+class ItemizerSplitResponse(BaseModel):
+    receipt_total_cents: int
+    shares: Dict[str, MemberSplitShare]
+    unclaimed_items: List[ReceiptItem] = Field(default_factory=list)
+    is_balanced: bool
+    discrepancy_cents: int = 0
