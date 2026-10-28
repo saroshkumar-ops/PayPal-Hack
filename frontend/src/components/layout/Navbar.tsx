@@ -10,6 +10,7 @@ import {
   Bot,
   Plus
 } from 'lucide-react';
+import { Logo } from '../common/Logo';
 
 interface NavbarProps {
   hoursElapsed: number;
@@ -32,18 +33,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#33475A] bg-[#10161C]/90 backdrop-blur-md px-4 sm:px-8 py-3.5">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Brand identity */}
+        {/* Brand identity with new Logo */}
         <div className="flex items-center justify-between w-full md:w-auto">
-          <NavLink to="/" className="flex items-center gap-3 no-underline">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1F2C38] border border-[#33475A] text-[#E7EDF2] font-bold text-base shadow-sm">
-              🤠
-            </div>
-            <div>
-              <div className="text-sm font-bold text-[#E7EDF2] leading-tight">
-                TripSheriff <span className="text-[#8199AE]">AI</span>
-              </div>
-              <div className="text-[11px] text-[#8199AE]">Group Travel Treasury</div>
-            </div>
+          <NavLink to="/" className="no-underline">
+            <Logo size="md" />
           </NavLink>
 
           {/* Mobile scan button */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CreditCard, Lock, CheckCircle2 } from 'lucide-react';
+import { Logo } from '../common/Logo';
 
 interface PayPalCheckoutDrawerProps {
   isOpen: boolean;
@@ -55,9 +56,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between pb-3.5 border-b border-[#33475A]">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#10161C] text-[#E7EDF2] border border-[#33475A] font-bold text-xs">
-                PP
-              </div>
+              <Logo size="sm" showText={false} />
               <div>
                 <h3 className="text-sm font-bold text-[#E7EDF2] m-0">PayPal Express Checkout</h3>
                 <p className="text-[11px] text-[#8199AE] m-0">Orders API (v2) Sandbox Rail</p>

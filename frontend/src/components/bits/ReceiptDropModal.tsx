@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Upload, CheckCircle2 } from 'lucide-react';
+import { Logo } from '../common/Logo';
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
@@ -70,9 +71,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#33475A] pb-3.5 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#10161C] text-[#E7EDF2] border border-[#33475A]">
-                <Sparkles className="h-4 w-4 text-[#8199AE]" />
-              </div>
+              <Logo size="sm" showText={false} />
               <div>
                 <h3 className="text-sm font-bold text-[#E7EDF2] m-0">Gemini Receipt Itemizer</h3>
                 <p className="text-[11px] text-[#8199AE] m-0">Multimodal OCR & Proportional Tax/Tip Split</p>

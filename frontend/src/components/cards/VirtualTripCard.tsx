@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Wifi, ShieldCheck, Sparkles } from 'lucide-react';
+import { Logo } from '../common/Logo';
 
 interface VirtualTripCardProps {
   balanceCents: number;
@@ -42,14 +43,12 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
 
         {/* Card Header */}
         <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0070E0] to-[#003087] text-white shadow-md shadow-blue-500/30 font-bold text-xs">
-              PP
-            </div>
+          <div className="flex items-center gap-2.5">
+            <Logo size="sm" showText={false} />
             <div>
               <div className="text-[11px] font-extrabold tracking-wider text-white uppercase flex items-center gap-1.5 font-mono">
-                PayPal Travel Treasury
-                <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
+                TripSheriff Treasury
+                <Sparkles className="w-3 h-3 text-[#8199AE] animate-pulse" />
               </div>
               <div className="text-[10px] text-zinc-400 font-medium">{tripName}</div>
             </div>

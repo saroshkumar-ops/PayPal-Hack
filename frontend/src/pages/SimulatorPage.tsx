@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Clock, Utensils, CreditCard, Flame, Paperclip, Sparkles } from 'lucide-react';
 import type { ChatMessage, TripLedger } from '../types';
+import { Logo } from '../components/common/Logo';
 
 interface SimulatorPageProps {
   ledger: TripLedger;
@@ -93,7 +94,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
           {/* Channel Header */}
           <div className="px-4 py-3 border-b border-[#33475A] bg-[#10161C]/50 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="text-lg">🌴</span>
+              <Logo size="sm" showText={false} />
               <div>
                 <div className="text-xs font-bold text-[#E7EDF2] leading-tight">
                   Bali Reunion 2026 #expenses

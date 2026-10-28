@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, X, CheckCircle2 } from 'lucide-react';
 import type { Member } from '../../types';
+import { Logo } from '../common/Logo';
 
 interface PayoutModalProps {
   isOpen: boolean;
@@ -37,9 +38,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#33475A]">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#10161C] border border-[#33475A] text-[#E7EDF2]">
-                <ShieldCheck className="h-4 w-4 text-[#8199AE]" />
-              </div>
+              <Logo size="sm" showText={false} />
               <div>
                 <h3 className="text-sm font-bold text-[#E7EDF2] m-0">Confirm Batch Payout</h3>
                 <p className="text-[11px] text-[#8199AE] m-0">Human-in-the-Loop Organizer Authorization</p>
