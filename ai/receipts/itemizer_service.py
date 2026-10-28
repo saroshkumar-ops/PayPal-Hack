@@ -1,5 +1,5 @@
-from typing import Dict, List, Set
-from app.schemas import (
+from typing import Dict, List
+from core.schemas import (
     ReceiptParseResponse,
     ReceiptItem,
     ItemizerSplitRequest,
@@ -20,7 +20,6 @@ class ReceiptItemizerService:
         claims = request.claims
         all_members = list(request.all_members)
 
-        # Ensure all claimants are part of members list
         for user_id in claims.keys():
             if user_id not in all_members:
                 all_members.append(user_id)
@@ -28,14 +27,13 @@ class ReceiptItemizerService:
         if not all_members:
             all_members = list(claims.keys()) if claims else ["organizer"]
 
-        # 1. Map item claims (item_index -> list of claiming user_ids)
+        # 1. Map item claims
         item_claimants: Dict[int, List[str]] = {idx: [] for idx in range(len(items))}
         for user_id, claimed_indices in claims.items():
             for idx in claimed_indices:
                 if 0 <= idx < len(items):
                     item_claimants[idx].append(user_id)
 
-        # Track user claimed subtotals and names
         user_item_subtotal: Dict[str, int] = {uid: 0 for uid in all_members}
         user_claimed_names: Dict[str, List[str]] = {uid: [] for uid in all_members}
         unclaimed_items: List[ReceiptItem] = []
@@ -112,10 +110,8 @@ class ReceiptItemizerService:
         drift = receipt.total_cents - sum_allocated
 
         if drift != 0 and all_members:
-            # Reconcile discrepancy by adjusting highest spender (or first member)
             highest_user = max(all_members, key=lambda u: shares[u].total_cents)
-            updated_share = shares[highest_user].total_cents + drift
-            shares[highest_user].total_cents = updated_share
+            shares[highest_user].total_cents += drift
 
         final_sum = sum(s.total_cents for s in shares.values())
         is_balanced = (final_sum == receipt.total_cents)

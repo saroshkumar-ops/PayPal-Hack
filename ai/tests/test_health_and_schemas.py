@@ -3,7 +3,14 @@ import base64
 from PIL import Image
 import pytest
 from httpx import AsyncClient, ASGITransport
-from app.main import app
+from main import app
+
+
+def get_valid_b64_img() -> str:
+    img = Image.new("RGB", (32, 32), color="blue")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def get_valid_b64_img() -> str:

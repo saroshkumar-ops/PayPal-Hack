@@ -14,7 +14,7 @@ class HealthResponse(BaseModel):
 
 
 # -------------------------------------------------------------
-# Contract 1.1: Intent Parsing & Tool-Calling (/ai/agent/decide)
+# Task F - Agent Models (/ai/agent/decide)
 # -------------------------------------------------------------
 class MemberSummary(BaseModel):
     user_id: str
@@ -47,7 +47,43 @@ class AgentDecideResponse(BaseModel):
 
 
 # -------------------------------------------------------------
-# Contract 1.2: Multimodal Receipt OCR (/ai/receipt/parse & /split)
+# Task F - Escalation & Roast Models (/ai/escalate/roast)
+# -------------------------------------------------------------
+class ButtonItem(BaseModel):
+    text: str
+    url: str
+
+
+class EscalateRoastRequest(BaseModel):
+    trip_id: str
+    debtor_id: str
+    debtor_name: str
+    debtor_handle: Optional[str] = None
+    creditor_name: str
+    amount_cents: int
+    currency: str = "USD"
+    expense_description: str
+    hours_overdue: int
+    tier: Literal[
+        "POLITE_CONCIERGE",
+        "PASSIVE_AGGRESSIVE",
+        "DISAPPOINTED_PARENT",
+        "PUBLIC_ROAST",
+        "ITINERARY_EMBARGO"
+    ] = "POLITE_CONCIERGE"
+    roast_consent: Literal["MILD", "SPICY", "NO_ROAST"] = "MILD"
+    paypal_checkout_url: str
+
+
+class EscalateRoastResponse(BaseModel):
+    tier: str
+    generated_text: str
+    image_card_base64: Optional[str] = None
+    call_to_action_buttons: List[ButtonItem] = Field(default_factory=list)
+
+
+# -------------------------------------------------------------
+# Task G - Multimodal Receipt OCR Models (/ai/receipt/parse & /split)
 # -------------------------------------------------------------
 class ReceiptItem(BaseModel):
     index: Optional[int] = None
@@ -87,9 +123,7 @@ class MemberSplitShare(BaseModel):
 
 class ItemizerSplitRequest(BaseModel):
     receipt: ReceiptParseResponse
-    # claims maps user_id -> list of item indices claimed by that user
     claims: Dict[str, List[int]] = Field(default_factory=dict)
-    # all members in the group
     all_members: List[str] = Field(default_factory=list)
     split_unclaimed_equally: bool = True
 
@@ -100,39 +134,3 @@ class ItemizerSplitResponse(BaseModel):
     unclaimed_items: List[ReceiptItem] = Field(default_factory=list)
     is_balanced: bool
     discrepancy_cents: int = 0
-
-
-# -------------------------------------------------------------
-# Contract 1.3: Escalation & Roast Generator (/ai/escalate/roast)
-# -------------------------------------------------------------
-class ButtonItem(BaseModel):
-    text: str
-    url: str
-
-
-class EscalateRoastRequest(BaseModel):
-    trip_id: str
-    debtor_id: str
-    debtor_name: str
-    debtor_handle: Optional[str] = None
-    creditor_name: str
-    amount_cents: int
-    currency: str = "USD"
-    expense_description: str
-    hours_overdue: int
-    tier: Literal[
-        "POLITE_CONCIERGE",
-        "PASSIVE_AGGRESSIVE",
-        "DISAPPOINTED_PARENT",
-        "PUBLIC_ROAST",
-        "ITINERARY_EMBARGO"
-    ] = "POLITE_CONCIERGE"
-    roast_consent: Literal["MILD", "SPICY", "NO_ROAST"] = "MILD"
-    paypal_checkout_url: str
-
-
-class EscalateRoastResponse(BaseModel):
-    tier: str
-    generated_text: str
-    image_card_base64: Optional[str] = None
-    call_to_action_buttons: List[ButtonItem] = Field(default_factory=list)

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas import EscalateRoastRequest, EscalateRoastResponse
-from app.services.personality_matrix import PersonalityMatrixService
-from app.services.roast_card import RoastCardGenerator
-from app.services.moderation import ModerationService
+from core.schemas import EscalateRoastRequest, EscalateRoastResponse
+from escalation.personality_service import PersonalityMatrixService
+from escalation.roast_card_service import RoastCardGenerator
+from core.moderation import ModerationService
 
 router = APIRouter(prefix="/ai/escalate", tags=["escalate"])
 
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/ai/escalate", tags=["escalate"])
 @router.post("/roast", response_model=EscalateRoastResponse)
 async def generate_roast(request: EscalateRoastRequest):
     """
-    Generates comedic debt escalation messages across 5 tiers.
+    Contract 1.3: Generates comedic debt escalation messages across 5 tiers.
     """
     try:
         response = await PersonalityMatrixService.generate_escalated_message(request)

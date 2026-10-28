@@ -3,13 +3,13 @@ import base64
 import pytest
 from PIL import Image
 from httpx import AsyncClient, ASGITransport
-from app.main import app
-from app.schemas import (
+from main import app
+from core.schemas import (
     ReceiptParseResponse,
     ReceiptItem,
     ItemizerSplitRequest
 )
-from app.services.receipt_itemizer import ReceiptItemizerService
+from receipts.itemizer_service import ReceiptItemizerService
 
 
 def create_dummy_png_base64() -> str:
@@ -41,7 +41,6 @@ async def test_parse_receipt_base64_mock():
     assert data["tip_cents"] == 2400
     assert data["total_cents"] == 15600
     assert len(data["items"]) == 3
-    # Check that item indices were assigned
     assert data["items"][0]["index"] == 0
 
 
@@ -79,12 +78,6 @@ async def test_upload_file_endpoint():
 
 
 def test_itemizer_proportional_tax_tip_split():
-    """
-    Sarah orders Red Snapper ($45.00).
-    Alex orders Truffle Fries ($25.00).
-    Dave orders Cocktails ($50.00).
-    Subtotal: $120.00, Tax: $12.00 (10%), Tip: $24.00 (20%), Total: $156.00.
-    """
     receipt = ReceiptParseResponse(
         status="SUCCESS",
         merchant="Sunset Bistro",
@@ -135,17 +128,11 @@ def test_itemizer_proportional_tax_tip_split():
     assert shares["user_alex"].items_subtotal_cents == 2500
     assert shares["user_alex"].total_cents == 3250
 
-    # Strict sum verification
     total_allocated = sum(s.total_cents for s in shares.values())
     assert total_allocated == 15600
 
 
 def test_itemizer_shared_item_and_unclaimed_pool():
-    """
-    Item 0 ($40) co-claimed by Sarah and Alex ($20 each).
-    Item 1 ($20) unclaimed (split equally between all 3 members: Sarah, Alex, Dave).
-    Subtotal: $60, Tax: $6, Tip: $12, Total: $78 (7800 cents).
-    """
     receipt = ReceiptParseResponse(
         status="SUCCESS",
         merchant="Tapas Bar",
@@ -176,6 +163,5 @@ def test_itemizer_shared_item_and_unclaimed_pool():
     assert len(response.unclaimed_items) == 1
     assert response.unclaimed_items[0].name == "Bread Basket"
 
-    # Total allocated must exactly match receipt total
     total_allocated = sum(s.total_cents for s in response.shares.values())
     assert total_allocated == 7800

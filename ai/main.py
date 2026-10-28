@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
-from app.schemas import HealthResponse
-from app.routers import receipt, agent, escalate
+from core.config import settings
+from core.schemas import HealthResponse
+
+# Modular Domain Routers
+from receipts.router import router as receipts_router
+from agent.router import router as agent_router
+from escalation.router import router as escalation_router
 
 app = FastAPI(
     title="TripSheriff AI Microservice",
@@ -19,10 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Routers
-app.include_router(receipt.router)
-app.include_router(agent.router)
-app.include_router(escalate.router)
+# Mount Domain Routers
+app.include_router(receipts_router)
+app.include_router(agent_router)
+app.include_router(escalation_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
@@ -38,4 +42,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True)
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=True)

@@ -6,8 +6,8 @@ import logging
 from typing import Tuple, List, Optional
 from PIL import Image
 
-from app.schemas import ReceiptParseRequest, ReceiptParseResponse, ReceiptItem
-from app.config import settings
+from core.schemas import ReceiptParseRequest, ReceiptParseResponse, ReceiptItem
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,6 @@ class ReceiptVisionService:
                 mime = f"image/{img_format.lower()}"
                 width, height = img.size
 
-                # Resize if needed to optimize Gemini latency
                 if width > max_dim or height > max_dim:
                     img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
                     out_buffer = io.BytesIO()
@@ -111,11 +110,9 @@ class ReceiptVisionService:
         tip_cents = int(data.get("tip_cents", 0))
         total_cents = int(data.get("total_cents", 0))
 
-        # Reconcile subtotal if omitted or minor drift
         if subtotal_cents <= 0 or abs(computed_subtotal - subtotal_cents) <= 5:
             subtotal_cents = computed_subtotal
 
-        # Reconcile total if omitted or mismatched
         expected_total = subtotal_cents + tax_cents + tip_cents
         if total_cents <= 0 or abs(expected_total - total_cents) <= 5:
             total_cents = expected_total
@@ -146,10 +143,8 @@ class ReceiptVisionService:
         """
         Processes raw image bytes through Gemini 2.0 Flash or Mock engine.
         """
-        # 1. Image preprocessing & validation
         cleaned_bytes, resolved_mime = cls._preprocess_image(image_bytes)
 
-        # 2. Check for Mock Mode
         if settings.USE_MOCK_AI or not settings.GEMINI_API_KEY:
             logger.info("Parsing receipt in MOCK mode.")
             mock_data = {
@@ -167,7 +162,6 @@ class ReceiptVisionService:
             }
             return cls._reconcile_receipt_math(mock_data)
 
-        # 3. Live Call to Gemini 2.0 Flash
         try:
             from google import genai
             from google.genai import types
@@ -187,7 +181,6 @@ class ReceiptVisionService:
             )
 
             raw_text = response.text.strip()
-            # Clean possible markdown wrapping
             if raw_text.startswith("```"):
                 raw_text = re.sub(r"^```(?:json)?\n", "", raw_text)
                 raw_text = re.sub(r"\n```$", "", raw_text)

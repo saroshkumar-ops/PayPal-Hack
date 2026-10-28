@@ -1,4 +1,4 @@
-from app.schemas import EscalateRoastRequest, EscalateRoastResponse, ButtonItem
+from core.schemas import EscalateRoastRequest, EscalateRoastResponse, ButtonItem
 
 
 class PersonalityMatrixService:

@@ -1,13 +1,12 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from typing import Optional
-from app.schemas import (
+from core.schemas import (
     ReceiptParseRequest,
     ReceiptParseResponse,
     ItemizerSplitRequest,
     ItemizerSplitResponse
 )
-from app.services.receipt_vision import ReceiptVisionService
-from app.services.receipt_itemizer import ReceiptItemizerService
+from receipts.vision_service import ReceiptVisionService
+from receipts.itemizer_service import ReceiptItemizerService
 
 router = APIRouter(prefix="/ai/receipt", tags=["receipt"])
 
