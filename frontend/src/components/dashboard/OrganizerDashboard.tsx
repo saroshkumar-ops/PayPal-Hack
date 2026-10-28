@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import type { TripLedger } from '../../types';
+import { SpotlightCard } from '../bits/SpotlightCard';
+import { BadgePill } from '../bits/BadgePill';
 import { 
   Search, 
   ArrowRight, 
@@ -52,7 +54,9 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
     return ledger.expenses.map((exp) => {
       const payer = ledger.members.find((m) => m.user_id === exp.paid_by);
       const isAllSettled = exp.splits.every((s) => s.paid_status === 'SETTLED');
-      const hasEscalated = exp.splits.some((s) => s.paid_status === 'PENDING' && (ledger.members.find(m => m.user_id === s.user_id)?.heat_score || 0) > 40);
+      const hasEscalated = exp.splits.some(
+        (s) => s.paid_status === 'PENDING' && (ledger.members.find(m => m.user_id === s.user_id)?.heat_score || 0) > 40
+      );
 
       const splitSummary = exp.splits
         .map((s) => {
@@ -72,7 +76,6 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
         payer_avatar: payer?.avatar_url,
         split_summary: splitSummary,
         status: isAllSettled ? 'SETTLED' : hasEscalated ? 'ESCALATED' : 'PENDING',
-        split_count: exp.splits.length,
       };
     });
   }, [ledger]);
@@ -83,14 +86,14 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
       {
         field: 'date',
         headerName: 'Date',
-        width: 100,
+        width: 110,
         sortable: true,
         filter: true,
       },
       {
         field: 'category',
         headerName: 'Category',
-        width: 130,
+        width: 140,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => {
@@ -102,7 +105,7 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
             OTHER: '📦 Other',
           };
           return (
-            <span className="text-xs font-medium text-gray-300">
+            <span className="text-xs font-semibold text-zinc-300">
               {icons[params.value] || params.value}
             </span>
           );
@@ -116,17 +119,17 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-medium text-white">{params.value}</span>
+          <span className="font-semibold text-white">{params.value}</span>
         ),
       },
       {
         field: 'amount',
-        headerName: 'Amount (USD)',
+        headerName: 'Total (USD)',
         width: 140,
         sortable: true,
         filter: 'agNumberColumnFilter',
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono font-bold text-amber-400">${params.value}</span>
+          <span className="font-mono font-bold text-emerald-400">${params.value}</span>
         ),
       },
       {
@@ -141,10 +144,10 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
               <img
                 src={params.data.payer_avatar}
                 alt=""
-                className="w-5 h-5 rounded-full object-cover border border-gray-600"
+                className="w-6 h-6 rounded-full object-cover border border-white/10"
               />
             )}
-            <span className="text-xs text-gray-200">{params.value}</span>
+            <span className="text-xs text-zinc-200 font-medium">{params.value}</span>
           </div>
         ),
       },
@@ -154,39 +157,17 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
         flex: 2,
         minWidth: 260,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-xs text-gray-400 font-mono">{params.value}</span>
+          <span className="text-xs text-zinc-400 font-mono">{params.value}</span>
         ),
       },
       {
         field: 'status',
-        headerName: 'Payment Status',
-        width: 150,
+        headerName: 'Status',
+        width: 140,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => {
-          const status = params.value;
-          if (status === 'SETTLED') {
-            return (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                SETTLED
-              </span>
-            );
-          }
-          if (status === 'ESCALATED') {
-            return (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                ESCALATED
-              </span>
-            );
-          }
-          return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              PENDING
-            </span>
-          );
+          return <BadgePill status={params.value as any} />;
         },
       },
     ];
@@ -194,95 +175,94 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Metrics Row */}
+      {/* 4 Spotlight Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400 font-medium">Total Trip Spend</span>
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+        <SpotlightCard className="p-5 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-zinc-400 font-medium">Total Trip Volume</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-white">${stats.totalVolume}</div>
-          <div className="text-[11px] text-gray-500 mt-1">Calculated in integer cents</div>
-        </div>
+          <div className="text-3xl font-bold font-mono text-white tracking-tight">${stats.totalVolume}</div>
+          <div className="text-[11px] text-zinc-500 mt-1">Calculated in integer cents</div>
+        </SpotlightCard>
 
-        {/* Metric 2 */}
-        <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400 font-medium">Settled via PayPal</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+        <SpotlightCard className="p-5 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-zinc-400 font-medium">Settled via PayPal</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-emerald-400">${stats.settledAmount}</div>
-          <div className="text-[11px] text-emerald-500/80 mt-1">
-            {stats.settledPercentage}% of group debts settled
+          <div className="text-3xl font-bold font-mono text-emerald-400 tracking-tight">${stats.settledAmount}</div>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                style={{ width: `${stats.settledPercentage}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-mono text-emerald-400">{stats.settledPercentage}%</span>
           </div>
-        </div>
+        </SpotlightCard>
 
-        {/* Metric 3 */}
-        <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400 font-medium">Outstanding Balances</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+        <SpotlightCard className="p-5 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-zinc-400 font-medium">Outstanding Debts</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-amber-400">${stats.pendingAmount}</div>
-          <div className="text-[11px] text-gray-500 mt-1">Active collection in progress</div>
-        </div>
+          <div className="text-3xl font-bold font-mono text-amber-400 tracking-tight">${stats.pendingAmount}</div>
+          <div className="text-[11px] text-zinc-500 mt-1">Active collection in chat</div>
+        </SpotlightCard>
 
-        {/* Metric 4 */}
-        <div className="bg-gray-950 border border-gray-800 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400 font-medium">Trip Members</span>
-            <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+        <SpotlightCard className="p-5 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-zinc-400 font-medium">Group Members</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-white">{ledger.members.length} People</div>
-          <div className="text-[11px] text-purple-400/80 mt-1">1 Organizer • 2 Members</div>
-        </div>
+          <div className="text-3xl font-bold font-mono text-white tracking-tight">{ledger.members.length} Travelers</div>
+          <div className="text-[11px] text-zinc-500 mt-1">1 Organizer • 2 Members</div>
+        </SpotlightCard>
       </div>
 
       {/* Flagship AG Grid Component */}
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl p-5 shadow-2xl">
-        {/* Table Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+      <SpotlightCard className="p-6 shadow-2xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center font-bold text-xs border border-red-500/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-red-500/10 text-red-400 font-bold text-xs border border-red-500/20">
               AG
             </div>
             <div>
               <h3 className="text-base font-bold text-white m-0 flex items-center gap-2">
                 Trip Ledger Data Grid
-                <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-semibold">
                   AG Grid Enabled
                 </span>
               </h3>
-              <p className="text-xs text-gray-400 m-0">
-                Interactive multi-column sorting, quick filter, and real-time capture updates
-              </p>
+              <p className="text-xs text-zinc-400 m-0">Multi-column sorting, quick filter, and real-time capture updates</p>
             </div>
           </div>
 
           {/* Search Box */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search expenses..."
+              placeholder="Search expenses, members..."
               value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700/80 rounded-xl pl-9 pr-4 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full rounded-2xl bg-zinc-950/80 border border-white/10 pl-9 pr-4 py-2 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-blue-500/60 transition-colors"
             />
           </div>
         </div>
 
         {/* AG Grid Container */}
-        <div className="ag-theme-quartz-dark w-full h-[400px] rounded-xl overflow-hidden border border-gray-800">
+        <div className="ag-theme-quartz-dark w-full h-[400px] rounded-2xl overflow-hidden border border-white/[0.08]">
           <AgGridReact
             rowData={rowData}
             columnDefs={colDefs}
@@ -296,110 +276,106 @@ export const OrganizerDashboard: React.FC<OrganizerDashboardProps> = ({
             paginationPageSize={10}
           />
         </div>
-      </div>
+      </SpotlightCard>
 
       {/* Bipartite Debt Simplification & Batch Payout Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Minimum Cash Flow Simplification Engine */}
-        <div className="lg:col-span-2 bg-gray-950 border border-gray-800 rounded-2xl p-5 shadow-xl">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-800">
-            <div className="flex items-center gap-2">
+        <SpotlightCard className="lg:col-span-2 p-6 shadow-xl">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.07]">
+            <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-amber-400" />
               <h3 className="text-sm font-bold text-white m-0">
-                Bipartite Minimum Cash Flow Simplification
+                Bipartite Minimum Cash Flow Optimization
               </h3>
             </div>
-            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-mono">
-              O(N) Optimization
+            <span className="font-mono text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
+              O(N) Graph Simplification
             </span>
           </div>
 
-          <p className="text-xs text-gray-400 leading-relaxed mb-4">
-            Instead of multiple messy cross-payments, TripSheriff matches the largest net debtors directly with the fronting creditor to reduce transaction friction:
+          <p className="text-xs text-zinc-400 leading-relaxed mb-4">
+            Instead of multiple confusing pairwise splits, TripSheriff matches net debtors directly with the fronting creditor to reduce transaction friction:
           </p>
 
           <div className="space-y-3">
             {/* Payment 1: Alex to Sarah */}
-            <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/60 border border-white/[0.05]">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-rose-300">Alex Rivera</span>
-                  <span className="text-[10px] text-gray-500">(@alex_travels)</span>
+                  <span className="text-[10px] text-zinc-500">(@alex_travels)</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-600" />
+                <ArrowRight className="w-4 h-4 text-zinc-600" />
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-emerald-300">Sarah Chen</span>
-                  <span className="text-[10px] text-gray-500">(@sarah_c)</span>
+                  <span className="text-[10px] text-zinc-500">(@sarah_c)</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-sm font-bold font-mono text-amber-400">$110.00 USD</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-medium">
-                  PENDING
-                </span>
+                <span className="font-mono font-bold text-sm text-amber-400">$110.00 USD</span>
+                <BadgePill status="PENDING" label="PENDING" />
               </div>
             </div>
 
             {/* Payment 2: Dave to Sarah */}
-            <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/60 border border-white/[0.05]">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-rose-300">Dave Kim</span>
-                  <span className="text-[10px] text-gray-500">(@dave_k)</span>
+                  <span className="text-[10px] text-zinc-500">(@dave_k)</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-gray-600" />
+                <ArrowRight className="w-4 h-4 text-zinc-600" />
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-emerald-300">Sarah Chen</span>
-                  <span className="text-[10px] text-gray-500">(@sarah_c)</span>
+                  <span className="text-[10px] text-zinc-500">(@sarah_c)</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-sm font-bold font-mono text-amber-400">$80.00 USD</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-medium">
-                  PENDING
-                </span>
+                <span className="font-mono font-bold text-sm text-amber-400">$80.00 USD</span>
+                <BadgePill status="PENDING" label="PENDING" />
               </div>
             </div>
           </div>
-        </div>
+        </SpotlightCard>
 
         {/* Right: PayPal Batch Payout Authorization Card */}
-        <div className="bg-gradient-to-br from-gray-950 via-gray-900 to-indigo-950/40 border border-indigo-500/30 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+        <SpotlightCard className="p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-sm font-bold text-white m-0">PayPal Batch Payouts</h3>
+            <div className="flex items-center gap-2.5 mb-2">
+              <ShieldCheck className="w-5 h-5 text-blue-400" />
+              <h3 className="text-sm font-bold text-white m-0">PayPal Batch Payouts API</h3>
             </div>
-            <p className="text-xs text-gray-300 leading-relaxed mb-4">
+            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
               Disburse pooled funds to reimburse Sarah for fronting the group expenses with a single idempotent API call.
             </p>
 
-            <div className="bg-gray-900/80 border border-gray-800 rounded-xl p-3 space-y-2 mb-4 text-xs font-mono">
-              <div className="flex justify-between text-gray-400">
+            <div className="p-3.5 rounded-2xl bg-zinc-950/80 border border-white/[0.06] space-y-2 mb-4 text-xs font-mono">
+              <div className="flex justify-between text-zinc-400">
                 <span>Beneficiary:</span>
-                <span className="text-gray-200">sarah.organizer@personal.example.com</span>
+                <span className="text-zinc-200">sarah.organizer@personal.example.com</span>
               </div>
-              <div className="flex justify-between text-gray-400">
+              <div className="flex justify-between text-zinc-400">
                 <span>Net Reimbursement:</span>
                 <span className="text-emerald-400 font-bold">$190.00 USD</span>
               </div>
-              <div className="flex justify-between text-gray-400">
+              <div className="flex justify-between text-zinc-400">
                 <span>API Rails:</span>
-                <span className="text-indigo-400">POST /v1/payments/payouts</span>
+                <span className="text-blue-400">POST /v1/payments/payouts</span>
               </div>
             </div>
           </div>
 
           <button
             onClick={onTriggerPayout}
-            className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <ShieldCheck className="w-4 h-4" />
             Authorize PayPal Batch Payout
           </button>
-        </div>
+        </SpotlightCard>
       </div>
     </div>
   );
