@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Sparkles, CheckCircle2, Receipt } from 'lucide-react';
+import { X, Upload, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           { name: 'Tropical Craft Mojitos (x3)', priceCents: 5000, claimedBy: 'Alex' },
         ],
       });
-    }, 1500);
+    }, 1200);
   };
 
   const handleClaim = (index: number) => {
@@ -59,110 +59,91 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-[#0E121B] p-6 shadow-2xl"
+          className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-[#33475A] bg-[#1F2C38] p-6 shadow-xl"
         >
-          {/* Subtle Ambient Radial Glow */}
-          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
-
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-500/20 to-blue-500/20 text-purple-400 border border-purple-500/30">
-                <Sparkles className="h-5 w-5" />
+          <div className="flex items-center justify-between border-b border-[#33475A] pb-3.5 mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#10161C] text-[#E7EDF2] border border-[#33475A]">
+                <Sparkles className="h-4 w-4 text-[#8199AE]" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white m-0">Gemini 2.0 Receipt Itemizer</h3>
-                <p className="text-xs text-zinc-400 m-0">Multimodal OCR & Proportional Tax/Tip Split</p>
+                <h3 className="text-sm font-bold text-[#E7EDF2] m-0">Gemini Receipt Itemizer</h3>
+                <p className="text-[11px] text-[#8199AE] m-0">Multimodal OCR & Proportional Tax/Tip Split</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="rounded-xl p-1.5 text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
+              className="p-1 rounded-lg text-[#8199AE] hover:text-[#E7EDF2] transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="mt-5 space-y-4">
+          <div className="space-y-4">
             {!extractedReceipt ? (
               <div
                 onClick={simulateScan}
-                className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all ${
-                  isScanning
-                    ? 'border-blue-500/60 bg-blue-500/[0.04]'
-                    : 'border-white/15 bg-zinc-900/40 hover:border-white/30 hover:bg-zinc-900/60'
-                }`}
+                className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#33475A] bg-[#10161C] p-8 text-center cursor-pointer hover:border-[#4E6A83] transition-all"
               >
                 {isScanning ? (
-                  <div className="flex flex-col items-center space-y-3 py-4">
-                    <div className="relative h-12 w-12">
-                      <div className="absolute inset-0 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                      <Receipt className="absolute inset-2.5 h-7 w-7 text-blue-400" />
-                    </div>
-                    <div className="text-sm font-semibold text-white">Extracting Line Items...</div>
-                    <p className="text-xs text-zinc-400">Gemini 2.0 Flash Vision parsing image bytes</p>
+                  <div className="flex flex-col items-center space-y-2 py-3">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E7EDF2] border-t-transparent" />
+                    <div className="text-xs font-semibold text-[#E7EDF2] mt-2">Extracting Line Items...</div>
+                    <p className="text-[11px] text-[#8199AE] m-0">Gemini 2.0 Flash Vision parsing image</p>
                   </div>
                 ) : (
                   <>
-                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.05] border border-white/10 text-zinc-300">
-                      <Upload className="h-6 w-6 text-blue-400" />
-                    </div>
-                    <div className="text-sm font-semibold text-zinc-200">
+                    <Upload className="h-8 w-8 text-[#8199AE] mb-2" />
+                    <div className="text-xs font-semibold text-[#E7EDF2]">
                       Click to upload or drag receipt photo
                     </div>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      JPG, PNG, HEIC up to 10MB (Simulates Sunset Beach Bistro sample)
+                    <p className="text-[11px] text-[#8199AE] mt-1 m-0">
+                      Simulates Sunset Beach Bistro sample receipt
                     </p>
                   </>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* Merchant & Total */}
-                <div className="flex items-center justify-between rounded-2xl bg-zinc-900/80 p-4 border border-white/10">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between rounded-xl bg-[#10161C] p-3 border border-[#33475A]">
                   <div>
-                    <div className="text-xs text-zinc-400">Merchant Detected</div>
-                    <div className="text-sm font-bold text-white">{extractedReceipt.merchant}</div>
+                    <div className="text-[10px] text-[#8199AE] uppercase font-mono">Merchant</div>
+                    <div className="text-xs font-bold text-[#E7EDF2]">{extractedReceipt.merchant}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-zinc-400">Total with Tax & Tip</div>
-                    <div className="text-base font-bold font-mono text-emerald-400">
+                    <div className="text-[10px] text-[#8199AE] uppercase font-mono">Total (with Tax/Tip)</div>
+                    <div className="text-sm font-bold font-mono text-[#E7EDF2]">
                       ${(extractedReceipt.totalCents / 100).toFixed(2)} USD
                     </div>
                   </div>
                 </div>
 
-                {/* Extracted Items Claim Grid */}
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  <div className="text-[11px] font-mono text-[#8199AE] uppercase">
                     Extracted Line Items (Tap to change claimant):
                   </div>
                   {extractedReceipt.items.map((item, idx) => (
                     <div
                       key={idx}
                       onClick={() => handleClaim(idx)}
-                      className="flex items-center justify-between rounded-xl bg-zinc-900/50 p-3 border border-white/5 hover:border-white/15 cursor-pointer transition-all"
+                      className="flex items-center justify-between rounded-xl bg-[#10161C] p-2.5 border border-[#33475A] hover:border-[#4E6A83] cursor-pointer transition-all text-xs"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/20 text-xs font-mono font-bold text-blue-300">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <div className="text-xs font-medium text-white">{item.name}</div>
-                          <div className="text-[11px] text-zinc-400 font-mono">
-                            ${(item.priceCents / 100).toFixed(2)} USD
-                          </div>
+                      <div>
+                        <div className="font-medium text-[#E7EDF2]">{item.name}</div>
+                        <div className="text-[10px] text-[#8199AE] font-mono">
+                          ${(item.priceCents / 100).toFixed(2)} USD
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 text-zinc-200 border border-white/10">
-                        Claimed: {item.claimedBy}
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#1F2C38] text-[#E7EDF2] border border-[#33475A]">
+                        {item.claimedBy}
                       </span>
                     </div>
                   ))}
@@ -171,16 +152,16 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 <div className="flex items-center justify-between pt-2">
                   <button
                     onClick={() => setExtractedReceipt(null)}
-                    className="text-xs text-zinc-400 hover:text-white"
+                    className="text-xs text-[#8199AE] hover:text-[#E7EDF2] cursor-pointer"
                   >
                     Scan Another
                   </button>
                   <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:brightness-110"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] px-4 py-2 text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer shadow-sm"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    Split & Post to Ledger
+                    Save & Split
                   </button>
                 </div>
               </div>

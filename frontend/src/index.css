@@ -4,17 +4,28 @@
 
 @layer base {
   :root {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --bg-base: #10161C;
+    --bg-surface: #1F2C38;
+    --border-subtle: #33475A;
+    --accent: #4E6A83;
+    --text-muted: #8199AE;
+    --text-body: #B7C6D3;
+    --text-heading: #E7EDF2;
     color-scheme: dark;
   }
 
   body {
     margin: 0;
     padding: 0;
-    background-color: #08090D;
-    color: #F4F4F6;
+    background-color: #10161C;
+    color: #B7C6D3;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #E7EDF2;
   }
 
   code, pre, .font-mono {
@@ -22,43 +33,15 @@
   }
 }
 
-/* Glass & Card Micro-Interactions inspired by Linear & Dribbble Fintech */
-.glass-panel {
-  background: rgba(17, 20, 29, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-}
-
-.glass-panel-subtle {
-  background: rgba(14, 17, 24, 0.5);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.glass-button {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-button:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-/* AG Grid Dark Fintech Customization */
+/* Custom AG Grid with strict matching palette */
 .ag-theme-quartz-dark {
-  --ag-background-color: #0D1018;
-  --ag-header-background-color: #121622;
-  --ag-border-color: rgba(255, 255, 255, 0.07);
-  --ag-row-hover-color: rgba(255, 255, 255, 0.03);
-  --ag-selected-row-background-color: rgba(0, 112, 224, 0.12);
-  --ag-foreground-color: #E2E8F0;
-  --ag-header-foreground-color: #94A3B8;
+  --ag-background-color: #10161C;
+  --ag-header-background-color: #1F2C38;
+  --ag-border-color: #33475A;
+  --ag-row-hover-color: rgba(78, 106, 131, 0.15);
+  --ag-selected-row-background-color: rgba(78, 106, 131, 0.25);
+  --ag-foreground-color: #B7C6D3;
+  --ag-header-foreground-color: #E7EDF2;
   --ag-font-family: 'Plus Jakarta Sans', sans-serif;
   --ag-font-size: 13px;
   --ag-border-radius: 12px;
@@ -66,23 +49,24 @@
 
 .ag-theme-quartz-dark .ag-header-cell-label {
   font-weight: 600;
+  color: #8199AE;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 11px;
 }
 
-/* Sleek Minimalist Scrollbars */
+/* Minimalist scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #10161C;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
+  background: #33475A;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #4E6A83;
 }
