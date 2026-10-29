@@ -1,0 +1,136 @@
+# TripSheriff AI — Backend Core & Double-Entry Ledger Engine (Task B)
+
+Welcome to the **TripSheriff AI** core Java backend service. This service acts as the financial fortress and source of truth for group travel treasury, expense splitting, double-entry ledger calculation, and multi-party debt simplification.
+
+---
+
+## 1. Architectural Overview
+
+The backend is built with **Java 21** and **Spring Boot**, adhering to a clean **Package-by-Feature** architecture. Each feature is self-contained with its own models, repositories, services, controllers, and DTOs:
+
+```
+backend/src/main/java/com/shrihari/backend/
+├── common/                  # Cross-cutting utilities, Jackson config, global exceptions
+│   ├── CurrencyUtils.java   # Strict integer cent conversions & formatting
+│   ├── IdGenerator.java     # Prefixed human-friendly ID generator (trip_*, exp_*, user_*)
+│   ├── JacksonConfig.java   # Custom ObjectMapper with JSR-310 JavaTime support
+│   └── exception/           # ResourceNotFoundException, InvalidSplitException, GlobalExceptionHandler
+├── trip/                    # Feature: Trip lifecycle
+│   ├── model/               # Trip.java, TripStatus.java
+│   ├── repository/          # TripRepository.java
+│   ├── service/             # TripService.java
+│   ├── controller/          # TripController.java
+│   └── dto/                 # TripCreateRequest.java, TripResponse.java
+├── member/                  # Feature: Trip participants & roles
+│   ├── model/               # TripMember.java, MemberRole.java, RoastConsent.java
+│   ├── repository/          # TripMemberRepository.java
+│   ├── service/             # TripMemberService.java
+│   ├── controller/          # TripMemberController.java
+│   └── dto/                 # MemberCreateRequest.java, MemberResponse.java
+├── expense/                 # Feature: Multi-type expense logging
+│   ├── model/               # Expense.java, ExpenseSplit.java, SplitType.java, PaymentStatus.java
+│   ├── repository/          # ExpenseRepository.java, ExpenseSplitRepository.java
+│   ├── service/             # ExpenseService.java, SplitCalculator.java
+│   ├── controller/          # ExpenseController.java
+│   └── dto/                 # ExpenseCreateRequest.java, ExpenseResponse.java, SplitResponse.java
+└── ledger/                  # Feature: Core financial math & debt graph
+    ├── service/             # LedgerEngine.java, DebtSimplificationService.java
+    ├── controller/          # LedgerController.java
+    └── dto/                 # LedgerResponse.java, SettlementTransaction.java
+```
+
+---
+
+## 2. Core Mathematical Specifications (Task B)
+
+### A. Strict Integer Cents Precision
+Floating-point arithmetic (`float` / `double`) causes rounding drift in financial transactions. TripSheriff stores and calculates all values in **integer cents** (`long amountCents`).
+- Example: `$80.00` is represented as `8000L`.
+- String representations (e.g. `"80.00"`) are generated only at presentation / API boundaries via `CurrencyUtils.centsToFormattedString()`.
+
+### B. Deterministic Remainder Cent Distribution
+When an amount cannot be divided evenly among $N$ people (e.g. $100.00 split 3 ways):
+- Base share: `base = totalCents / N = 3333` cents ($33.33).
+- Remainder: `rem = totalCents % N = 1` cent.
+- The remainder is assigned deterministically to the first `rem` members:
+  - User 1: `3334` cents ($33.34)
+  - User 2: `3333` cents ($33.33)
+  - User 3: `3333` cents ($33.33)
+  - **Sum**: Exactly `10000` cents ($100.00). **Zero floating-point drift.**
+
+### C. Supported Split Types
+1. **`EQUAL`**: Splits expense equally across selected members (or all members of the trip if omitted), with remainder distribution.
+2. **`EXACT`**: Custom dollar/cent allocation per member. Strict validation guarantees that $\sum \text{customCents} == \text{totalCents}$.
+3. **`ITEMIZED`**: Line-item claims with proportional tax and tip distribution.
+
+### D. Bipartite Minimum Cash Flow Debt Simplification
+In a group of $N$ people, naive debt tracking creates $O(N^2)$ transactions with confusing circular debts (e.g. $A \to B \ \$20$, $B \to C \ \$20$, $C \to A \ \$20$).
+
+**The Algorithm (`DebtSimplificationService.java`):**
+1. Computes the net balance of every participant:
+   $$\text{netBalance}(U) = \sum \text{Fronted} - \sum \text{Owed}$$
+2. Members with $\text{netBalance} == 0$ (including full circular debt loops) are eliminated immediately.
+3. Separates non-zero members into two Max-Heaps:
+   - **Creditors Heap** ($\text{netBalance} > 0$): sorted descending by amount owed to them.
+   - **Debtors Heap** ($\text{netBalance} < 0$): sorted descending by amount they owe.
+4. Greedily pairs the maximum debtor $D$ with the maximum creditor $C$:
+   $$\text{settlement} = \min(|B_D|, B_C)$$
+   Emits a direct transaction $D \to C$ and pushes any remaining balance back into the respective heap.
+5. **Guarantees**:
+   - Reduces $O(N^2)$ debts down to at most $N - 1$ settlement transactions.
+   - Circular debts reduce to **exactly 0 transactions**.
+   - Exactly matches Contract 1 schema (`contracts/ledger.json`).
+
+---
+
+## 3. Database Setup (H2 $\to$ PostgreSQL)
+
+### Local Development (H2 In-Memory)
+By default, the application runs with an embedded **H2 in-memory database** with PostgreSQL compatibility mode:
+- **JDBC URL**: `jdbc:h2:mem:tripsheriff;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL`
+- **H2 Web Console**: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
+  - JDBC URL: `jdbc:h2:mem:tripsheriff`
+  - User Name: `sa`
+  - Password: *(blank)*
+
+### Switching to PostgreSQL
+When your PostgreSQL instance is ready, update `src/main/resources/application.properties`:
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/tripsheriff
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=your_password
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+```
+
+---
+
+## 4. Building and Running
+
+### Prerequisites
+- Java 21+ JDK
+- Maven wrapper (`./mvnw`)
+
+### Run Tests
+```bash
+./mvnw test
+```
+All unit and integration tests (including split remainder tests and circular debt benchmark) will execute against the in-memory H2 database.
+
+### Start the Server
+```bash
+./mvnw spring-boot:run
+```
+The application will start on **`http://localhost:8080`**.
+
+---
+
+## 5. Contract Compliance
+
+The output of `GET /api/trips/{tripId}/ledger` adheres 100% to **Contract 1 (`contracts/ledger.json`)**:
+- `trip_id`
+- `currency`
+- `members` (`user_id`, `name`, `handle`, `paypal_email`, `role`, `roast_consent`)
+- `expenses` (`expense_id`, `paid_by`, `amount_cents`, `description`, `category`, `timestamp`, `split_type`, `splits`)
+- `net_balances_cents` (Map of user IDs to integer net cents)
+- `simplified_settlements` (Optimal $N-1$ transaction settlement plan)

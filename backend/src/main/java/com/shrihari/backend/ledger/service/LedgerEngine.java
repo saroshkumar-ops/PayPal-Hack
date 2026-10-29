@@ -1,0 +1,99 @@
+package com.shrihari.backend.ledger.service;
+
+import com.shrihari.backend.expense.dto.ExpenseResponse;
+import com.shrihari.backend.expense.model.Expense;
+import com.shrihari.backend.expense.model.ExpenseSplit;
+import com.shrihari.backend.expense.model.PaymentStatus;
+import com.shrihari.backend.expense.repository.ExpenseRepository;
+import com.shrihari.backend.ledger.dto.LedgerResponse;
+import com.shrihari.backend.ledger.dto.SettlementTransaction;
+import com.shrihari.backend.member.dto.MemberResponse;
+import com.shrihari.backend.member.service.TripMemberService;
+import com.shrihari.backend.trip.model.Trip;
+import com.shrihari.backend.trip.service.TripService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+
+@Service
+@RequiredArgsConstructor
+public class LedgerEngine {
+
+    private final TripService tripService;
+    private final TripMemberService memberService;
+    private final ExpenseRepository expenseRepository;
+    private final DebtSimplificationService debtSimplificationService;
+
+    @Transactional(readOnly = true)
+    public LedgerResponse getTripLedger(String tripId) {
+        Trip trip = tripService.findTripEntity(tripId);
+        List<MemberResponse> members = memberService.getMembers(tripId);
+        List<Expense> expenses = expenseRepository.findByTripIdOrderByTimestampAsc(tripId);
+
+        // Calculate double-entry net balances
+        Map<String, Long> netBalances = calculateNetBalances(members, expenses);
+
+        // Compute Bipartite Minimum Cash Flow settlements
+        List<SettlementTransaction> settlements = debtSimplificationService.simplifyDebts(netBalances);
+
+        List<ExpenseResponse> expenseResponses = expenses.stream()
+                .map(ExpenseResponse::fromEntity)
+                .toList();
+
+        return LedgerResponse.builder()
+                .tripId(trip.getId())
+                .currency(trip.getCurrency())
+                .members(members)
+                .expenses(expenseResponses)
+                .netBalancesCents(netBalances)
+                .simplifiedSettlements(settlements)
+                .build();
+    }
+
+    /**
+     * Computes double-entry integer net balances for all members in a trip.
+     * Guaranteed: sum(netBalances.values()) == 0.
+     */
+    public Map<String, Long> calculateNetBalances(List<MemberResponse> members, List<Expense> expenses) {
+        Map<String, Long> balances = new LinkedHashMap<>();
+
+        // Initialize all known members to 0 balance
+        for (MemberResponse member : members) {
+            balances.put(member.getUserId(), 0L);
+        }
+
+        for (Expense expense : expenses) {
+            String payer = expense.getPaidBy();
+            long totalAmount = expense.getAmountCents();
+
+            // Payer is credited the full amount fronted
+            balances.put(payer, balances.getOrDefault(payer, 0L) + totalAmount);
+
+            // Each debtor is debited their share
+            if (expense.getSplits() != null) {
+                for (ExpenseSplit split : expense.getSplits()) {
+                    String debtor = split.getUserId();
+                    long owes = split.getOwesCents();
+
+                    balances.put(debtor, balances.getOrDefault(debtor, 0L) - owes);
+
+                    // If a non-payer debtor already settled their split (e.g. via PayPal capture)
+                    // their debt has been satisfied: debtor +owes, and creditor/system +0 (already credited)
+                    if (!debtor.equals(payer) && split.getPaidStatus() == PaymentStatus.SETTLED) {
+                        balances.put(debtor, balances.get(debtor) + owes);
+                        balances.put(payer, balances.get(payer) - owes);
+                    }
+                }
+            }
+        }
+
+        return balances;
+    }
+
+    @Transactional(readOnly = true)
+    public List<SettlementTransaction> getSettlements(String tripId) {
+        return getTripLedger(tripId).getSimplifiedSettlements();
+    }
+}
