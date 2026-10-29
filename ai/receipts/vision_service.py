@@ -139,9 +139,54 @@ class ReceiptVisionService:
         )
 
     @classmethod
+    async def _call_gemini_vision(cls, cleaned_bytes: bytes, resolved_mime: str) -> ReceiptParseResponse:
+        """
+        Calls Google Gemini Vision with automatic model fallback.
+        """
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        image_part = types.Part.from_bytes(data=cleaned_bytes, mime_type=resolved_mime)
+
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.1,
+        )
+
+        models_to_try = [
+            settings.GEMINI_MODEL,
+            "gemini-3.5-flash",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest"
+        ]
+
+        last_error = None
+        for model_id in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_id,
+                    contents=[image_part, RECEIPT_EXTRACTION_PROMPT],
+                    config=config
+                )
+
+                raw_text = response.text.strip()
+                if raw_text.startswith("```"):
+                    raw_text = re.sub(r"^```(?:json)?\n", "", raw_text)
+                    raw_text = re.sub(r"\n```$", "", raw_text)
+
+                parsed_json = json.loads(raw_text)
+                return cls._reconcile_receipt_math(parsed_json)
+            except Exception as e:
+                logger.warning(f"Model {model_id} failed: {str(e)}; trying next fallback...")
+                last_error = e
+
+        raise RuntimeError(f"All Gemini vision models failed. Last error: {str(last_error)}")
+
+    @classmethod
     async def _call_groq_vision(cls, cleaned_bytes: bytes, resolved_mime: str) -> ReceiptParseResponse:
         """
-        Calls Groq's ultra-fast Llama 3.2 Vision model.
+        Calls Groq's Vision endpoint if available.
         """
         from groq import Groq
 
@@ -174,44 +219,14 @@ class ReceiptVisionService:
         return cls._reconcile_receipt_math(parsed_json)
 
     @classmethod
-    async def _call_gemini_vision(cls, cleaned_bytes: bytes, resolved_mime: str) -> ReceiptParseResponse:
-        """
-        Calls Google Gemini 2.0 Flash Vision.
-        """
-        from google import genai
-        from google.genai import types
-
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        image_part = types.Part.from_bytes(data=cleaned_bytes, mime_type=resolved_mime)
-
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.1,
-        )
-
-        response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=[image_part, RECEIPT_EXTRACTION_PROMPT],
-            config=config
-        )
-
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = re.sub(r"^```(?:json)?\n", "", raw_text)
-            raw_text = re.sub(r"\n```$", "", raw_text)
-
-        parsed_json = json.loads(raw_text)
-        return cls._reconcile_receipt_math(parsed_json)
-
-    @classmethod
     async def parse_image_bytes(cls, image_bytes: bytes, mime_type: str = "image/jpeg", currency: str = "USD") -> ReceiptParseResponse:
         """
-        Processes raw image bytes through Groq Vision, Gemini Vision, or Mock engine.
+        Processes raw image bytes through Gemini Vision, Groq Vision, or Mock engine.
         """
         cleaned_bytes, resolved_mime = cls._preprocess_image(image_bytes)
 
         # 1. Check for Mock Mode
-        if settings.USE_MOCK_AI or (not settings.GROQ_API_KEY and not settings.GEMINI_API_KEY):
+        if settings.USE_MOCK_AI or (not settings.GEMINI_API_KEY and not settings.GROQ_API_KEY):
             logger.info("Parsing receipt in MOCK mode.")
             mock_data = {
                 "merchant": "Sunset Beach Bistro",
@@ -228,22 +243,22 @@ class ReceiptVisionService:
             }
             return cls._reconcile_receipt_math(mock_data)
 
-        # 2. Prefer Groq if key is present (sub-second vision inference)
-        if settings.GROQ_API_KEY:
-            try:
-                return await cls._call_groq_vision(cleaned_bytes, resolved_mime)
-            except Exception as e:
-                logger.error(f"Groq Vision OCR failed: {str(e)}", exc_info=True)
-                if not settings.GEMINI_API_KEY:
-                    raise RuntimeError(f"Groq Vision OCR failed: {str(e)}")
-
-        # 3. Fallback to Gemini if key is present
+        # 2. Primary: Gemini Vision (tested and active with fallback)
         if settings.GEMINI_API_KEY:
             try:
                 return await cls._call_gemini_vision(cleaned_bytes, resolved_mime)
             except Exception as e:
                 logger.error(f"Gemini Receipt OCR failed: {str(e)}", exc_info=True)
-                raise RuntimeError(f"Gemini OCR processing failed: {str(e)}")
+                if not settings.GROQ_API_KEY:
+                    raise RuntimeError(f"Gemini OCR processing failed: {str(e)}")
+
+        # 3. Secondary: Groq Vision
+        if settings.GROQ_API_KEY:
+            try:
+                return await cls._call_groq_vision(cleaned_bytes, resolved_mime)
+            except Exception as e:
+                logger.error(f"Groq Vision OCR failed: {str(e)}", exc_info=True)
+                raise RuntimeError(f"Vision OCR processing failed: {str(e)}")
 
         raise RuntimeError("No valid AI provider configured.")
 
