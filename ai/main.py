@@ -31,12 +31,14 @@ app.include_router(escalation_router)
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
+    has_live_key = bool(settings.GROQ_API_KEY or settings.GEMINI_API_KEY)
+    active_model = settings.GROQ_VISION_MODEL if settings.GROQ_API_KEY else settings.GEMINI_MODEL
     return HealthResponse(
         status="ok",
         service="TripSheriff AI Microservice",
         version="1.0.0",
-        mock_mode=settings.USE_MOCK_AI or not bool(settings.GEMINI_API_KEY),
-        ai_model=settings.GEMINI_MODEL
+        mock_mode=settings.USE_MOCK_AI or not has_live_key,
+        ai_model=active_model
     )
 
 
