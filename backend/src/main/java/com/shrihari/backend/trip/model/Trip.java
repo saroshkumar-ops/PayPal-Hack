@@ -33,4 +33,12 @@ public class Trip {
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
+
+    @Column(name = "simulated_hours_advance", nullable = false)
+    @Builder.Default
+    private long simulatedHoursAdvance = 0L;
+
+    public Instant getEffectiveNow() {
+        return Instant.now().plus(java.time.Duration.ofHours(simulatedHoursAdvance));
+    }
 }

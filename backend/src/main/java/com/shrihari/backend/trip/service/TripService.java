@@ -64,4 +64,20 @@ public class TripService {
                 .map(TripResponse::fromEntity)
                 .toList();
     }
+
+    @Transactional
+    public com.shrihari.backend.trip.dto.SimTimeResponse advanceSimTime(String tripId, Long hoursToAdvance) {
+        Trip trip = findTripEntity(tripId);
+        long advance = (hoursToAdvance != null && hoursToAdvance > 0) ? hoursToAdvance : 24L;
+        trip.setSimulatedHoursAdvance(trip.getSimulatedHoursAdvance() + advance);
+        Trip saved = tripRepository.save(trip);
+
+        return com.shrihari.backend.trip.dto.SimTimeResponse.builder()
+                .tripId(saved.getId())
+                .totalHoursAdvanced(saved.getSimulatedHoursAdvance())
+                .effectiveNow(saved.getEffectiveNow())
+                .message(String.format("Fast-forwarded trip time by +%d hours. Total simulated advance: %d hours.",
+                        advance, saved.getSimulatedHoursAdvance()))
+                .build();
+    }
 }

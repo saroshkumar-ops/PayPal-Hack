@@ -33,10 +33,18 @@ backend/src/main/java/com/shrihari/backend/
 │   ├── service/             # ExpenseService.java, SplitCalculator.java
 │   ├── controller/          # ExpenseController.java
 │   └── dto/                 # ExpenseCreateRequest.java, ExpenseResponse.java, SplitResponse.java
-└── ledger/                  # Feature: Core financial math & debt graph
-    ├── service/             # LedgerEngine.java, DebtSimplificationService.java
-    ├── controller/          # LedgerController.java
-    └── dto/                 # LedgerResponse.java, SettlementTransaction.java
+├── ledger/                  # Feature: Core financial math & debt graph
+│   ├── service/             # LedgerEngine.java, DebtSimplificationService.java
+│   ├── controller/          # LedgerController.java
+│   ├── model/               # Settlement.java, SettlementStatus.java
+│   ├── repository/          # SettlementRepository.java
+│   └── dto/                 # LedgerResponse.java, SettlementTransaction.java
+└── payment/                 # Feature: PayPal Orders & Two-Step Capture (Task C)
+    ├── client/              # PayPalClient.java (OAuth2 token cache, Orders v2, Capture)
+    ├── config/              # PayPalProperties.java (Auto-Mock fallback & credentials binding)
+    ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
+    ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
+    └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
 ```
 
 ---
@@ -91,7 +99,41 @@ In TripSheriff's platform-mediated architecture:
 
 ---
 
-## 3. Database Setup (H2 $\to$ PostgreSQL)
+## 3. PayPal Orders API & Two-Step Capture Flow (Task C)
+
+TripSheriff implements the complete PayPal Orders v2 payment lifecycle for individual debt collection.
+
+### A. The PayPal Capture Rule
+When creating an order with `intent: "CAPTURE"`, buyer approval alone does **not** transfer money. The application backend **must** execute `POST /v2/checkout/orders/{id}/capture` to complete the transaction and release funds into escrow.
+
+### B. Order Creation (`POST /api/payment/create-order`)
+- Adheres to **Contract 3 (`contracts/paypal_ops.json`)**.
+- Uses modern PayPal `payment_source.paypal.experience_context` with `user_action: "PAY_NOW"`.
+- Encodes custom tracking metadata in `purchase_units[0].custom_id`: `trip_id|debtor_user_id|expense_id`.
+- Automatically links `paypal_order_id` and the PayPal sandbox approval URL directly to the debtor's `ExpenseSplit` in the database.
+
+### C. Two-Step Capture Paths
+1. **Primary Path (Buyer Redirect)**:
+   - When buyer finishes checkout on PayPal, they return to:
+     `GET /api/payment/success?token={orderId}`
+   - The endpoint immediately executes `POST /v2/checkout/orders/{id}/capture`.
+   - Transitions `ExpenseSplit.paidStatus` from `PENDING` to `SETTLED`.
+   - Renders a clean, celebratory HTML confirmation page (or JSON response when queried by automated clients).
+2. **Programmatic / Webhook Direct Path**:
+   - `POST /api/payment/capture/{orderId}`: Enables direct server-to-server capture triggered by the Web Simulator or the `CHECKOUT.ORDER.APPROVED` webhook fallback.
+
+### D. Zero-Config Auto-Mock Mode
+- If `PAYPAL_CLIENT_ID` is empty (or `paypal.mock-mode=true`), the system automatically runs in Mock Mode.
+- Generates realistic sandbox checkout links (`https://www.sandbox.paypal.com/checkoutnow?token=...`) and handles capture without failing or requiring internet access.
+- As soon as real sandbox credentials are added to environment variables or `application.properties`, the system automatically switches to live sandbox calls with **zero code changes**.
+
+### E. Environment Time-Warp Setting (`POST /api/trips/{tripId}/sim-time`)
+- Allows organizers or judges to advance the virtual trip clock by +24h, +48h, or +72h in milliseconds.
+- Enables simulating debt aging and triggering higher escalation tiers instantly during hackathon demo recording.
+
+---
+
+## 4. Database Setup (H2 $\to$ PostgreSQL)
 
 ### Local Development (H2 In-Memory)
 By default, the application runs with an embedded **H2 in-memory database** with PostgreSQL compatibility mode:

@@ -33,4 +33,16 @@ public class TripController {
     public ResponseEntity<TripResponse> getTrip(@PathVariable String tripId) {
         return ResponseEntity.ok(tripService.getTripById(tripId));
     }
+
+    /**
+     * Environment Time-Warp Setting (Task C requirement 4):
+     * Simulates hours of debt age in seconds during hackathon demo recording.
+     */
+    @PostMapping("/{tripId}/sim-time")
+    public ResponseEntity<com.shrihari.backend.trip.dto.SimTimeResponse> advanceSimTime(
+            @PathVariable String tripId,
+            @RequestBody(required = false) com.shrihari.backend.trip.dto.SimTimeRequest request) {
+        Long hours = (request != null) ? request.getHoursToAdvance() : 24L;
+        return ResponseEntity.ok(tripService.advanceSimTime(tripId, hours));
+    }
 }

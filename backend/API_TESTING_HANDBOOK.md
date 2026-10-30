@@ -382,3 +382,145 @@ curl -i -X POST http://localhost:8080/api/trips/trip_bali_2026/expenses \
   "message": "Exact split total (16000 cents) does not match expense amount (24000 cents). Difference: 8000 cents"
 }
 ```
+
+---
+
+## 6. PayPal Orders API & Two-Step Capture Flow (Task C)
+
+### Step 1: Create a PayPal Checkout Order for a Debtor Split
+Creates an approved PayPal order token for Alex (`user_02`) on the Villa Deposit (`exp_8821`).
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/payment/create-order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trip_id": "trip_bali_2026",
+    "debtor_id": "user_02",
+    "expense_id": "exp_8821"
+  }'
+```
+
+**Expected Response (`201 Created`):**
+```json
+{
+  "order_id": "5O190127TN364715T",
+  "approve_url": "https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T",
+  "status": "CREATED",
+  "custom_id": "trip_bali_2026|user_02|exp_8821",
+  "amount_cents": 8000,
+  "formatted_amount": "80.00"
+}
+```
+*(Notice: The `ExpenseSplit` in the trip database is automatically linked with `paypal_order_id` and `payment_url`)*.
+
+---
+
+### Step 2: Primary Capture Path — Buyer Approval Redirect
+When the buyer completes approval in PayPal Sandbox, PayPal redirects their browser back to `return_url`: `http://localhost:8080/api/payment/success?token=5O190127TN364715T`.
+
+**Test in Browser or with curl:**
+```bash
+# Request celebratory HTML (default browser behavior):
+curl -i "http://localhost:8080/api/payment/success?token=5O190127TN364715T"
+
+# Or request JSON (for automated tests or frontend callers):
+curl -i -H "Accept: application/json" "http://localhost:8080/api/payment/success?token=5O190127TN364715T"
+```
+
+**Expected Response (`200 OK` JSON):**
+```json
+{
+  "order_id": "5O190127TN364715T",
+  "capture_id": "CAP_703821932024",
+  "status": "COMPLETED",
+  "custom_id": "trip_bali_2026|user_02|exp_8821",
+  "trip_id": null,
+  "debtor_id": "user_02",
+  "expense_id": "exp_8821",
+  "amount_cents": 8000,
+  "payer_email": "alex.debtor@personal.example.com",
+  "settled_at": "2026-10-30T13:20:00Z"
+}
+```
+
+---
+
+### Step 3: Programmatic Direct Capture (Web Simulator & Webhook Fallback)
+Direct endpoint allowing the judge web simulator to trigger capture instantly without waiting for redirects.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/payment/capture/5O190127TN364715T
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "order_id": "5O190127TN364715T",
+  "capture_id": "CAP_703821932024",
+  "status": "COMPLETED",
+  "custom_id": "trip_bali_2026|user_02|exp_8821",
+  "debtor_id": "user_02",
+  "expense_id": "exp_8821",
+  "amount_cents": 8000
+}
+```
+
+---
+
+### Step 4: Verify Post-Capture Ledger State & Platform Escrow
+Inspect the ledger after Alex's payment. Notice:
+- Alex's net debt is `0` (`SETTLED`).
+- Sarah's receivable is preserved at `+16000` (+8000 from Dave pending, +8000 from Escrow).
+- `platform_escrow_cents` holds `8000` ready for Task D Batch Payout!
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/ledger
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "currency": "USD",
+  "net_balances_cents": {
+    "user_01": 16000,
+    "user_02": 0,
+    "user_03": -8000
+  },
+  "platform_escrow_cents": 8000,
+  "simplified_settlements": [
+    {
+      "from_user_id": "user_03",
+      "to_user_id": "user_01",
+      "amount_cents": 8000,
+      "formatted_amount": "80.00"
+    }
+  ]
+}
+```
+
+---
+
+### Step 5: Environment Time-Warp Simulator (Debt Aging)
+Fast-forwards the virtual trip clock by +24 hours to simulate debt aging during demo recording.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/trips/trip_bali_2026/sim-time \
+  -H "Content-Type: application/json" \
+  -d '{"hours_to_advance": 24}'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "total_hours_advanced": 24,
+  "effective_now": "2026-10-31T13:20:00Z",
+  "message": "Fast-forwarded trip time by +24 hours. Total simulated advance: 24 hours."
+}
+```
+
