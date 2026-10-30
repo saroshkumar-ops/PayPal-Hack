@@ -146,14 +146,24 @@ public class SplitCalculator {
         long additional = safeTax + safeTip;
 
         long expectedTotal = itemsSubtotal + additional;
-        if (totalCents != expectedTotal) {
-            // If totalCents differs from subtotal + tax + tip, adjust or validate
-            if (additional == 0L && totalCents > itemsSubtotal) {
+        long diff = totalCents - expectedTotal;
+
+        if (diff != 0) {
+            if (additional == 0L && totalCents > itemsSubtotal && diff > 2) {
                 additional = totalCents - itemsSubtotal;
+            } else if (Math.abs(diff) <= 2) {
+                // Auto-absorb small rounding drift (±1 to ±2 cents) from receipt OCR line-item rounding
+                if (additional + diff >= 0) {
+                    additional += diff;
+                } else {
+                    // When tax/tip is 0 and diff is negative, absorb drift into highest item totals
+                    adjustItemTotalsForDrift(userItemTotals, diff);
+                    itemsSubtotal += diff;
+                }
             } else {
                 throw new InvalidSplitException(String.format(
-                        "Itemized subtotal (%d) + tax/tip (%d) = %d cents does not match total amount (%d cents)",
-                        itemsSubtotal, (safeTax + safeTip), expectedTotal, totalCents));
+                        "Itemized subtotal (%d) + tax/tip (%d) = %d cents does not match total amount (%d cents). Difference of %d cents exceeds ±2 cent tolerance.",
+                        itemsSubtotal, (safeTax + safeTip), expectedTotal, totalCents, diff));
             }
         }
 
@@ -199,5 +209,18 @@ public class SplitCalculator {
         }
 
         return splits;
+    }
+
+    private void adjustItemTotalsForDrift(Map<String, Long> userItemTotals, long diff) {
+        if (userItemTotals.isEmpty()) return;
+        List<Map.Entry<String, Long>> sortedUsers = new ArrayList<>(userItemTotals.entrySet());
+        sortedUsers.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+        long remainingAdjustment = Math.abs(diff);
+        long unit = (diff > 0) ? 1L : -1L;
+        for (int i = 0; i < remainingAdjustment; i++) {
+            String uid = sortedUsers.get(i % sortedUsers.size()).getKey();
+            userItemTotals.put(uid, userItemTotals.get(uid) + unit);
+        }
     }
 }

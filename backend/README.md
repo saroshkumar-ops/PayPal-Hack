@@ -62,6 +62,7 @@ When an amount cannot be divided evenly among $N$ people (e.g. $100.00 split 3 w
 1. **`EQUAL`**: Splits expense equally across selected members (or all members of the trip if omitted), with remainder distribution.
 2. **`EXACT`**: Custom dollar/cent allocation per member. Strict validation guarantees that $\sum \text{customCents} == \text{totalCents}$.
 3. **`ITEMIZED`**: Line-item claims with proportional tax and tip distribution.
+   - **OCR Drift Auto-Absorption Tolerance**: Real-world receipt line items and sales tax rounding frequently cause ±1–2 cents of rounding variance. `SplitCalculator` automatically absorbs up to $\pm 2$ cents of OCR rounding drift, preserving strict integer cent balancing without brittle request rejections.
 
 ### D. Bipartite Minimum Cash Flow Debt Simplification
 In a group of $N$ people, naive debt tracking creates $O(N^2)$ transactions with confusing circular debts (e.g. $A \to B \ \$20$, $B \to C \ \$20$, $C \to A \ \$20$).
@@ -80,6 +81,13 @@ In a group of $N$ people, naive debt tracking creates $O(N^2)$ transactions with
    - Reduces $O(N^2)$ debts down to at most $N - 1$ settlement transactions.
    - Circular debts reduce to **exactly 0 transactions**.
    - Exactly matches Contract 1 schema (`contracts/ledger.json`).
+
+### E. Platform Escrow vs. Direct Settlement Architecture
+In TripSheriff's platform-mediated architecture:
+- When Alex pays his $80 split via the PayPal Orders API (Task C), the funds flow into the **TripSheriff Platform Sandbox Escrow Account**.
+- Alex's debt is cleared immediately (`Alex net balance = 0`).
+- The funds are credited to `platform_escrow_cents` (+8000), while Sarah's receivable credit is **preserved**.
+- When the trip concludes and the organizer authorizes Task D (PayPal Batch Payouts), the platform disburses the pooled funds to Sarah, satisfying both Sarah's credit and the escrow balance simultaneously.
 
 ---
 

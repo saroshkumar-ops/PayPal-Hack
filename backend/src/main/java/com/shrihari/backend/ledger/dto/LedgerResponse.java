@@ -26,6 +26,10 @@ public class LedgerResponse {
     @JsonProperty("net_balances_cents")
     private Map<String, Long> netBalancesCents;
 
+    @JsonProperty("platform_escrow_cents")
+    @Builder.Default
+    private long platformEscrowCents = 0L;
+
     @JsonProperty("simplified_settlements")
     private List<SettlementTransaction> simplifiedSettlements;
 

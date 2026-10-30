@@ -203,6 +203,7 @@ curl -X GET http://localhost:8080/api/trips/trip_bali_2026/ledger
     "user_02": -8000,
     "user_03": -8000
   },
+  "platform_escrow_cents": 0,
   "simplified_settlements": [
     {
       "from_user_id": "user_02",

@@ -129,4 +129,58 @@ class SplitCalculatorTest {
         assertEquals(PaymentStatus.PENDING, s2.getPaidStatus());
         assertEquals(PaymentStatus.PENDING, s3.getPaidStatus());
     }
+
+    @Test
+    @DisplayName("OCR Drift: Auto-absorbs +1 cent drift without error and balances exactly")
+    void testItemizedSplitWithPlusOneCentOcrDrift() {
+        // Items subtotal = 12000, Tax = 1000, Tip = 2000 -> Expected = 15000.
+        // But OCR extracted receipt total as 15001 (+1 cent drift)
+        List<ItemClaimDto> items = List.of(
+                new ItemClaimDto("Steak", 4000L, List.of("user_01")),
+                new ItemClaimDto("Pasta", 4000L, List.of("user_02")),
+                new ItemClaimDto("Cocktails", 4000L, List.of("user_03"))
+        );
+
+        List<ExpenseSplit> splits = splitCalculator.calculateItemizedSplit(
+                "exp_drift_pos", "user_01", 15001L, items, 1000L, 2000L);
+
+        assertEquals(3, splits.size());
+        long totalSum = splits.stream().mapToLong(ExpenseSplit::getOwesCents).sum();
+        assertEquals(15001L, totalSum, "Should absorb +1 cent drift and balance to 15,001 cents");
+    }
+
+    @Test
+    @DisplayName("OCR Drift: Auto-absorbs -1 cent drift without error and balances exactly")
+    void testItemizedSplitWithMinusOneCentOcrDrift() {
+        // Items subtotal = 12000, Tax = 1000, Tip = 2000 -> Expected = 15000.
+        // But OCR extracted receipt total as 14999 (-1 cent drift)
+        List<ItemClaimDto> items = List.of(
+                new ItemClaimDto("Steak", 4000L, List.of("user_01")),
+                new ItemClaimDto("Pasta", 4000L, List.of("user_02")),
+                new ItemClaimDto("Cocktails", 4000L, List.of("user_03"))
+        );
+
+        List<ExpenseSplit> splits = splitCalculator.calculateItemizedSplit(
+                "exp_drift_neg", "user_01", 14999L, items, 1000L, 2000L);
+
+        assertEquals(3, splits.size());
+        long totalSum = splits.stream().mapToLong(ExpenseSplit::getOwesCents).sum();
+        assertEquals(14999L, totalSum, "Should absorb -1 cent drift and balance to 14,999 cents");
+    }
+
+    @Test
+    @DisplayName("OCR Drift: Drift exceeding 2 cents throws InvalidSplitException")
+    void testItemizedSplitExceedingDriftThrows() {
+        // Expected = 15000, but total is 15010 (+10 cents drift)
+        List<ItemClaimDto> items = List.of(
+                new ItemClaimDto("Steak", 4000L, List.of("user_01")),
+                new ItemClaimDto("Pasta", 4000L, List.of("user_02")),
+                new ItemClaimDto("Cocktails", 4000L, List.of("user_03"))
+        );
+
+        InvalidSplitException ex = assertThrows(InvalidSplitException.class, () ->
+                splitCalculator.calculateItemizedSplit("exp_bad", "user_01", 15010L, items, 1000L, 2000L));
+
+        assertTrue(ex.getMessage().contains("exceeds ±2 cent tolerance"));
+    }
 }

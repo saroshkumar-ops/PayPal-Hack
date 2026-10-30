@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -131,6 +132,8 @@ class LedgerControllerIntegrationTest {
                 .andExpect(jsonPath("$.net_balances_cents.user_01").value(16000))
                 .andExpect(jsonPath("$.net_balances_cents.user_02").value(-8000))
                 .andExpect(jsonPath("$.net_balances_cents.user_03").value(-8000))
+                // Verify Platform Escrow (0 cents initially when all splits pending)
+                .andExpect(jsonPath("$.platform_escrow_cents").value(0))
                 // Verify Simplified Settlements
                 .andExpect(jsonPath("$.simplified_settlements", hasSize(2)))
                 .andExpect(jsonPath("$.simplified_settlements[0].to_user_id").value("user_01"))
@@ -139,5 +142,62 @@ class LedgerControllerIntegrationTest {
                 .andExpect(jsonPath("$.simplified_settlements[1].to_user_id").value("user_01"))
                 .andExpect(jsonPath("$.simplified_settlements[1].amount_cents").value(8000))
                 .andExpect(jsonPath("$.simplified_settlements[1].formatted_amount").value("80.00"));
+    }
+
+    @Test
+    @DisplayName("Platform Escrow vs Direct Settlement: When Alex settles via PayPal, escrow holds $80 and Sarah's credit is preserved")
+    void testPlatformEscrowWhenMemberSettlesViaPayPal() throws Exception {
+        String tripId = "trip_escrow_test";
+
+        // 1. Create Trip
+        mockMvc.perform(post("/api/trips")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(TripCreateRequest.builder()
+                                .tripId(tripId)
+                                .name("Escrow Test")
+                                .currency("USD")
+                                .build())))
+                .andExpect(status().isCreated());
+
+        // 2. Add Members
+        mockMvc.perform(post("/api/trips/" + tripId + "/members")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(MemberCreateRequest.builder()
+                                .userId("user_sarah").name("Sarah").role("ORGANIZER").build())))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/trips/" + tripId + "/members")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(MemberCreateRequest.builder()
+                                .userId("user_alex").name("Alex").role("MEMBER").build())))
+                .andExpect(status().isCreated());
+
+        // 3. Sarah fronts $100 for Sarah and Alex ($50 each = 5000 cents)
+        mockMvc.perform(post("/api/trips/" + tripId + "/expenses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(ExpenseCreateRequest.builder()
+                                .paidBy("user_sarah")
+                                .amountCents(10000L)
+                                .description("Dinner")
+                                .splitType("EQUAL")
+                                .splitWithUserIds(java.util.List.of("user_sarah", "user_alex"))
+                                .build())))
+                .andExpect(status().isCreated());
+
+        // 4. Alex pays via PayPal Sandbox: mark Alex's split SETTLED
+        com.shrihari.backend.expense.repository.ExpenseSplitRepository splitRepo =
+                webApplicationContext.getBean(com.shrihari.backend.expense.repository.ExpenseSplitRepository.class);
+        var splits = splitRepo.findByUserId("user_alex");
+        assertFalse(splits.isEmpty());
+        var alexSplit = splits.get(0);
+        alexSplit.setPaidStatus(com.shrihari.backend.expense.model.PaymentStatus.SETTLED);
+        splitRepo.save(alexSplit);
+
+        // 5. Query Ledger: Alex is at 0, Sarah is STILL owed 5000, Platform Escrow has 5000!
+        mockMvc.perform(get("/api/trips/" + tripId + "/ledger"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.net_balances_cents.user_alex").value(0))
+                .andExpect(jsonPath("$.net_balances_cents.user_sarah").value(5000))
+                .andExpect(jsonPath("$.platform_escrow_cents").value(5000));
     }
 }
