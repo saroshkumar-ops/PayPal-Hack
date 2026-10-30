@@ -1,8 +1,12 @@
 import os
+from pathlib import Path
 from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+# Ensure .env inside ai directory is loaded regardless of current working directory
+_ai_dir = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=_ai_dir / ".env")
 load_dotenv()
 
 
@@ -17,6 +21,7 @@ class Settings(BaseModel):
 
     # Groq Configuration (Ultra-fast multimodal vision & LLM)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_TEXT_MODEL: str = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
 
     ALLOWED_ORIGINS: List[str] = ["*"]

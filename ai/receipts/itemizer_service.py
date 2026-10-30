@@ -19,6 +19,8 @@ class ReceiptItemizerService:
         items = receipt.items
         claims = request.claims
         all_members = list(request.all_members)
+        curr_sym = getattr(receipt, "currency_symbol", "$") or "$"
+        currency = getattr(receipt, "currency", "USD") or "USD"
 
         for user_id in claims.keys():
             if user_id not in all_members:
@@ -88,10 +90,10 @@ class ReceiptItemizerService:
 
             claimed_str = ", ".join(user_claimed_names[uid]) if user_claimed_names[uid] else "No direct items claimed"
             breakdown = (
-                f"Items: ${user_item_subtotal[uid] / 100:.2f} ({claimed_str}) | "
-                f"Shared Pool: ${user_unclaimed_share[uid] / 100:.2f} | "
-                f"Tax: ${prop_tax / 100:.2f} | Tip: ${prop_tip / 100:.2f} | "
-                f"Total: ${user_total / 100:.2f}"
+                f"Items: {curr_sym}{user_item_subtotal[uid] / 100:.2f} ({claimed_str}) | "
+                f"Shared Pool: {curr_sym}{user_unclaimed_share[uid] / 100:.2f} | "
+                f"Tax: {curr_sym}{prop_tax / 100:.2f} | Tip: {curr_sym}{prop_tip / 100:.2f} | "
+                f"Total: {curr_sym}{user_total / 100:.2f}"
             )
 
             shares[uid] = MemberSplitShare(
@@ -119,6 +121,8 @@ class ReceiptItemizerService:
 
         return ItemizerSplitResponse(
             receipt_total_cents=receipt.total_cents,
+            currency=currency,
+            currency_symbol=curr_sym,
             shares=shares,
             unclaimed_items=unclaimed_items,
             is_balanced=is_balanced,

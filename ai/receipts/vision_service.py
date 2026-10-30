@@ -11,36 +11,51 @@ from core.config import settings
 
 logger = logging.getLogger(__name__)
 
+CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "INR": "₹",
+    "EUR": "€",
+    "GBP": "£",
+    "JPY": "¥",
+    "CAD": "$",
+    "AUD": "$",
+    "SGD": "$",
+    "CHF": "CHF ",
+    "AED": "AED ",
+}
 
 RECEIPT_EXTRACTION_PROMPT = """
 You are an expert financial receipt auditor and OCR extraction system for TripSheriff AI.
 Analyze this receipt image and extract structured financial line items.
 
 Rules:
-1. Extract the merchant/vendor name accurately.
+1. Extract the merchant/vendor name accurately (e.g., from header, banking name, or business title).
 2. Extract the transaction date if legible (YYYY-MM-DD or readable string).
-3. Extract each individual line item with:
+3. Detect the currency ISO code (e.g., "INR", "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "SGD") and currency symbol ("₹", "$", "€", "£", "¥") from the image. For example, if the amount has '₹' or mentions UPI/India banks/paise, the currency is "INR" and symbol is "₹". If '$', "USD". If '€', "EUR". If not clearly visible, default to the requested currency.
+4. Extract each individual line item with:
    - "name": Clean item description (e.g., "Truffle Pasta", "Draft Beer")
    - "qty": Item count (integer >= 1)
-   - "price_cents": Item price in INTEGER CENTS (e.g., $14.50 -> 1450, $4.00 -> 400).
-4. Extract financial totals in INTEGER CENTS:
+   - "price_cents": Item price in INTEGER CENTS (or lowest currency unit, e.g. paise / cents)
+   NOTE: If the image is a payment confirmation screenshot, UPI slip, banking app screenshot, or lump-sum receipt WITHOUT itemized lines, create a single item representing the full charge with the merchant or transaction remarks (e.g., "Swiggy Limited - Pay for Intent", qty: 1, price_cents: total_cents).
+5. Extract financial totals in INTEGER CENTS (paise / cents):
    - "subtotal_cents": Pre-tax subtotal
-   - "tax_cents": Total sales tax / VAT
-   - "tip_cents": Gratuity or tip (include handwritten tip if written on merchant copy, else 0)
-   - "total_cents": Final bill total
-5. Ensure the currency is parsed in the specified code.
+   - "tax_cents": Total sales tax / VAT (0 if none)
+   - "tip_cents": Gratuity or tip (0 if none)
+   - "total_cents": Final bill/payment total
 
 You MUST respond strictly with a valid JSON object matching this schema:
 {
   "merchant": "string",
   "date": "string or null",
+  "currency": "USD",
+  "currency_symbol": "$",
   "items": [
     {"name": "string", "qty": 1, "price_cents": 1200}
   ],
   "subtotal_cents": 1200,
-  "tax_cents": 100,
-  "tip_cents": 200,
-  "total_cents": 1500
+  "tax_cents": 0,
+  "tip_cents": 0,
+  "total_cents": 1200
 }
 """
 
@@ -88,15 +103,30 @@ class ReceiptVisionService:
         except Exception as e:
             raise ValueError(f"Corrupted or unreadable image file: {str(e)}")
 
-    @staticmethod
-    def _reconcile_receipt_math(data: dict) -> ReceiptParseResponse:
+    @classmethod
+    def _reconcile_receipt_math(cls, data: dict, requested_currency: str = "USD") -> ReceiptParseResponse:
         """
         Validates and reconciles integer-cent arithmetic for extracted receipt data.
         """
+        # Resolve currency and symbol
+        detected_curr = str(data.get("currency") or "").strip().upper()
+        currency = detected_curr if detected_curr else (requested_currency or "USD").upper().strip()
+
+        detected_sym = str(data.get("currency_symbol") or "").strip()
+        currency_symbol = detected_sym if detected_sym else CURRENCY_SYMBOLS.get(currency, "$")
+
+        merchant = str(data.get("merchant", "Restaurant / Vendor")).strip()
+        date = data.get("date")
+
+        subtotal_cents = int(data.get("subtotal_cents", 0))
+        tax_cents = int(data.get("tax_cents", 0))
+        tip_cents = int(data.get("tip_cents", 0))
+        total_cents = int(data.get("total_cents", 0))
+
         raw_items = data.get("items", [])
         items: List[ReceiptItem] = []
-
         computed_subtotal = 0
+
         for idx, item_data in enumerate(raw_items):
             qty = max(1, int(item_data.get("qty", 1)))
             price_cents = int(item_data.get("price_cents", 0))
@@ -105,10 +135,11 @@ class ReceiptVisionService:
             items.append(ReceiptItem(index=idx, name=name, qty=qty, price_cents=price_cents))
             computed_subtotal += (price_cents * qty)
 
-        subtotal_cents = int(data.get("subtotal_cents", 0))
-        tax_cents = int(data.get("tax_cents", 0))
-        tip_cents = int(data.get("tip_cents", 0))
-        total_cents = int(data.get("total_cents", 0))
+        # Fallback for single lump-sum payments / UPI receipts without itemized breakdown
+        if len(items) == 0 and total_cents > 0:
+            fallback_name = f"{merchant} (Lump-sum Payment)"
+            items.append(ReceiptItem(index=0, name=fallback_name, qty=1, price_cents=total_cents))
+            computed_subtotal = total_cents
 
         if subtotal_cents <= 0 or abs(computed_subtotal - subtotal_cents) <= 5:
             subtotal_cents = computed_subtotal
@@ -117,19 +148,24 @@ class ReceiptVisionService:
         if total_cents <= 0 or abs(expected_total - total_cents) <= 5:
             total_cents = expected_total
 
-        merchant = str(data.get("merchant", "Restaurant / Vendor")).strip()
-        date = data.get("date")
-
-        total_fmt = f"${total_cents / 100:.2f}"
-        suggested_reply = (
-            f"🧾 Extracted receipt from **{merchant}** ({total_fmt}). "
-            f"Found {len(items)} items. Tap buttons below to claim what you ordered!"
-        )
+        total_fmt = f"{currency_symbol}{total_cents / 100:.2f}"
+        if len(items) == 1 and any(term in items[0].name.lower() for term in ["payment", "pay for intent", "lump-sum", "transfer"]):
+            suggested_reply = (
+                f"🧾 Extracted payment receipt from **{merchant}** ({total_fmt}). "
+                f"Detected single charge. Tap to claim or split with group!"
+            )
+        else:
+            suggested_reply = (
+                f"🧾 Extracted receipt from **{merchant}** ({total_fmt}). "
+                f"Found {len(items)} items. Tap buttons below to claim what you ordered!"
+            )
 
         return ReceiptParseResponse(
             status="SUCCESS",
             merchant=merchant,
             date=date,
+            currency=currency,
+            currency_symbol=currency_symbol,
             subtotal_cents=subtotal_cents,
             tax_cents=tax_cents,
             tip_cents=tip_cents,
@@ -139,7 +175,7 @@ class ReceiptVisionService:
         )
 
     @classmethod
-    async def _call_gemini_vision(cls, cleaned_bytes: bytes, resolved_mime: str) -> ReceiptParseResponse:
+    async def _call_gemini_vision(cls, cleaned_bytes: bytes, resolved_mime: str, currency: str = "USD") -> ReceiptParseResponse:
         """
         Calls Google Gemini Vision with automatic model fallback.
         """
@@ -176,7 +212,7 @@ class ReceiptVisionService:
                     raw_text = re.sub(r"\n```$", "", raw_text)
 
                 parsed_json = json.loads(raw_text)
-                return cls._reconcile_receipt_math(parsed_json)
+                return cls._reconcile_receipt_math(parsed_json, requested_currency=currency)
             except Exception as e:
                 logger.warning(f"Model {model_id} failed: {str(e)}; trying next fallback...")
                 last_error = e
@@ -184,7 +220,7 @@ class ReceiptVisionService:
         raise RuntimeError(f"All Gemini vision models failed. Last error: {str(last_error)}")
 
     @classmethod
-    async def _call_groq_vision(cls, cleaned_bytes: bytes, resolved_mime: str) -> ReceiptParseResponse:
+    async def _call_groq_vision(cls, cleaned_bytes: bytes, resolved_mime: str, currency: str = "USD") -> ReceiptParseResponse:
         """
         Calls Groq's Vision endpoint if available.
         """
@@ -216,7 +252,7 @@ class ReceiptVisionService:
             raw_text = re.sub(r"\n```$", "", raw_text)
 
         parsed_json = json.loads(raw_text)
-        return cls._reconcile_receipt_math(parsed_json)
+        return cls._reconcile_receipt_math(parsed_json, requested_currency=currency)
 
     @classmethod
     async def parse_image_bytes(cls, image_bytes: bytes, mime_type: str = "image/jpeg", currency: str = "USD") -> ReceiptParseResponse:
@@ -231,6 +267,8 @@ class ReceiptVisionService:
             mock_data = {
                 "merchant": "Sunset Beach Bistro",
                 "date": "2026-10-26",
+                "currency": currency,
+                "currency_symbol": CURRENCY_SYMBOLS.get(currency.upper(), "$"),
                 "items": [
                     {"name": "Grilled Red Snapper", "qty": 1, "price_cents": 4500},
                     {"name": "Truffle Fries", "qty": 2, "price_cents": 2500},
@@ -241,12 +279,12 @@ class ReceiptVisionService:
                 "tip_cents": 2400,
                 "total_cents": 15600
             }
-            return cls._reconcile_receipt_math(mock_data)
+            return cls._reconcile_receipt_math(mock_data, requested_currency=currency)
 
         # 2. Primary: Gemini Vision (tested and active with fallback)
         if settings.GEMINI_API_KEY:
             try:
-                return await cls._call_gemini_vision(cleaned_bytes, resolved_mime)
+                return await cls._call_gemini_vision(cleaned_bytes, resolved_mime, currency=currency)
             except Exception as e:
                 logger.error(f"Gemini Receipt OCR failed: {str(e)}", exc_info=True)
                 if not settings.GROQ_API_KEY:
@@ -255,7 +293,7 @@ class ReceiptVisionService:
         # 3. Secondary: Groq Vision
         if settings.GROQ_API_KEY:
             try:
-                return await cls._call_groq_vision(cleaned_bytes, resolved_mime)
+                return await cls._call_groq_vision(cleaned_bytes, resolved_mime, currency=currency)
             except Exception as e:
                 logger.error(f"Groq Vision OCR failed: {str(e)}", exc_info=True)
                 raise RuntimeError(f"Vision OCR processing failed: {str(e)}")
