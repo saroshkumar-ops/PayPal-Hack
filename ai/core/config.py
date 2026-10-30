@@ -17,6 +17,7 @@ class Settings(BaseModel):
 
     # Groq Configuration (Ultra-fast multimodal vision & LLM)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_TEXT_MODEL: str = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
 
     ALLOWED_ORIGINS: List[str] = ["*"]
