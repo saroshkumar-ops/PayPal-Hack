@@ -126,6 +126,8 @@ class ReceiptParseResponse(BaseModel):
     status: Literal["SUCCESS", "FAILED"]
     merchant: str
     date: Optional[str] = None
+    currency: str = "USD"
+    currency_symbol: str = "$"
     subtotal_cents: int
     tax_cents: int = 0
     tip_cents: int = 0
@@ -154,6 +156,8 @@ class ItemizerSplitRequest(BaseModel):
 
 class ItemizerSplitResponse(BaseModel):
     receipt_total_cents: int
+    currency: str = "USD"
+    currency_symbol: str = "$"
     shares: Dict[str, MemberSplitShare]
     unclaimed_items: List[ReceiptItem] = Field(default_factory=list)
     is_balanced: bool

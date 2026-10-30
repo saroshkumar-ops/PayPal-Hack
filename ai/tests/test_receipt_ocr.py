@@ -165,3 +165,59 @@ def test_itemizer_shared_item_and_unclaimed_pool():
 
     total_allocated = sum(s.total_cents for s in response.shares.values())
     assert total_allocated == 7800
+
+
+def test_reconcile_receipt_math_inr_upi_payment():
+    from receipts.vision_service import ReceiptVisionService
+    raw_gemini_output = {
+        "merchant": "Swiggy Limited",
+        "date": "2026-01-07",
+        "currency": "INR",
+        "currency_symbol": "₹",
+        "items": [],
+        "subtotal_cents": 55100,
+        "tax_cents": 0,
+        "tip_cents": 0,
+        "total_cents": 55100
+    }
+
+    result = ReceiptVisionService._reconcile_receipt_math(raw_gemini_output, requested_currency="INR")
+    assert result.status == "SUCCESS"
+    assert result.currency == "INR"
+    assert result.currency_symbol == "₹"
+    assert result.total_cents == 55100
+    assert len(result.items) == 1
+    assert result.items[0].price_cents == 55100
+    assert "₹551.00" in result.suggested_reply
+    assert "$" not in result.suggested_reply
+
+
+def test_itemizer_with_inr_currency():
+    receipt = ReceiptParseResponse(
+        status="SUCCESS",
+        merchant="Swiggy Limited",
+        currency="INR",
+        currency_symbol="₹",
+        subtotal_cents=55100,
+        tax_cents=0,
+        tip_cents=0,
+        total_cents=55100,
+        items=[
+            ReceiptItem(index=0, name="Swiggy Order", qty=1, price_cents=55100)
+        ],
+        suggested_reply=""
+    )
+
+    request = ItemizerSplitRequest(
+        receipt=receipt,
+        claims={"user_01": [0], "user_02": [0]},
+        all_members=["user_01", "user_02"],
+        split_unclaimed_equally=True
+    )
+
+    response = ReceiptItemizerService.calculate_split(request)
+    assert response.is_balanced is True
+    assert response.currency == "INR"
+    assert response.currency_symbol == "₹"
+    assert "₹" in response.shares["user_01"].breakdown_text
+    assert "$" not in response.shares["user_01"].breakdown_text

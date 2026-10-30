@@ -1,8 +1,12 @@
 import os
+from pathlib import Path
 from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+# Ensure .env inside ai directory is loaded regardless of current working directory
+_ai_dir = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=_ai_dir / ".env")
 load_dotenv()
 
 
