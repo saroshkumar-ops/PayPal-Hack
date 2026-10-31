@@ -690,4 +690,165 @@ curl -X GET http://localhost:8080/api/trips/trip_bali_2026/payout/5UE86K84MZN4E
 }
 ```
 
+---
+
+## 8. PayPal Webhooks & Real-Time Event Dispatcher Walkthrough (Task E)
+
+Task E listens to asynchronous PayPal webhook notifications, validates transmission signatures, settles ledger splits, and broadcasts real-time celebration events over Server-Sent Events (SSE).
+
+### Step 1: Subscribe to Trip Real-Time Events (SSE)
+Open a terminal to stream events in real time (or connect via Web EventSource):
+
+**Request:**
+```bash
+curl -N -H "Accept: text/event-stream" http://localhost:8080/api/trips/trip_bali_2026/events
+```
+
+**Expected Initial Stream Output:**
+```
+event:CONNECTED
+data:{"message":"Subscribed to trip events","trip_id":"trip_bali_2026"}
+```
+
+---
+
+### Step 2: Ingest Valid `PAYMENT.CAPTURE.COMPLETED` Webhook
+Simulates PayPal Sandbox firing the payment capture completed notification:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-id: tx_99182377" \
+  -H "paypal-transmission-time: 2026-10-31T14:30:05Z" \
+  -H "paypal-transmission-sig: VALID_MOCK_SIGNATURE" \
+  -H "paypal-cert-url: https://api.sandbox.paypal.com/v1/notifications/certs/CERT-1" \
+  -H "paypal-auth-algo: SHA256withRSA" \
+  -d '{
+    "id": "WH-EVT-99881122",
+    "event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "create_time": "2026-10-31T14:30:00Z",
+    "resource": {
+      "id": "CAP-MOCK-99112233",
+      "custom_id": "trip_bali_2026|user_02|exp_8821",
+      "status": "COMPLETED",
+      "amount": {
+        "value": "80.00",
+        "currency_code": "USD"
+      }
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "PAYMENT.CAPTURE.COMPLETED",
+  "event_id": "WH-EVT-99881122",
+  "message": "🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Villa Deposit via PayPal!",
+  "processed": true
+}
+```
+
+**SSE Event Received in Terminal 1:**
+```
+event:PAYMENT.CAPTURE.COMPLETED
+data:{"event_id":"WH-EVT-99881122","event_type":"PAYMENT.CAPTURE.COMPLETED","trip_id":"trip_bali_2026","debtor_id":"user_02","debtor_name":"Alex","amount_cents":8000,"formatted_amount":"80.00","currency":"USD","message":"🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Villa Deposit via PayPal!","timestamp":"2026-10-31T14:30:06Z"}
+```
+
+---
+
+### Step 3: Test Forged / Tampered Signature Rejection
+Send a webhook with an invalid or tampered signature:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-id: tx_fake_01" \
+  -H "paypal-transmission-time: 2026-10-31T14:35:00Z" \
+  -H "paypal-transmission-sig: FORGED_TAMPERED_SIG" \
+  -H "paypal-cert-url: https://fake.cert.url" \
+  -H "paypal-auth-algo: SHA256withRSA" \
+  -d '{
+    "id": "WH-EVT-FORGED",
+    "event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "resource": { "id": "CAP-FAKE" }
+  }'
+```
+
+**Expected Response (`400 Bad Request`):**
+```json
+{
+  "status": "REJECTED",
+  "error": "Invalid PayPal transmission signature"
+}
+```
+
+---
+
+### Step 4: Fallback Capture on `CHECKOUT.ORDER.APPROVED`
+If the buyer approved payment on PayPal but closed the browser before returning to the success redirect URL:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-sig: VALID_SIG" \
+  -d '{
+    "id": "WH-EVT-APPROVED-01",
+    "event_type": "CHECKOUT.ORDER.APPROVED",
+    "resource": {
+      "id": "5O190127TN364715T"
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "CHECKOUT.ORDER.APPROVED",
+  "event_id": "WH-EVT-APPROVED-01",
+  "message": "Successfully triggered automatic capture for order 5O190127TN364715T",
+  "processed": true
+}
+```
+
+---
+
+### Step 5: `PAYOUTSBATCH.SUCCESS` Disbursement Delivery Notice
+Dispatches a group celebration that batch reimbursements have landed:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-sig: VALID_SIG" \
+  -d '{
+    "id": "WH-EVT-PAYOUT-01",
+    "event_type": "PAYOUTSBATCH.SUCCESS",
+    "resource": {
+      "batch_header": {
+        "payout_batch_id": "5UE86K84MZN4E",
+        "amount": { "value": "160.00", "currency": "USD" },
+        "sender_batch_header": { "sender_batch_id": "batch_payout_bali_01" }
+      }
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "PAYOUTSBATCH.SUCCESS",
+  "event_id": "WH-EVT-PAYOUT-01",
+  "message": "💸 Batch Payout Delivered! Group trip reimbursements (USD 160.00) have successfully landed in members' PayPal accounts.",
+  "processed": true
+}
+```
+
+
 

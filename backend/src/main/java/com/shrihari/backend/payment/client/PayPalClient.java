@@ -446,4 +446,80 @@ public class PayPalClient {
             throw new RuntimeException("Error communicating with PayPal Batch Payouts API: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Validates PayPal webhook signatures via POST /v1/notifications/verify-webhook-signature
+     */
+    public boolean verifyWebhookSignature(Map<String, String> headers, JsonNode webhookEventJson) {
+        String transmissionId = getHeader(headers, "paypal-transmission-id");
+        String transmissionTime = getHeader(headers, "paypal-transmission-time");
+        String transmissionSig = getHeader(headers, "paypal-transmission-sig");
+        String certUrl = getHeader(headers, "paypal-cert-url");
+        String authAlgo = getHeader(headers, "paypal-auth-algo");
+
+        if (payPalProperties.isMock() || payPalProperties.getWebhookId() == null || payPalProperties.getWebhookId().isBlank()) {
+            if (transmissionSig == null || transmissionSig.isBlank()) {
+                log.warn("[MOCK PAYPAL] Missing paypal-transmission-sig header");
+                return false;
+            }
+            if (transmissionSig.toUpperCase().contains("FORGED") || transmissionSig.toUpperCase().contains("INVALID")) {
+                log.warn("[MOCK PAYPAL] Rejected forged webhook signature: {}", transmissionSig);
+                return false;
+            }
+            log.info("[MOCK PAYPAL] Successfully verified webhook signature for event {}",
+                    webhookEventJson.path("event_type").asText());
+            return true;
+        }
+
+        String token = getAccessToken();
+        String webhookId = payPalProperties.getWebhookId();
+
+        Map<String, Object> verifyBody = Map.of(
+                "auth_algo", authAlgo != null ? authAlgo : "",
+                "cert_url", certUrl != null ? certUrl : "",
+                "transmission_id", transmissionId != null ? transmissionId : "",
+                "transmission_sig", transmissionSig != null ? transmissionSig : "",
+                "transmission_time", transmissionTime != null ? transmissionTime : "",
+                "webhook_id", webhookId,
+                "webhook_event", webhookEventJson
+        );
+
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(verifyBody);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(payPalProperties.getBaseUrl() + "/v1/notifications/verify-webhook-signature"))
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .timeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                JsonNode resNode = objectMapper.readTree(response.body());
+                String status = resNode.path("verification_status").asText();
+                boolean verified = "SUCCESS".equalsIgnoreCase(status);
+                log.info("PayPal webhook verification returned: {} (verified: {})", status, verified);
+                return verified;
+            } else {
+                log.error("Failed to verify webhook signature: HTTP {} {}", response.statusCode(), response.body());
+                return false;
+            }
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Error communicating with PayPal webhook verification endpoint: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private String getHeader(Map<String, String> headers, String targetHeader) {
+        if (headers == null) return null;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(targetHeader)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
 }
+

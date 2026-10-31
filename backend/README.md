@@ -45,10 +45,14 @@ backend/src/main/java/com/shrihari/backend/
 │   ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
 │   ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
 │   └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
-└── payout/                  # Feature: PayPal Batch Payouts & Settlement Engine (Task D)
-    ├── service/             # PayoutService.java (Proposal, idempotency validation, batch execution)
-    ├── controller/          # PayoutController.java (/proposal, /confirm, /{batchId})
-    └── dto/                 # PayoutBatchItemDto, PayoutProposalResponse, PayoutConfirmRequest, etc.
+├── payout/                  # Feature: PayPal Batch Payouts & Settlement Engine (Task D)
+│   ├── service/             # PayoutService.java (Proposal, idempotency validation, batch execution)
+│   ├── controller/          # PayoutController.java (/proposal, /confirm, /{batchId})
+│   └── dto/                 # PayoutBatchItemDto, PayoutProposalResponse, PayoutConfirmRequest, etc.
+└── webhook/                 # Feature: PayPal Webhook Ingestion & Real-Time Event Dispatcher (Task E)
+    ├── service/             # WebhookService.java, EventBroadcaster.java (SSE emitter registry)
+    ├── controller/          # WebhookController.java (/api/paypal/webhook, /api/trips/{tripId}/events)
+    └── dto/                 # CelebrationEvent.java, WebhookProcessResult.java
 ```
 
 ---
@@ -171,7 +175,39 @@ Upon successful payout confirmation:
 
 ---
 
-## 5. Database Setup (H2 $\to$ PostgreSQL)
+## 5. PayPal Webhook Ingestion & Real-Time Event Dispatcher (Task E)
+
+TripSheriff listens to real-time asynchronous PayPal webhook events, verifies signatures, and closes the feedback loop with instant celebrations across chat and dashboards.
+
+### A. Webhook Listener (`POST /api/paypal/webhook`)
+- Listens to incoming PayPal notifications.
+- Verifies transmission signatures via PayPal's `/v1/notifications/verify-webhook-signature` using:
+  - `paypal-transmission-id`
+  - `paypal-transmission-time`
+  - `paypal-transmission-sig`
+  - `paypal-cert-url`
+  - `paypal-auth-algo`
+- Forged or tampered signatures are rejected immediately with `400 Bad Request`.
+
+### B. Event Handlers
+1. **`PAYMENT.CAPTURE.COMPLETED`**:
+   - Decodes `custom_id` (`tripId|debtorId|expenseId`).
+   - Marks the debtor's split as `SETTLED` in the database.
+   - Clears debtor debt and credits `platform_escrow_cents` in the ledger.
+   - Broadcasts real-time celebration message:
+     `"🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Seafood via PayPal!"`
+2. **`CHECKOUT.ORDER.APPROVED`**:
+   - Fallback capture: executes `POST /v2/checkout/orders/{id}/capture` if redirect capture was bypassed.
+3. **`PAYOUTSBATCH.SUCCESS`**:
+   - Broadcasts reimbursement landing confirmation to group trip participants.
+
+### C. Server-Sent Events (SSE) Stream
+- `GET /api/trips/{tripId}/events`: Subscribes clients (Telegram bot, Web Simulator, AG Grid) to real-time celebration alerts without polling.
+- `GET /api/events`: Global multi-trip event feed for judge simulators and admin panels.
+
+---
+
+## 6. Database Setup (H2 $\to$ PostgreSQL)
 
 ### Local Development (H2 In-Memory)
 By default, the application runs with an embedded **H2 in-memory database** with PostgreSQL compatibility mode:
