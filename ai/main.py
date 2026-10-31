@@ -9,6 +9,7 @@ from core.schemas import HealthResponse
 from receipts.router import router as receipts_router
 from agent.router import router as agent_router
 from escalation.router import router as escalation_router
+from gateway.whatsapp_router import router as whatsapp_router
 from gateway.telegram_bot import create_telegram_application
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,7 @@ app.add_middleware(
 app.include_router(receipts_router)
 app.include_router(agent_router)
 app.include_router(escalation_router)
+app.include_router(whatsapp_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
