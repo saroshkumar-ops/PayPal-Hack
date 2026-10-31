@@ -21,7 +21,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         .map((s) => {
           const m = ledger.members.find((mem) => mem.user_id === s.user_id);
           const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
+          return `${firstName}: ₹${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
         })
         .join(' • ');
 
@@ -71,12 +71,12 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       },
       {
         field: 'amount',
-        headerName: 'Amount (USD)',
+        headerName: 'Amount (INR)',
         width: 140,
         sortable: true,
         filter: 'agNumberColumnFilter',
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono font-bold text-[#E7EDF2]">${params.value}</span>
+          <span className="font-mono font-bold text-[#E7EDF2]">₹{params.value}</span>
         ),
       },
       {
@@ -197,7 +197,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
                     <span className="text-xs font-semibold text-[#E7EDF2]">{toMember?.name || s.to_user_id}</span>
                   </div>
                   <span className="font-mono font-bold text-xs text-[#E7EDF2]">
-                    ${s.formatted_amount || (s.amount_cents / 100).toFixed(2)} USD
+                    ₹{s.formatted_amount || (s.amount_cents / 100).toFixed(2)} INR
                   </span>
                 </div>
               );

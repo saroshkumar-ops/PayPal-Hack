@@ -78,12 +78,12 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             Fast-Forward +24h
           </button>
           <button
-            onClick={() => onPayDebt('user_02', 8000)}
+            onClick={() => onPayDebt('user_02', 49933)}
             disabled={isLoading}
             className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-xs font-medium text-[#E7EDF2] transition-all cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5 text-[#8199AE]" />
-            Pay Alex's $80
+            Pay Alex's Share
           </button>
         </div>
       </div>
@@ -187,7 +187,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                         WANTED: DEADBEAT TRAVELER
                       </div>
                       <div className="text-xs text-[#E7EDF2] font-semibold mt-1">
-                        Alex Rivera • $80.00 USD
+                        Alex Rivera • ₹499.33 INR
                       </div>
                       <div className="text-[11px] text-[#8199AE] italic mt-0.5">
                         "Consensus roast active. Demoted to pull-out couch until settled."
@@ -205,7 +205,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                             if (btn.payload) {
                               onPayDebt(btn.payload.userId, btn.payload.amountCents, btn.payload.expenseId);
                             } else {
-                              onPayDebt('user_02', 8000, 'exp_8821');
+                              onPayDebt('user_02', 49933, 'exp_8821');
                             }
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] transition-all cursor-pointer"
@@ -234,7 +234,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             </button>
             <input
               type="text"
-              placeholder="e.g. Paid $60 for surf rentals with Alex and Dave..."
+              placeholder="e.g. Paid ₹600 for dinner with Alex and Dave..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="flex-1 bg-[#10161C] border border-[#33475A] rounded-xl px-3.5 py-2 text-xs text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83]"
@@ -276,7 +276,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                   <div className="text-[11px] text-[#8199AE] font-mono">{alexDebtor.handle}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold font-mono text-[#E7EDF2]">$110.00 Overdue</div>
+                  <div className="text-sm font-bold font-mono text-[#E7EDF2]">₹799.33 Overdue</div>
                   <div className="text-[10px] text-[#8199AE]">{ledger.hours_elapsed}h Unpaid</div>
                 </div>
               </div>
@@ -294,7 +294,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
               {/* Current Persona Quote */}
               <div className="p-3 rounded-xl bg-[#10161C] border border-[#33475A] text-[11px] text-[#B7C6D3] italic leading-relaxed">
-                "Alex beta, I see your Instagram stories from Potato Head Beach Club. Sarah is still waiting on your $80.00 villa share from yesterday."
+                "Alex beta, I see your stories from the cafe. Sarah is still waiting on your ₹499.33 dinner share from yesterday."
               </div>
             </div>
 
@@ -329,14 +329,14 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                       <div className="text-[10px] text-[#8199AE] font-mono">{m.handle}</div>
                     </div>
                     <div className="text-right font-mono text-xs font-bold text-[#E7EDF2]">
-                      {isCreditor ? `+$${net.toFixed(2)}` : isSettled ? '$0.00' : `-$${Math.abs(net).toFixed(2)}`}
+                      {isCreditor ? `+₹${net.toFixed(2)}` : isSettled ? '₹0.00' : `-₹${Math.abs(net).toFixed(2)}`}
                     </div>
                   </div>
                 );
               })}
             </div>
             <p className="text-[11px] text-[#8199AE] font-mono mt-3 m-0">
-              Sum of net balances: $0.00 (Perfect conservation)
+              Sum of net balances: ₹0.00 (Perfect conservation)
             </p>
           </div>
         </div>

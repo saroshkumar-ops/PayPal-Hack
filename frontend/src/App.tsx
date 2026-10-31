@@ -293,6 +293,7 @@ export function App() {
         <ReceiptDropModal
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
+          members={ledger.members}
           onConfirmExpense={handleConfirmScannedExpense}
         />
       </div>

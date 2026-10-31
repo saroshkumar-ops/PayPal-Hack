@@ -67,7 +67,7 @@ export const tripService = {
       return {
         trip_id: data.trip_id,
         name: data.name,
-        currency: data.currency || 'USD',
+        currency: data.currency || 'INR',
         status: 'ACTIVE',
         created_at: new Date().toISOString(),
       };
@@ -250,7 +250,7 @@ export const ledgerService = {
         await backendClient.post(ENDPOINTS.TRIPS.BASE, {
           trip_id: tripId,
           name: 'Bali Reunion 2026',
-          currency: 'USD',
+          currency: 'INR',
         });
 
         // 2. Add Members
@@ -382,9 +382,9 @@ export const paymentService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'PAYMENT.CAPTURE.COMPLETED',
-        summary: `Webhook Verified: ${member.name} paid $${(capture.amount_cents / 100).toFixed(2)} USD via PayPal Order capture`,
+        summary: `Webhook Verified: ${member.name} paid ₹${(capture.amount_cents / 100).toFixed(2)} INR via PayPal Order capture`,
         status: 'SUCCESS',
-        amount: `$${(capture.amount_cents / 100).toFixed(2)} USD`,
+        amount: `₹${(capture.amount_cents / 100).toFixed(2)} INR`,
         reference_id: capture.capture_id || order.order_id,
       };
       mockLogs.unshift(log);
@@ -397,7 +397,7 @@ export const paymentService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'PAYMENT CAPTURED',
-        text: `**PAYMENT CONFIRMED:** ${member.name} just settled **$${(capture.amount_cents / 100).toFixed(2)} USD** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Sanctions lifted\n\nLedger updated in real-time on sandbox escrow.`,
+        text: `**PAYMENT CONFIRMED:** ${member.name} just settled **₹${(capture.amount_cents / 100).toFixed(2)} INR** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Sanctions lifted\n\nLedger updated in real-time on sandbox escrow.`,
       };
       mockChat.push(chatAnnouncement);
 
@@ -423,9 +423,9 @@ export const paymentService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'PAYMENT.CAPTURE.COMPLETED',
-        summary: `Webhook Verified: ${member.name} paid $${(amountCents / 100).toFixed(2)} USD via PayPal Order capture`,
+        summary: `Webhook Verified: ${member.name} paid ₹${(amountCents / 100).toFixed(2)} INR via PayPal Order capture`,
         status: 'SUCCESS',
-        amount: `$${(amountCents / 100).toFixed(2)} USD`,
+        amount: `₹${(amountCents / 100).toFixed(2)} INR`,
         reference_id: `capture_${Date.now().toString().slice(-6)}`,
       };
       mockLogs.unshift(log);
@@ -438,7 +438,7 @@ export const paymentService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'PAYMENT CAPTURED',
-        text: `**PAYMENT CONFIRMED:** ${member.name} just settled **$${(amountCents / 100).toFixed(2)} USD** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Sanctions lifted\n\nLedger updated in real-time.`,
+        text: `**PAYMENT CONFIRMED:** ${member.name} just settled **₹${(amountCents / 100).toFixed(2)} INR** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Sanctions lifted\n\nLedger updated in real-time.`,
       };
       mockChat.push(chatAnnouncement);
 
@@ -477,9 +477,9 @@ export const paymentService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'PAYOUTSBATCH.SUCCESS',
-        summary: `Disbursed $${(payoutCents / 100).toFixed(2)} USD reimbursement to ${sarah.paypal_email} via PayPal Batch Payouts API`,
+        summary: `Disbursed ₹${(payoutCents / 100).toFixed(2)} INR reimbursement to ${sarah.paypal_email} via PayPal Batch Payouts API`,
         status: 'SUCCESS',
-        amount: `$${(payoutCents / 100).toFixed(2)} USD`,
+        amount: `₹${(payoutCents / 100).toFixed(2)} INR`,
         reference_id: batchId,
       };
       mockLogs.unshift(log);
@@ -492,7 +492,7 @@ export const paymentService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'BATCH PAYOUT DISBURSED',
-        text: `**Trip Treasury Settled!**\n\nReimbursed **$${(payoutCents / 100).toFixed(2)} USD** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced!`,
+        text: `**Trip Treasury Settled!**\n\nReimbursed **₹${(payoutCents / 100).toFixed(2)} INR** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced!`,
       };
       mockChat.push(chatAnnouncement);
 
@@ -522,23 +522,23 @@ export const aiService = {
       return res.data;
     } catch {
       // Fallback regex intent classifier
-      const matchAmount = req.message_text.match(/\$(\d+(\.\d{2})?)/);
+      const matchAmount = req.message_text.match(/\₹(\d+(\.\d{2})?)/);
       if (matchAmount) {
         const dollars = parseFloat(matchAmount[1]);
         const cents = Math.round(dollars * 100);
-        const desc = req.message_text.replace(/\$\d+(\.\d{2})?/, '').replace(/paid/i, '').replace(/for/i, '').trim() || 'Group Expense';
+        const desc = req.message_text.replace(/\₹\d+(\.\d{2})?/, '').replace(/paid/i, '').replace(/for/i, '').trim() || 'Group Expense';
         return {
           action: 'LOG_EXPENSE',
           confidence: 0.95,
           parsed_data: {
             description: desc,
             amount_cents: cents,
-            currency: 'USD',
+            currency: 'INR',
             payer_id: req.sender_id,
             split_type: 'EQUAL',
             split_with_user_ids: req.active_members.map(m => m.user_id),
           },
-          reply_text: `Logged **$${dollars.toFixed(2)} ${desc}** paid by ${req.sender_name}.`,
+          reply_text: `Logged **₹${dollars.toFixed(2)} ${desc}** paid by ${req.sender_name}.`,
         };
       }
       return {
@@ -563,44 +563,64 @@ export const aiService = {
   /** Parse receipt photo via base64 OCR (POST /ai/receipt/parse) */
   parseReceipt: async (req: ReceiptParseRequest): Promise<ReceiptParseResponse> => {
     try {
-      const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_PARSE, req);
+      const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_PARSE, req, { timeout: 60000 });
       return res.data;
-    } catch {
+    } catch (err) {
+      console.error('[aiService.parseReceipt] Failed, using fallback:', err);
       return {
         status: 'SUCCESS',
-        merchant: 'Sunset Beach Bistro',
-        date: '2026-10-28',
-        subtotal_cents: 12000,
-        tax_cents: 1200,
-        tip_cents: 2400,
-        total_cents: 15600,
+        merchant: 'Aman Dhaba (Karnal NH-44)',
+        date: '2026-02-06',
+        currency: 'INR',
+        currency_symbol: '₹',
+        subtotal_cents: 142900,
+        tax_cents: 6876,
+        tip_cents: 0,
+        total_cents: 149800,
         items: [
-          { index: 0, name: 'Grilled Red Snapper', qty: 1, price_cents: 4500 },
-          { index: 1, name: 'Truffle Fries', qty: 2, price_cents: 2500 },
-          { index: 2, name: 'Tropical Cocktails', qty: 3, price_cents: 5000 },
+          { index: 0, name: 'Malai Chap Gravy', qty: 2, price_cents: 63800 },
+          { index: 1, name: 'Green Salad', qty: 2, price_cents: 14000 },
+          { index: 2, name: 'Butter Naan', qty: 4, price_cents: 36000 },
+          { index: 3, name: 'Lacha Parantha', qty: 3, price_cents: 23700 },
+          { index: 4, name: 'Mineral Water', qty: 2, price_cents: 5400 },
         ],
-        suggested_reply: 'Extracted receipt from Sunset Beach Bistro ($156.00). Found 3 items. Tap buttons below to claim what you ordered!',
+        suggested_reply: 'Extracted receipt from Aman Dhaba (₹1,498.00). Found 5 items. Tap buttons below to claim what you ordered!',
       };
     }
   },
 
   /** Upload receipt file directly (POST /ai/receipt/upload) */
-  uploadReceipt: async (file: File, currency: string = 'USD'): Promise<ReceiptParseResponse> => {
+  uploadReceipt: async (file: File, currency: string = 'INR'): Promise<ReceiptParseResponse> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('currency', currency);
 
       const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_UPLOAD, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
       });
       return res.data;
-    } catch {
-      return aiService.parseReceipt({
-        trip_id: 'trip_bali_2026',
-        image_base64: 'placeholder',
-        currency,
-      });
+    } catch (err) {
+      console.error('[aiService.uploadReceipt] Failed, using fallback:', err);
+      return {
+        status: 'SUCCESS',
+        merchant: 'Aman Dhaba (Karnal NH-44)',
+        date: '2026-02-06',
+        currency: 'INR',
+        currency_symbol: '₹',
+        subtotal_cents: 142900,
+        tax_cents: 6876,
+        tip_cents: 0,
+        total_cents: 149800,
+        items: [
+          { index: 0, name: 'Malai Chap Gravy', qty: 2, price_cents: 63800 },
+          { index: 1, name: 'Green Salad', qty: 2, price_cents: 14000 },
+          { index: 2, name: 'Butter Naan', qty: 4, price_cents: 36000 },
+          { index: 3, name: 'Lacha Parantha', qty: 3, price_cents: 23700 },
+          { index: 4, name: 'Mineral Water', qty: 2, price_cents: 5400 },
+        ],
+        suggested_reply: 'Extracted receipt from Aman Dhaba (₹1,498.00). Found 5 items. Tap buttons below to claim what you ordered!',
+      };
     }
   },
 
@@ -621,7 +641,7 @@ export const aiService = {
             proportional_tax_cents: 450,
             proportional_tip_cents: 900,
             total_cents: 5850,
-            breakdown_text: 'Items: $45.00 | Tax: $4.50 | Tip: $9.00 | Total: $58.50',
+            breakdown_text: 'Items: ₹45.00 | Tax: ₹4.50 | Tip: ₹9.00 | Total: ₹58.50',
           },
           user_02: {
             user_id: 'user_02',
@@ -629,7 +649,7 @@ export const aiService = {
             proportional_tax_cents: 250,
             proportional_tip_cents: 500,
             total_cents: 3250,
-            breakdown_text: 'Items: $25.00 | Tax: $2.50 | Tip: $5.00 | Total: $32.50',
+            breakdown_text: 'Items: ₹25.00 | Tax: ₹2.50 | Tip: ₹5.00 | Total: ₹32.50',
           },
           user_03: {
             user_id: 'user_03',
@@ -637,7 +657,7 @@ export const aiService = {
             proportional_tax_cents: 500,
             proportional_tip_cents: 1000,
             total_cents: 6500,
-            breakdown_text: 'Items: $50.00 | Tax: $5.00 | Tip: $10.00 | Total: $65.00',
+            breakdown_text: 'Items: ₹50.00 | Tax: ₹5.00 | Tip: ₹10.00 | Total: ₹65.00',
           },
         },
       };
@@ -653,19 +673,19 @@ export const aiService = {
       let generated_text = '';
       switch (req.tier) {
         case 'POLITE_CONCIERGE':
-          generated_text = `Hey ${req.debtor_name}! Quick friendly link to settle your $${(req.amount_cents / 100).toFixed(2)} share for ${req.expense_description}.`;
+          generated_text = `Hey ${req.debtor_name}! Quick friendly link to settle your ₹${(req.amount_cents / 100).toFixed(2)} share for ${req.expense_description}.`;
           break;
         case 'PASSIVE_AGGRESSIVE':
           generated_text = `Must be nice watching the sunset from the rooftop deck while ${req.creditor_name} fronts your bed... Quick link to settle before dinner!`;
           break;
         case 'DISAPPOINTED_PARENT':
-          generated_text = `${req.debtor_name} beta, I see your Instagram stories from Potato Head Beach Club. ${req.creditor_name} is still waiting on your $${(req.amount_cents / 100).toFixed(2)} villa share from yesterday. Is this how we raised you?`;
+          generated_text = `${req.debtor_name} beta, I see your Instagram stories from Potato Head Beach Club. ${req.creditor_name} is still waiting on your ₹${(req.amount_cents / 100).toFixed(2)} villa share from yesterday. Is this how we raised you?`;
           break;
         case 'PUBLIC_ROAST':
-          generated_text = `WANTED FOR SOCIAL DEBT: ${req.debtor_name} | Bounty: $${(req.amount_cents / 100).toFixed(2)} USD | Crime: Drinking mango craft mojitos on rooftop terraces while ${req.creditor_name} carries his accommodation debt. Consensus roast active.`;
+          generated_text = `WANTED FOR SOCIAL DEBT: ${req.debtor_name} | Bounty: ₹${(req.amount_cents / 100).toFixed(2)} INR | Crime: Drinking mango craft mojitos on rooftop terraces while ${req.creditor_name} carries his accommodation debt. Consensus roast active.`;
           break;
         case 'ITINERARY_EMBARGO':
-          generated_text = `TRIP SANCTION ENFORCED: ${req.debtor_name} has ignored 4 reminders over 72 hours for the $${(req.amount_cents / 100).toFixed(2)} ${req.expense_description} split. Demoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.`;
+          generated_text = `TRIP SANCTION ENFORCED: ${req.debtor_name} has ignored 4 reminders over 72 hours for the ₹${(req.amount_cents / 100).toFixed(2)} ${req.expense_description} split. Demoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.`;
           break;
       }
       return {
@@ -673,7 +693,7 @@ export const aiService = {
         generated_text,
         call_to_action_buttons: [
           {
-            text: `Pay $${(req.amount_cents / 100).toFixed(2)} via PayPal Sandbox`,
+            text: `Pay ₹${(req.amount_cents / 100).toFixed(2)} via PayPal Sandbox`,
             url: req.paypal_checkout_url || 'https://www.sandbox.paypal.com',
           },
         ],
@@ -744,11 +764,11 @@ export const chatService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'EXPENSE RECORDED',
-        text: `**Logged $${(expense.amount_cents / 100).toFixed(2)} ${expense.description}** fronted by ${sender.name}!\n\nSplit ${expense.splits.length} ways ($${((expense.splits[0]?.owes_cents || 0) / 100).toFixed(2)} each). 1-click PayPal sandbox links generated:`,
+        text: `**Logged ₹${(expense.amount_cents / 100).toFixed(2)} ${expense.description}** fronted by ${sender.name}!\n\nSplit ${expense.splits.length} ways (₹${((expense.splits[0]?.owes_cents || 0) / 100).toFixed(2)} each). 1-click PayPal sandbox links generated:`,
         buttons: pendingSplits.map(s => {
           const m = mockLedger.members.find(mem => mem.user_id === s.user_id);
           return {
-            text: `Pay $${(s.owes_cents / 100).toFixed(2)} (${m?.name.split(' ')[0] || s.user_id})`,
+            text: `Pay ₹${(s.owes_cents / 100).toFixed(2)} (${m?.name.split(' ')[0] || s.user_id})`,
             action: `PAY_${s.user_id}`,
             payload: { userId: s.user_id, amountCents: s.owes_cents, expenseId: expense.expense_id },
           };
@@ -761,9 +781,9 @@ export const chatService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'ORDER.CREATED',
-        summary: `Created PayPal Orders for ${expense.description} ($${(expense.amount_cents / 100).toFixed(2)} USD)`,
+        summary: `Created PayPal Orders for ${expense.description} (₹${(expense.amount_cents / 100).toFixed(2)} INR)`,
         status: 'INFO',
-        amount: `$${(expense.amount_cents / 100).toFixed(2)} USD`,
+        amount: `₹${(expense.amount_cents / 100).toFixed(2)} INR`,
         reference_id: `order_${tripId}_${expense.expense_id}`,
       });
 
@@ -820,7 +840,7 @@ export const simulatorService = {
       debtor_handle: debtor.handle,
       creditor_name: 'Sarah Chen',
       amount_cents: 8000,
-      currency: 'USD',
+      currency: 'INR',
       expense_description: 'Sunset Villa Deposit',
       hours_overdue: newHours,
       tier,
@@ -841,7 +861,7 @@ export const simulatorService = {
       image_card_base64: roastRes.image_card_base64 || undefined,
       buttons: [
         {
-          text: 'Settle $80.00 via PayPal Sandbox',
+          text: 'Settle ₹80.00 via PayPal Sandbox',
           action: 'PAY_ALEX',
           payload: { userId: debtor.user_id, amountCents: 8000 },
         },

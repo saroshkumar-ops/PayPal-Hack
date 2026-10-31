@@ -66,7 +66,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
             <div className="flex justify-between items-center text-[#8199AE]">
               <span>Net Reimbursement:</span>
-              <span className="font-bold text-sm text-[#E7EDF2]">${formattedAmount} USD</span>
+              <span className="font-bold text-sm text-[#E7EDF2]">₹{formattedAmount} INR</span>
             </div>
 
             <div className="flex justify-between items-center text-[#8199AE] pt-2 border-t border-[#33475A] text-[10px]">

@@ -64,11 +64,11 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-[#8199AE]">Escrow Balance:</span>
-                <span className="text-[#E7EDF2] font-semibold">${((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} USD</span>
+                <span className="text-[#E7EDF2] font-semibold">₹{((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} INR</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#8199AE]">Net Reimbursement:</span>
-                <span className="text-[#E7EDF2] font-bold">${(organizerOwedCents / 100).toFixed(2)} USD</span>
+                <span className="text-[#E7EDF2] font-bold">₹{(organizerOwedCents / 100).toFixed(2)} INR</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-[#33475A]">
                 <span className="text-[#8199AE]">API Call:</span>
@@ -83,7 +83,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
               className="w-full py-2.5 px-4 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <ShieldCheck className="w-4 h-4" />
-              Execute Batch Payout ($ {(organizerOwedCents / 100).toFixed(2)} USD)
+              Execute Batch Payout (₹{(organizerOwedCents / 100).toFixed(2)} INR)
             </button>
           </div>
         </div>

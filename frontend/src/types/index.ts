@@ -209,6 +209,8 @@ export interface ReceiptParseResponse {
   status: string;
   merchant: string;
   date: string;
+  currency?: string;
+  currency_symbol?: string;
   subtotal_cents: number;
   tax_cents: number;
   tip_cents: number;

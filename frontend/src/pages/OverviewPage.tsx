@@ -90,15 +90,15 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 Net Reimbursable Balance
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold font-mono text-[#E7EDF2] tracking-tight mt-1">
-                ${(organizerOwedCents / 100).toFixed(2)}{' '}
-                <span className="text-xs text-[#8199AE] font-normal">USD</span>
+                ₹{(organizerOwedCents / 100).toFixed(2)}{' '}
+                <span className="text-xs text-[#8199AE] font-normal">INR</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-[#33475A]/60 text-xs">
               <span className="text-[#8199AE]">Sandbox Escrow:</span>
               <span className="font-mono font-semibold text-[#E7EDF2]">
-                ${((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} USD
+                ₹{((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} INR
               </span>
             </div>
 
@@ -131,7 +131,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             </div>
             <div className="my-2">
               <div className="text-2xl font-bold font-mono text-[#E7EDF2]">
-                ${(totalSpendCents / 100).toFixed(2)}
+                ₹{(totalSpendCents / 100).toFixed(2)}
               </div>
               <div className="text-[11px] text-[#8199AE] mt-0.5">Across {ledger.expenses.length} logged items</div>
             </div>
@@ -156,7 +156,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 {settledPercentage}%
               </div>
               <div className="text-[11px] text-[#8199AE] mt-0.5">
-                ${(settledCents / 100).toFixed(2)} settled via PayPal
+                ₹{(settledCents / 100).toFixed(2)} settled via PayPal
               </div>
             </div>
             <div className="text-[11px] text-[#8199AE]">Zero floating-point drift</div>
@@ -173,10 +173,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="flex items-center justify-between my-2">
               <div>
                 <div className="text-2xl font-bold font-mono text-[#E7EDF2]">
-                  ${(pendingCents / 100).toFixed(2)}
+                  ₹{(pendingCents / 100).toFixed(2)}
                 </div>
                 <div className="text-[11px] text-[#8199AE] mt-0.5">
-                  Alex: $110.00 • Dave: $80.00
+                  Across pending group splits
                 </div>
               </div>
               <Link
@@ -202,7 +202,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[#10161C] hover:bg-[#33475A] border border-[#33475A] text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer"
           >
             <PlusCircle className="w-4 h-4 text-[#8199AE]" />
-            Simulate $150 Seafood Dinner
+            Simulate ₹1,500 Group Dinner
           </button>
 
           <button
@@ -250,7 +250,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 </div>
               </div>
               <div className="text-right font-mono font-bold text-sm text-[#E7EDF2]">
-                ${(exp.amount_cents / 100).toFixed(2)}
+                ₹{(exp.amount_cents / 100).toFixed(2)}
               </div>
             </div>
           ))}
