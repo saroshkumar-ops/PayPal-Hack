@@ -24,6 +24,14 @@ class Settings(BaseModel):
     GROQ_TEXT_MODEL: str = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
 
+    # Telegram Gateway Configuration (Task A)
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_BOT_USERNAME: str = os.getenv("TELEGRAM_BOT_USERNAME", "TripSheriffBot")
+
+    # Cross-Service URLs
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8080")
+    WEB_SIMULATOR_URL: str = os.getenv("WEB_SIMULATOR_URL", "http://localhost:5173")
+
     ALLOWED_ORIGINS: List[str] = ["*"]
 
 
