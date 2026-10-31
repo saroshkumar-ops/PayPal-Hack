@@ -185,11 +185,15 @@ class LedgerControllerIntegrationTest {
                 .andExpect(status().isCreated());
 
         // 4. Alex pays via PayPal Sandbox: mark Alex's split SETTLED
+        com.shrihari.backend.expense.repository.ExpenseRepository expenseRepo =
+                webApplicationContext.getBean(com.shrihari.backend.expense.repository.ExpenseRepository.class);
+        var tripExpenses = expenseRepo.findByTripIdOrderByTimestampAsc(tripId);
+        assertFalse(tripExpenses.isEmpty());
+        var alexSplit = tripExpenses.get(0).getSplits().stream()
+                .filter(s -> s.getUserId().equals("user_alex"))
+                .findFirst().orElseThrow();
         com.shrihari.backend.expense.repository.ExpenseSplitRepository splitRepo =
                 webApplicationContext.getBean(com.shrihari.backend.expense.repository.ExpenseSplitRepository.class);
-        var splits = splitRepo.findByUserId("user_alex");
-        assertFalse(splits.isEmpty());
-        var alexSplit = splits.get(0);
         alexSplit.setPaidStatus(com.shrihari.backend.expense.model.PaymentStatus.SETTLED);
         splitRepo.save(alexSplit);
 

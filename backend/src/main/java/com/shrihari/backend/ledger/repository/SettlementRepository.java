@@ -13,4 +13,10 @@ public interface SettlementRepository extends JpaRepository<Settlement, String> 
     List<Settlement> findByTripIdOrderByCreatedAtDesc(String tripId);
 
     List<Settlement> findByTripIdAndStatus(String tripId, SettlementStatus status);
+
+    List<Settlement> findByIdempotencyKey(String idempotencyKey);
+
+    boolean existsByIdempotencyKey(String idempotencyKey);
+
+    List<Settlement> findByPaypalPayoutBatchId(String paypalPayoutBatchId);
 }

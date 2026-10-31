@@ -13,4 +13,8 @@ public final class IdGenerator {
         String shortUuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         return prefix + "_" + shortUuid;
     }
+
+    public static String settlementId() {
+        return generateId("settle");
+    }
 }

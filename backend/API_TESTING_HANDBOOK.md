@@ -524,3 +524,168 @@ curl -X POST http://localhost:8080/api/trips/trip_bali_2026/sim-time \
 }
 ```
 
+---
+
+## 7. PayPal Batch Payouts API Walkthrough (Task D)
+
+Task D handles the conclusion of the trip, reimbursing multiple creditors (e.g. Sarah for Villa, Dave for Dinner) via the **PayPal Batch Payouts API** (`POST /v1/payments/payouts`) with mandatory Human-in-the-Loop approval and strict idempotency protection.
+
+### Step 1: Human-in-the-Loop Proposal Preview
+Before any money moves, the organizer requests a payout proposal. The system verifies positive balances, checks platform escrow, and formats Contract 3 line items.
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/payout/proposal
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "currency": "USD",
+  "platform_escrow_cents": 16000,
+  "formatted_platform_escrow": "160.00",
+  "total_payout_cents": 16000,
+  "formatted_total_payout": "160.00",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "requires_confirmation": true,
+  "items": [
+    {
+      "user_id": "user_01",
+      "member_name": "Sarah",
+      "receiver_email": "sarah.organizer@personal.example.com",
+      "amount_cents": 16000,
+      "formatted_amount": "160.00",
+      "currency": "USD",
+      "note": "TripSheriff: Net reimbursement for Bali Summer Vacation 2026 (Sarah)",
+      "sender_item_id": "settle_user_01_179342999"
+    }
+  ],
+  "warning": null
+}
+```
+
+---
+
+### Step 2: Organizer Authorizes Batch Payout (Multi-Recipient Disbursement)
+The organizer clicks **[Confirm Payout]** in the Telegram Bot or Web Simulator. The backend dispatches `POST /v1/payments/payouts` with the `PayPal-Request-Id: {idempotency_key}` header.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/trips/trip_bali_2026/payout/confirm \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+    "email_subject": "TripSheriff: Bali Trip Reimbursement Arrived!",
+    "email_message": "All trip expenses are settled. Funds have been deposited to your PayPal account."
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "total_disbursed_cents": 16000,
+  "formatted_total_disbursed": "160.00",
+  "currency": "USD",
+  "items": [
+    {
+      "user_id": "user_01",
+      "member_name": "Sarah",
+      "receiver_email": "sarah.organizer@personal.example.com",
+      "amount_cents": 16000,
+      "formatted_amount": "160.00",
+      "currency": "USD",
+      "note": "TripSheriff: Net reimbursement for Bali Summer Vacation 2026 (Sarah)",
+      "sender_item_id": "settle_user_01_179342999"
+    }
+  ],
+  "settled_recipients_count": 1,
+  "is_idempotent_replay": false,
+  "executed_at": "2026-10-31T12:20:00Z",
+  "message": "Batch payout executed successfully. Reimbursed 1 members (USD 160.00)"
+}
+```
+
+---
+
+### Step 3: Test Strict Idempotency Protection (Replay Attack / Double Clicks)
+Re-submit the exact same `idempotency_key`. The service recognizes the key, prevents duplicate execution, and returns the previous result with `is_idempotent_replay: true`.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/trips/trip_bali_2026/payout/confirm \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa"
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "total_disbursed_cents": 16000,
+  "formatted_total_disbursed": "160.00",
+  "currency": "USD",
+  "settled_recipients_count": 1,
+  "is_idempotent_replay": true,
+  "message": "Idempotent replay: batch payout was previously executed."
+}
+```
+
+---
+
+### Step 4: Verify Final Zero-Balance Ledger
+Inspect the ledger after payout completion. Sarah's credit is now $0.00 and `platform_escrow_cents` is $0.00. The trip is 100% financially settled.
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/ledger
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "currency": "USD",
+  "net_balances_cents": {
+    "user_01": 0,
+    "user_02": 0,
+    "user_03": 0
+  },
+  "platform_escrow_cents": 0,
+  "simplified_settlements": []
+}
+```
+
+---
+
+### Step 5: Query PayPal Batch Status
+Check real-time processing status of the payout batch directly from PayPal:
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/payout/5UE86K84MZN4E
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "sender_batch_id": "batch_payout_trip_bali_2026_179342999",
+  "total_amount": "160.00",
+  "currency": "USD",
+  "created_at": "2026-10-31T12:20:00Z",
+  "items_count": 1
+}
+```
+
+

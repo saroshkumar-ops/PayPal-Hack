@@ -39,12 +39,16 @@ backend/src/main/java/com/shrihari/backend/
 │   ├── model/               # Settlement.java, SettlementStatus.java
 │   ├── repository/          # SettlementRepository.java
 │   └── dto/                 # LedgerResponse.java, SettlementTransaction.java
-└── payment/                 # Feature: PayPal Orders & Two-Step Capture (Task C)
-    ├── client/              # PayPalClient.java (OAuth2 token cache, Orders v2, Capture)
-    ├── config/              # PayPalProperties.java (Auto-Mock fallback & credentials binding)
-    ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
-    ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
-    └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
+├── payment/                 # Feature: PayPal Orders & Two-Step Capture (Task C)
+│   ├── client/              # PayPalClient.java (OAuth2 token cache, Orders v2, Capture, Batch Payouts)
+│   ├── config/              # PayPalProperties.java (Auto-Mock fallback & credentials binding)
+│   ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
+│   ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
+│   └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
+└── payout/                  # Feature: PayPal Batch Payouts & Settlement Engine (Task D)
+    ├── service/             # PayoutService.java (Proposal, idempotency validation, batch execution)
+    ├── controller/          # PayoutController.java (/proposal, /confirm, /{batchId})
+    └── dto/                 # PayoutBatchItemDto, PayoutProposalResponse, PayoutConfirmRequest, etc.
 ```
 
 ---
@@ -133,7 +137,41 @@ When creating an order with `intent: "CAPTURE"`, buyer approval alone does **not
 
 ---
 
-## 4. Database Setup (H2 $\to$ PostgreSQL)
+## 4. PayPal Batch Payouts API & Settlement Engine (Task D)
+
+When a trip concludes, TripSheriff settles all accumulated group reimbursements via the **PayPal Batch Payouts API** (`POST /v1/payments/payouts`).
+
+### A. Human-in-the-Loop Proposal (`GET /api/trips/{tripId}/payout/proposal`)
+TripSheriff **never** disburses funds without explicit organizer approval:
+- Inspects the current double-entry ledger to identify net creditors (`balance > 0`).
+- Validates collected `platform_escrow_cents` vs total owed.
+- Generates Contract 3 compliant line items mapped to each creditor's registered `paypal_email`.
+- Generates a UUID `idempotency_key` pre-configured for the payout execution.
+- Returns a proposal preview with `requires_confirmation = true`.
+
+### B. Batch Execution (`POST /api/trips/{tripId}/payout/confirm`)
+Organizer reviews and authorizes the disbursement:
+- Transmits Contract 3 `batch_payout_payload` with `sender_batch_header` and multiple recipient `items`.
+- Injects mandatory `PayPal-Request-Id: {idempotency_uuid}` HTTP header.
+- Reimburses multiple participants (e.g. Sarah for Villa, Dave for Dinner) in a single atomic transaction.
+
+### C. Strict Idempotency Protection
+- If an organizer double-clicks or network retries occur, `PayoutService` checks for existing `Settlement` records with that `idempotency_key`.
+- If already processed, it immediately returns the original response with `"is_idempotent_replay": true` and **zero duplicate PayPal API calls or ledger debits**.
+
+### D. Closed-Loop Ledger Finality
+Upon successful payout confirmation:
+- Creates persistent `Settlement` records (`status = COMPLETED`, `fromUserId = "PLATFORM_ESCROW"`, `paypalPayoutBatchId`, `idempotencyKey`).
+- `LedgerEngine` automatically updates:
+  - Disbursed payouts debit each recipient's positive balance to zero.
+  - Decrements `platform_escrow_cents` by the exact disbursement total.
+
+### E. Batch Status Query (`GET /api/trips/{tripId}/payout/{batchId}`)
+- Queries `GET /v1/payments/payouts/{batchId}` on PayPal Sandbox to verify real-time status and delivery confirmations.
+
+---
+
+## 5. Database Setup (H2 $\to$ PostgreSQL)
 
 ### Local Development (H2 In-Memory)
 By default, the application runs with an embedded **H2 in-memory database** with PostgreSQL compatibility mode:
