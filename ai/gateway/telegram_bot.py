@@ -1,10 +1,22 @@
 import io
 import re
 import os
+import sys
+from pathlib import Path
 import json
 import base64
 import logging
 from typing import Optional, List, Dict, Any
+
+# Ensure ai package root is in sys.path when running standalone
+_ai_root = Path(__file__).resolve().parent.parent
+if str(_ai_root) not in sys.path:
+    sys.path.insert(0, str(_ai_root))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from telegram import (
     Update,
@@ -183,9 +195,9 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     msg = (
         "📊 **TripSheriff Simulated Ledger — Bali 2026**\n\n"
         "**Members & Net Balances:**\n"
-        "• Sarah Chen (@sarah_c): `+$160.00` (Fronted Villa Deposit)\n"
-        "• Alex Rivera (@alex_travels): `-$80.00` (36h Overdue | Heat: 75/100 🔥)\n"
-        "• Dave Kim (@dave_k): `-$80.00` (Pending)\n\n"
+        "• Sarah Chen (`@sarah_c`): `+$160.00` (Fronted Villa Deposit)\n"
+        "• Alex Rivera (`@alex_travels`): `-$80.00` (36h Overdue | Heat: 75/100 🔥)\n"
+        "• Dave Kim (`@dave_k`): `-$80.00` (Pending)\n\n"
         "**Optimal Settlement Plan:**\n"
         "• Alex owes Sarah: **$80.00**\n"
         "• Dave owes Sarah: **$80.00**\n"
@@ -547,7 +559,7 @@ def create_telegram_application(token: Optional[str] = None) -> Application:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    print("🤠 Starting TripSheriff Telegram Bot Gateway...")
+    print("[TripSheriff] Starting Telegram Bot Gateway...")
     try:
         bot_app = create_telegram_application()
         bot_app.run_polling()
