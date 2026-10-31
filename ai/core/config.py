@@ -30,7 +30,7 @@ class Settings(BaseModel):
 
     # Cross-Service URLs
     BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8080")
-    WEB_SIMULATOR_URL: str = os.getenv("WEB_SIMULATOR_URL", "http://localhost:5173")
+    WEB_SIMULATOR_URL: str = os.getenv("WEB_SIMULATOR_URL", "https://tripsheriff.devpost.com")
 
     ALLOWED_ORIGINS: List[str] = ["*"]
 

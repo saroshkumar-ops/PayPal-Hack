@@ -82,6 +82,19 @@ def get_or_create_user_profile(user_id: int, username: Optional[str], first_name
     return _USER_PROFILES[user_id]
 
 
+def get_web_simulator_url() -> str:
+    """
+    Telegram Bot API strictly rejects 'localhost' or non-TLD URLs for InlineKeyboardButton.
+    Ensures URL is a valid public domain acceptable to Telegram.
+    """
+    url = (settings.WEB_SIMULATOR_URL or "").strip()
+    if not url or "localhost" in url or "127.0.0.1" in url:
+        return "https://tripsheriff.devpost.com"
+    if not (url.startswith("http://") or url.startswith("https://") or url.startswith("tg://")):
+        return f"https://{url}"
+    return url
+
+
 # ---------------------------------------------------------------------------
 # Command Handlers
 # ---------------------------------------------------------------------------
@@ -133,7 +146,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     group_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("⚙️ Set PayPal & Roast Consent", url=deep_link),
-            InlineKeyboardButton("📊 View Trip Ledger", url=settings.WEB_SIMULATOR_URL),
+            InlineKeyboardButton("📊 View Trip Ledger", url=get_web_simulator_url()),
         ]
     ])
 
@@ -184,7 +197,7 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                     msg += f"• **{s.get('from_user_id')}** owes **{s.get('to_user_id')}**: `${s.get('amount_cents', 0)/100:.2f}`\n"
 
                 keyboard = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📊 Open AG Grid Dashboard", url=f"{settings.WEB_SIMULATOR_URL}/ledger")]
+                    [InlineKeyboardButton("📊 Open AG Grid Dashboard", url=f"{get_web_simulator_url()}#ledger")]
                 ])
                 await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
                 return
@@ -205,7 +218,7 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("💳 Pay Alex's $80 Share", url="https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T"),
-            InlineKeyboardButton("📊 View AG Grid", url=settings.WEB_SIMULATOR_URL),
+            InlineKeyboardButton("📊 View AG Grid", url=get_web_simulator_url()),
         ]
     ])
     await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
@@ -331,7 +344,7 @@ async def sim_time_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(f"🚨 Trigger {tier_name} Roast", callback_data=f"trigger_roast_{tier_name}"),
-            InlineKeyboardButton("📊 View AG Grid", url=settings.WEB_SIMULATOR_URL),
+            InlineKeyboardButton("📊 View AG Grid", url=get_web_simulator_url()),
         ]
     ])
 
@@ -438,7 +451,7 @@ async def handle_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                     ])
 
             buttons.append([
-                InlineKeyboardButton("📊 View AG Grid Ledger", url=settings.WEB_SIMULATOR_URL)
+                InlineKeyboardButton("📊 View AG Grid Ledger", url=get_web_simulator_url())
             ])
 
             try:
@@ -501,7 +514,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         buttons = [
             [
                 InlineKeyboardButton(f"💳 Settle Share via PayPal", url=f"https://www.sandbox.paypal.com/checkoutnow?token=SIM_RECEIPT_{ocr_response.total_cents}"),
-                InlineKeyboardButton("📊 Claim in Web Portal", url=f"{settings.WEB_SIMULATOR_URL}"),
+                InlineKeyboardButton("📊 Claim in Web Portal", url=get_web_simulator_url()),
             ]
         ]
 
