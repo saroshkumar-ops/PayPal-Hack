@@ -61,7 +61,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount Domain Routers
+# Mount Domain Routers (FastAPI Endpoints)
 app.include_router(receipts_router)
 app.include_router(agent_router)
 app.include_router(escalation_router)
