@@ -28,6 +28,12 @@ class Settings(BaseModel):
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_BOT_USERNAME: str = os.getenv("TELEGRAM_BOT_USERNAME", "TripSheriffBot")
 
+    # Meta WhatsApp Cloud API Configuration
+    WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+    WHATSAPP_PHONE_NUMBER_ID: str = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN", "tripsheriff_webhook_verify_2026")
+    WHATSAPP_API_VERSION: str = os.getenv("WHATSAPP_API_VERSION", "v21.0")
+
     # Cross-Service URLs
     BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8080")
     WEB_SIMULATOR_URL: str = os.getenv("WEB_SIMULATOR_URL", "https://tripsheriff.devpost.com")
