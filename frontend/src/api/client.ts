@@ -90,11 +90,11 @@ export const apiClient = {
     let botReply: ChatMessage | undefined;
     const lower = text.toLowerCase();
 
-    if (lower.includes('paid') || lower.includes('split') || lower.includes('$')) {
+    if (lower.includes('paid') || lower.includes('split') || lower.includes('₹')) {
       // Parse expense loosely in mock
-      const matchAmount = text.match(/\$(\d+)/);
+      const matchAmount = text.match(/\₹(\d+)/);
       const amountCents = matchAmount ? parseInt(matchAmount[1]) * 100 : 12000;
-      const desc = text.replace(/\$\d+/, '').replace(/paid/i, '').replace(/for/i, '').trim() || 'Group Activity';
+      const desc = text.replace(/\₹\d+/, '').replace(/paid/i, '').replace(/for/i, '').trim() || 'Group Activity';
 
       const expId = `exp_${Date.now().toString().slice(-4)}`;
       const splitAmount = Math.round(amountCents / currentLedger.members.length);
@@ -126,11 +126,11 @@ export const apiClient = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'EXPENSE LOGGED',
-        text: `**Logged $${(amountCents / 100).toFixed(2)} ${desc}** paid by ${sender.name}!\n\nSplitting equally among ${currentLedger.members.length} members ($${(splitAmount / 100).toFixed(2)} each). Direct PayPal links generated:`,
+        text: `**Logged ₹${(amountCents / 100).toFixed(2)} ${desc}** paid by ${sender.name}!\n\nSplitting equally among ${currentLedger.members.length} members (₹${(splitAmount / 100).toFixed(2)} each). Direct PayPal links generated:`,
         buttons: currentLedger.members
           .filter(m => m.user_id !== sender.user_id)
           .map(m => ({
-            text: `Pay $${(splitAmount / 100).toFixed(2)} (${m.name.split(' ')[0]})`,
+            text: `Pay ₹${(splitAmount / 100).toFixed(2)} (${m.name.split(' ')[0]})`,
             action: `PAY_${m.user_id}`,
             payload: { userId: m.user_id, amountCents: splitAmount, expenseId: expId },
           })),
@@ -142,9 +142,9 @@ export const apiClient = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'ORDER.CREATED',
-        summary: `Created PayPal Orders for ${desc} ($${(amountCents / 100).toFixed(2)} USD)`,
+        summary: `Created PayPal Orders for ${desc} (₹${(amountCents / 100).toFixed(2)} INR)`,
         status: 'INFO',
-        amount: `$${(amountCents / 100).toFixed(2)} USD`,
+        amount: `₹${(amountCents / 100).toFixed(2)} INR`,
         reference_id: `order_${tripId}_${expId}`,
       });
     }
@@ -163,15 +163,15 @@ export const apiClient = {
     if (currentLedger.hours_elapsed >= 72) {
       tier = 'ITINERARY_EMBARGO';
       badge = 'TIER 5: ITINERARY EMBARGO';
-      text = '**TRIP SANCTION APPLIED:** Alex has ignored 4 reminders over 72 hours for the $80.00 Villa split.\n\nDemoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.';
+      text = '**TRIP SANCTION APPLIED:** Alex has ignored 4 reminders over 72 hours for the ₹80.00 Villa split.\n\nDemoted to the pull-out couch and forbidden from controlling the rental car aux cord until settled.';
     } else if (currentLedger.hours_elapsed >= 48) {
       tier = 'PUBLIC_ROAST';
       badge = 'TIER 4: PUBLIC DEADBEAT ROAST';
-      text = '**WANTED FOR FINANCIAL NEGLIGENCE: Alex Rivera**\n\nBounty: $80.00 USD | Crime: Drinking mango craft mojitos while Sarah carries his accommodation debt.\n\nGroup consensus roast active. Settle up to clear your name:';
+      text = '**WANTED FOR FINANCIAL NEGLIGENCE: Alex Rivera**\n\nBounty: ₹80.00 INR | Crime: Drinking mango craft mojitos while Sarah carries his accommodation debt.\n\nGroup consensus roast active. Settle up to clear your name:';
     } else if (currentLedger.hours_elapsed >= 24) {
       tier = 'DISAPPOINTED_PARENT';
       badge = 'TIER 3: DISAPPOINTED PARENT';
-      text = 'Alex beta, I see the stories you posted from Potato Head Beach Club 2 hours ago. Very glamorous. But Sarah is still waiting on your $80.00 villa share from yesterday. We did not raise you to drink craft mango mojitos while your friend fronts your bed.';
+      text = 'Alex beta, I see the stories you posted from Potato Head Beach Club 2 hours ago. Very glamorous. But Sarah is still waiting on your ₹80.00 villa share from yesterday. We did not raise you to drink craft mango mojitos while your friend fronts your bed.';
     } else {
       tier = 'PASSIVE_AGGRESSIVE';
       badge = 'TIER 2: PASSIVE AGGRESSIVE';
@@ -197,7 +197,7 @@ export const apiClient = {
       text,
       buttons: [
         {
-          text: 'Settle $80.00 via PayPal Sandbox',
+          text: 'Settle ₹80.00 via PayPal Sandbox',
           action: 'PAY_ALEX',
           payload: { userId: 'user_02', amountCents: 8000 },
         },
@@ -236,9 +236,9 @@ export const apiClient = {
       id: `log_${Date.now()}`,
       timestamp: new Date().toLocaleTimeString(),
       event_type: 'PAYMENT.CAPTURE.COMPLETED',
-      summary: `Verified Webhook: ${member.name} paid $${(amountCents / 100).toFixed(2)} USD via PayPal Order capture`,
+      summary: `Verified Webhook: ${member.name} paid ₹${(amountCents / 100).toFixed(2)} INR via PayPal Order capture`,
       status: 'SUCCESS',
-      amount: `$${(amountCents / 100).toFixed(2)} USD`,
+      amount: `₹${(amountCents / 100).toFixed(2)} INR`,
       reference_id: `capture_${Date.now().toString().slice(-6)}`,
     };
     paypalLogs.unshift(log);
@@ -252,7 +252,7 @@ export const apiClient = {
       is_bot: true,
       timestamp: 'Just now',
       badge: 'PAYMENT CAPTURED',
-      text: `**PAYMENT CONFIRMED:** ${member.name} just settled **$${(amountCents / 100).toFixed(2)} USD** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Demotion sanctions lifted\n\nLedger updated in real-time.`,
+      text: `**PAYMENT CONFIRMED:** ${member.name} just settled **₹${(amountCents / 100).toFixed(2)} INR** via PayPal!\n\n• Debt Cleared\n• Heat Score reset to 0\n• Demotion sanctions lifted\n\nLedger updated in real-time.`,
     };
     chatMessages.push(chatAnnouncement);
 
@@ -283,9 +283,9 @@ export const apiClient = {
       id: `log_${Date.now()}`,
       timestamp: new Date().toLocaleTimeString(),
       event_type: 'PAYOUTSBATCH.SUCCESS',
-      summary: `Disbursed $${(payoutCents / 100).toFixed(2)} USD reimbursement to ${sarah.paypal_email} via PayPal Batch Payouts`,
+      summary: `Disbursed ₹${(payoutCents / 100).toFixed(2)} INR reimbursement to ${sarah.paypal_email} via PayPal Batch Payouts`,
       status: 'SUCCESS',
-      amount: `$${(payoutCents / 100).toFixed(2)} USD`,
+      amount: `₹${(payoutCents / 100).toFixed(2)} INR`,
       reference_id: batchId,
     };
     paypalLogs.unshift(log);
@@ -298,7 +298,7 @@ export const apiClient = {
       is_bot: true,
       timestamp: 'Just now',
       badge: 'BATCH PAYOUT DISBURSED',
-      text: `**Trip Treasury Settled!**\n\nReimbursed **$${(payoutCents / 100).toFixed(2)} USD** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll trip accounts are now 100% balanced!`,
+      text: `**Trip Treasury Settled!**\n\nReimbursed **₹${(payoutCents / 100).toFixed(2)} INR** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll trip accounts are now 100% balanced!`,
     };
     chatMessages.push(chatAnnouncement);
 

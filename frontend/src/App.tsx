@@ -14,6 +14,7 @@ import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer
 
 import { 
   ledgerService, 
+  expenseService,
   chatService, 
   simulatorService, 
   paymentService, 
@@ -40,6 +41,7 @@ export function App() {
     description: string;
     amountCents: number;
     userId: string;
+    expenseId?: string;
   }>({
     isOpen: false,
     debtorName: 'Alex Rivera',
@@ -48,6 +50,7 @@ export function App() {
     description: 'Sunset Villa Deposit Share',
     amountCents: 8000,
     userId: 'user_02',
+    expenseId: 'exp_8821',
   });
 
   // Load data on startup
@@ -59,11 +62,14 @@ export function App() {
   }, []);
 
   const checkBackend = async () => {
-    const isLive = await checkHealth();
-    setIsBackendConnected(isLive);
+    const health = await checkHealth();
+    setIsBackendConnected(health.backend);
   };
 
   const loadData = async () => {
+    // Attempt auto-seeding if backend is active
+    await ledgerService.autoBootstrapTrip('trip_bali_2026');
+
     const [currLedger, currMessages, currLogs] = await Promise.all([
       ledgerService.getLedger('trip_bali_2026'),
       chatService.getMessages('trip_bali_2026'),
@@ -83,7 +89,7 @@ export function App() {
     });
   };
 
-  // Chat message send
+  // Chat message send (uses Python AI Intent Decider & Java backend)
   const handleSendMessage = async (text: string) => {
     setIsLoading(true);
     try {
@@ -94,22 +100,24 @@ export function App() {
     }
   };
 
-  // Simulate $150 dinner
+  // Simulate $150 Jimbaran Seafood Dinner
   const handleSimulateExpense = async () => {
     setIsLoading(true);
     try {
-      await chatService.sendMessage(
-        'trip_bali_2026',
-        'Paid $150 for seafood dinner split with @alex_travels and @dave_k',
-        'user_01'
-      );
+      await expenseService.createExpense('trip_bali_2026', {
+        paid_by: 'user_01',
+        amount_cents: 15000,
+        description: 'Jimbaran Seafood Beach Dinner',
+        category: 'FOOD',
+        split_type: 'EQUAL',
+      });
       await loadData();
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Advance time +24h
+  // Advance virtual time +24h (Task C Sim-Time & Task F AI Escalation Roast)
   const handleAdvanceTime = async (hours: number = 24) => {
     setIsLoading(true);
     try {
@@ -121,7 +129,7 @@ export function App() {
   };
 
   // Open the interactive PayPal Express Checkout Sheet
-  const handleOpenCheckout = (userId: string, amountCents: number) => {
+  const handleOpenCheckout = (userId: string, amountCents: number, expenseId?: string) => {
     const debtor = ledger.members.find(m => m.user_id === userId) || ledger.members[1];
     const creditor = ledger.members.find(m => m.user_id === 'user_01') || ledger.members[0];
 
@@ -133,17 +141,23 @@ export function App() {
       description: 'Sunset Villa Deposit Share',
       amountCents,
       userId,
+      expenseId: expenseId || 'exp_8821',
     });
   };
 
-  // Confirm payment in PayPal Drawer
+  // Confirm payment in PayPal Drawer (Executes Orders API v2 & Capture Flow)
   const handleExecutePayment = async () => {
-    await paymentService.captureOrder('trip_bali_2026', checkoutDrawer.userId, checkoutDrawer.amountCents);
+    await paymentService.captureDebtorSplit(
+      'trip_bali_2026', 
+      checkoutDrawer.userId, 
+      checkoutDrawer.amountCents, 
+      checkoutDrawer.expenseId || 'exp_8821'
+    );
     triggerCelebrationConfetti();
     await loadData();
   };
 
-  // Batch Payout confirmation
+  // Batch Payout confirmation (Task D)
   const handleConfirmPayout = async () => {
     setIsLoading(true);
     try {
@@ -156,15 +170,27 @@ export function App() {
     }
   };
 
-  // Scanned receipt confirmed from modal
-  const handleConfirmScannedExpense = async (description: string, amountCents: number) => {
+  // Scanned receipt confirmed from modal (Gemini Vision OCR line items)
+  const handleConfirmScannedExpense = async (
+    description: string, 
+    amountCents: number,
+    items?: { name: string; priceCents: number; claimedBy?: string }[]
+  ) => {
     setIsLoading(true);
     try {
-      await ledgerService.addExpense('trip_bali_2026', {
-        description,
-        amount_cents: amountCents,
+      const itemClaims = items?.map(item => ({
+        name: item.name,
+        price_cents: item.priceCents,
+        claimed_by_user_ids: [item.claimedBy === 'Alex' ? 'user_02' : item.claimedBy === 'Dave' ? 'user_03' : 'user_01'],
+      }));
+
+      await expenseService.createExpense('trip_bali_2026', {
         paid_by: 'user_01',
+        amount_cents: amountCents,
+        description,
         category: 'FOOD',
+        split_type: itemClaims && itemClaims.length > 0 ? 'ITEMIZED' : 'EQUAL',
+        items: itemClaims,
       });
       await loadData();
     } finally {
@@ -238,7 +264,7 @@ export function App() {
           <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <span>TripSheriff AI — Group Travel Treasury & Debt Enforcement Agent</span>
             <span className="font-mono text-[11px] text-[#8199AE]">
-              PayPal AI Hackathon 2026 • Integer Cents Math Core
+              PayPal AI Hackathon 2026 • Java Core Port 8080 • Python AI Port 8001
             </span>
           </div>
         </footer>
@@ -267,6 +293,7 @@ export function App() {
         <ReceiptDropModal
           isOpen={isReceiptModalOpen}
           onClose={() => setIsReceiptModalOpen(false)}
+          members={ledger.members}
           onConfirmExpense={handleConfirmScannedExpense}
         />
       </div>

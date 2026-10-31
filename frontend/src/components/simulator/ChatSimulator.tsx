@@ -190,10 +190,10 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
                         Consensus Roast Mode: Active
                       </div>
                       <div className="text-xs text-white font-semibold">
-                        Alex Rivera • $80.00 Outstanding
+                        Alex Rivera • ₹499.33 Outstanding
                       </div>
                       <div className="text-[11px] text-zinc-400 italic mt-0.5">
-                        "Fronted villa debts do not settle themselves."
+                        "Fronted dinner debts do not settle themselves."
                       </div>
                     </div>
                   </div>
@@ -209,7 +209,7 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
                           if (btn.payload) {
                             onPayDebt(btn.payload.userId, btn.payload.amountCents);
                           } else {
-                            onPayDebt('user_02', 8000);
+                            onPayDebt('user_02', 49933);
                           }
                         }}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0070E0] to-[#003087] hover:from-[#005ea6] hover:to-[#002566] shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
@@ -242,7 +242,7 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type like Sarah: e.g. 'Paid $90 for surf lessons split with Alex'..."
+          placeholder="Type like Sarah: e.g. 'Paid ₹900 for dinner split with Alex'..."
           className="flex-1 bg-zinc-950/80 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500/70 transition-all"
         />
 

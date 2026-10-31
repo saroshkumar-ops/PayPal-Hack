@@ -23,9 +23,8 @@ export const backendClient: AxiosInstance = axios.create({
  */
 export const aiClient: AxiosInstance = axios.create({
   baseURL: AI_MICROSERVICE_URL,
-  timeout: 8000,
+  timeout: 60000,
   headers: {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
