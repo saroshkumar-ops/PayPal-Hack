@@ -87,7 +87,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
             <div className="pt-2 border-t border-[#33475A] flex items-center justify-between">
               <span className="font-bold text-[#E7EDF2]">Total Share</span>
               <span className="text-lg font-bold font-mono text-[#E7EDF2]">
-                ${formattedAmount} <span className="text-xs text-[#8199AE] font-normal">USD</span>
+                ₹{formattedAmount} <span className="text-xs text-[#8199AE] font-normal">INR</span>
               </span>
             </div>
           </div>
@@ -172,7 +172,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  Pay ${formattedAmount} USD with PayPal
+                  Pay ₹{formattedAmount} INR with PayPal
                 </>
               )}
             </button>

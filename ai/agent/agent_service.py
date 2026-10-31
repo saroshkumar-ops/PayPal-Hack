@@ -145,8 +145,9 @@ class AgentRouterService:
 
         models_to_try = [
             settings.GEMINI_MODEL,
-            "gemini-2.0-flash",
-            "gemini-1.5-flash-latest",
+            "gemini-3.5-flash",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest",
         ]
 
         last_error: Optional[Exception] = None

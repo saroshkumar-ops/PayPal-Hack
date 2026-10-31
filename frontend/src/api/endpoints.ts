@@ -1,20 +1,28 @@
 /**
  * Frozen REST Endpoints Contract between Frontend, Java Backend, and Python AI Microservice
- * Reference: docs/TEAM_COLLABORATION_GUIDE.md & docs/IMPLEMENTATION_PLAN.md
+ * Reference: docs/TEAM_COLLABORATION_GUIDE.md & backend/API_TESTING_HANDBOOK.md
  */
 
 export const ENDPOINTS = {
   // === 1. Java Core Backend (Port 8080) ===
-  HEALTH: '/api/health',
-  
-  // Trip & Ledger Endpoints (Task B)
   TRIPS: {
-    GET_LEDGER: (tripId: string) => `/api/trips/${tripId}/ledger`,
-    ADD_EXPENSE: (tripId: string) => `/api/trips/${tripId}/expenses`,
-    GET_MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
-    GET_SETTLEMENTS: (tripId: string) => `/api/trips/${tripId}/settlement-plan`,
-    ADVANCE_SIM_TIME: (tripId: string) => `/api/trips/${tripId}/sim-time`,
-    STREAM_EVENTS: (tripId: string) => `/api/trips/${tripId}/stream`,
+    BASE: '/api/trips',
+    BY_ID: (tripId: string) => `/api/trips/${tripId}`,
+    SIM_TIME: (tripId: string) => `/api/trips/${tripId}/sim-time`,
+    MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
+    EXPENSES: (tripId: string) => `/api/trips/${tripId}/expenses`,
+    LEDGER: (tripId: string) => `/api/trips/${tripId}/ledger`,
+    SETTLEMENTS: (tripId: string) => `/api/trips/${tripId}/settlements`,
+  },
+
+  // PayPal Financial Gateway (Tasks C, D, E)
+  PAYMENT: {
+    CREATE_ORDER: '/api/payment/create-order',
+    CAPTURE_ORDER: (orderId: string) => `/api/payment/capture/${orderId}`,
+    SUCCESS: '/api/payment/success',
+    CANCEL: '/api/payment/cancel',
+    CONFIRM_BATCH_PAYOUT: (tripId: string) => `/api/trips/${tripId}/payout/confirm`,
+    WEBHOOK: '/api/paypal/webhook',
   },
 
   // Chat Gateway (Task A)
@@ -23,18 +31,14 @@ export const ENDPOINTS = {
     HISTORY: (tripId: string) => `/api/chat/${tripId}/history`,
   },
 
-  // PayPal Financial Gateway (Tasks C, D, E)
-  PAYPAL: {
-    CREATE_ORDER: (tripId: string) => `/api/trips/${tripId}/checkout/order`,
-    CAPTURE_ORDER: '/api/payment/capture',
-    CONFIRM_BATCH_PAYOUT: (tripId: string) => `/api/trips/${tripId}/payout/confirm`,
-    WEBHOOK_INGEST: '/api/paypal/webhook',
-  },
-
   // === 2. Python AI Microservice (Port 8001) ===
   AI: {
-    INTENT_DECIDE: '/ai/agent/decide',
+    HEALTH: '/health',
+    AGENT_DECIDE: '/ai/agent/decide',
+    AGENT_LOOP: '/ai/agent/loop',
     RECEIPT_PARSE: '/ai/receipt/parse',
-    ROAST_GENERATE: '/ai/escalate/roast',
+    RECEIPT_UPLOAD: '/ai/receipt/upload',
+    RECEIPT_SPLIT: '/ai/receipt/split',
+    ESCALATE_ROAST: '/ai/escalate/roast',
   },
 } as const;

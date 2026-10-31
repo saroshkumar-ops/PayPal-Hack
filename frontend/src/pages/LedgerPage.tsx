@@ -21,7 +21,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         .map((s) => {
           const m = ledger.members.find((mem) => mem.user_id === s.user_id);
           const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: $${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
+          return `${firstName}: ₹${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
         })
         .join(' • ');
 
@@ -71,12 +71,12 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       },
       {
         field: 'amount',
-        headerName: 'Amount (USD)',
+        headerName: 'Amount (INR)',
         width: 140,
         sortable: true,
         filter: 'agNumberColumnFilter',
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono font-bold text-[#E7EDF2]">${params.value}</span>
+          <span className="font-mono font-bold text-[#E7EDF2]">₹{params.value}</span>
         ),
       },
       {
@@ -184,25 +184,30 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           Instead of multiple circular transactions, the minimum cash flow algorithm matches net debtors directly with the fronting organizer:
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-3.5 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold text-[#E7EDF2]">Alex Rivera</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8199AE]" />
-              <span className="text-xs font-semibold text-[#E7EDF2]">Sarah Chen</span>
-            </div>
-            <span className="font-mono font-bold text-xs text-[#E7EDF2]">$110.00 USD</span>
+        {ledger.simplified_settlements && ledger.simplified_settlements.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ledger.simplified_settlements.map((s, idx) => {
+              const fromMember = ledger.members.find((m) => m.user_id === s.from_user_id);
+              const toMember = ledger.members.find((m) => m.user_id === s.to_user_id);
+              return (
+                <div key={idx} className="p-3.5 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-semibold text-[#E7EDF2]">{fromMember?.name || s.from_user_id}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#8199AE]" />
+                    <span className="text-xs font-semibold text-[#E7EDF2]">{toMember?.name || s.to_user_id}</span>
+                  </div>
+                  <span className="font-mono font-bold text-xs text-[#E7EDF2]">
+                    ₹{s.formatted_amount || (s.amount_cents / 100).toFixed(2)} INR
+                  </span>
+                </div>
+              );
+            })}
           </div>
-
-          <div className="p-3.5 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold text-[#E7EDF2]">Dave Kim</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8199AE]" />
-              <span className="text-xs font-semibold text-[#E7EDF2]">Sarah Chen</span>
-            </div>
-            <span className="font-mono font-bold text-xs text-[#E7EDF2]">$80.00 USD</span>
+        ) : (
+          <div className="p-4 rounded-xl bg-[#10161C] border border-[#33475A] text-center text-xs text-[#8199AE]">
+            All group expenses are completely balanced. 0 circular settlements required.
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

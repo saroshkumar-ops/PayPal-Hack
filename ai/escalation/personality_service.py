@@ -157,7 +157,12 @@ class PersonalityMatrixService:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
         config = types.GenerateContentConfig(temperature=0.85, max_output_tokens=256)
 
-        models_to_try = [settings.GEMINI_MODEL, "gemini-2.0-flash", "gemini-1.5-flash-latest"]
+        models_to_try = [
+            settings.GEMINI_MODEL,
+            "gemini-3.5-flash",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest"
+        ]
         last_error: Optional[Exception] = None
 
         for model_id in models_to_try:

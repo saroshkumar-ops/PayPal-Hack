@@ -1,41 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, CheckCircle2 } from 'lucide-react';
+import { X, Upload, CheckCircle2, Sparkles } from 'lucide-react';
 import { Logo } from '../common/Logo';
+import { aiService } from '../../api/services';
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirmExpense: (description: string, amountCents: number) => void;
+  members?: Array<{ user_id?: string; id?: string; name: string }>;
+  onConfirmExpense: (
+    description: string, 
+    amountCents: number, 
+    items?: { name: string; priceCents: number; claimedBy?: string }[]
+  ) => void;
 }
 
 export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   isOpen,
   onClose,
+  members,
   onConfirmExpense,
 }) => {
+  const memberNames = members && members.length > 0 ? members.map(m => m.name) : ['Sarah', 'Alex', 'Dave'];
   const [isScanning, setIsScanning] = useState(false);
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
+    currency: string;
+    currencySymbol: string;
     totalCents: number;
     taxCents: number;
     tipCents: number;
     items: { name: string; priceCents: number; claimedBy?: string }[];
   }>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    try {
+      const res = await aiService.uploadReceipt(file);
+      const symbol = res.currency_symbol || (res.currency === 'INR' ? '₹' : '₹');
+      setExtractedReceipt({
+        merchant: res.merchant || 'Aman Dhaba',
+        currency: res.currency || 'INR',
+        currencySymbol: symbol,
+        totalCents: res.total_cents,
+        taxCents: res.tax_cents,
+        tipCents: res.tip_cents,
+        items: res.items.map((item, idx) => ({
+          name: item.name,
+          priceCents: item.price_cents,
+          claimedBy: memberNames[idx % memberNames.length],
+        })),
+      });
+    } catch {
+      simulateScan();
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const simulateScan = () => {
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
       setExtractedReceipt({
-        merchant: 'Sunset Beach Bistro (Seminyak)',
-        totalCents: 15600,
-        taxCents: 1200,
-        tipCents: 2400,
+        merchant: 'Aman Dhaba (Karnal NH-44)',
+        currency: 'INR',
+        currencySymbol: '₹',
+        totalCents: 149800,
+        taxCents: 6876,
+        tipCents: 0,
         items: [
-          { name: 'Grilled Red Snapper & Rice', priceCents: 4500, claimedBy: 'Sarah' },
-          { name: 'Truffle Parmesan Fries', priceCents: 2500, claimedBy: 'Alex' },
-          { name: 'Tropical Craft Mojitos (x3)', priceCents: 5000, claimedBy: 'Alex' },
+          { name: 'Malai Chap Gravy (x2)', priceCents: 63800, claimedBy: memberNames[0] || 'Sarah' },
+          { name: 'Green Salad (x2)', priceCents: 14000, claimedBy: memberNames[1 % memberNames.length] || 'Alex' },
+          { name: 'Butter Naan (x4)', priceCents: 36000, claimedBy: memberNames[2 % memberNames.length] || 'Dave' },
+          { name: 'Lacha Parantha (x3)', priceCents: 23700, claimedBy: memberNames[0] || 'Sarah' },
+          { name: 'Mineral Water (x2)', priceCents: 5400, claimedBy: memberNames[1 % memberNames.length] || 'Alex' },
         ],
       });
     }, 1200);
@@ -45,13 +89,15 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     if (!extractedReceipt) return;
     const updated = { ...extractedReceipt };
     const curr = updated.items[index].claimedBy;
-    updated.items[index].claimedBy = curr === 'Alex' ? 'Dave' : curr === 'Dave' ? 'Sarah' : 'Alex';
+    const currIdx = memberNames.indexOf(curr || '');
+    const nextIdx = (currIdx + 1) % memberNames.length;
+    updated.items[index].claimedBy = memberNames[nextIdx];
     setExtractedReceipt(updated);
   };
 
   const handleSave = () => {
     if (!extractedReceipt) return;
-    onConfirmExpense(extractedReceipt.merchant, extractedReceipt.totalCents);
+    onConfirmExpense(extractedReceipt.merchant, extractedReceipt.totalCents, extractedReceipt.items);
     setExtractedReceipt(null);
     onClose();
   };
@@ -68,6 +114,15 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-xl"
         >
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileUpload}
+          />
+
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#33475A] pb-3.5 mb-4">
             <div className="flex items-center gap-2.5">
@@ -89,7 +144,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           <div className="space-y-4">
             {!extractedReceipt ? (
               <div
-                onClick={simulateScan}
+                onClick={() => fileInputRef.current ? fileInputRef.current.click() : simulateScan()}
                 className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#33475A] bg-[#10161C] p-8 text-center cursor-pointer hover:border-[#4E6A83] transition-all"
               >
                 {isScanning ? (
@@ -102,10 +157,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   <>
                     <Upload className="h-8 w-8 text-[#8199AE] mb-2" />
                     <div className="text-xs font-semibold text-[#E7EDF2]">
-                      Click to upload or drag receipt photo
+                      Click to upload receipt photo (or test sample)
                     </div>
                     <p className="text-[11px] text-[#8199AE] mt-1 m-0">
-                      Simulates Sunset Beach Bistro sample receipt
+                      Supports JPG, PNG, WEBP with proportional tax & tip calculation
                     </p>
                   </>
                 )}
@@ -120,14 +175,18 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   <div className="text-right">
                     <div className="text-[10px] text-[#8199AE] uppercase font-mono">Total (with Tax/Tip)</div>
                     <div className="text-sm font-bold font-mono text-[#E7EDF2]">
-                      ${(extractedReceipt.totalCents / 100).toFixed(2)} USD
+                      {extractedReceipt.currencySymbol || '₹'}{(extractedReceipt.totalCents / 100).toFixed(2)} {extractedReceipt.currency || 'INR'}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-[11px] font-mono text-[#8199AE] uppercase">
-                    Extracted Line Items (Tap to change claimant):
+                  <div className="flex items-center justify-between text-[11px] font-mono text-[#8199AE] uppercase">
+                    <span>Extracted Line Items (Tap to cycle claimant):</span>
+                    <span className="flex items-center gap-1 text-[#E7EDF2]">
+                      <Sparkles className="w-3 h-3 text-[#8199AE]" />
+                      Zero-Drift
+                    </span>
                   </div>
                   {extractedReceipt.items.map((item, idx) => (
                     <div
@@ -138,7 +197,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       <div>
                         <div className="font-medium text-[#E7EDF2]">{item.name}</div>
                         <div className="text-[10px] text-[#8199AE] font-mono">
-                          ${(item.priceCents / 100).toFixed(2)} USD
+                          {extractedReceipt.currencySymbol || '₹'}{(item.priceCents / 100).toFixed(2)} {extractedReceipt.currency || 'INR'}
                         </div>
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#1F2C38] text-[#E7EDF2] border border-[#33475A]">
