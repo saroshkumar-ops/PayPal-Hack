@@ -5,24 +5,24 @@ import com.shrihari.backend.payout.dto.PayoutConfirmRequest;
 import com.shrihari.backend.payout.dto.PayoutConfirmResponse;
 import com.shrihari.backend.payout.dto.PayoutProposalResponse;
 import com.shrihari.backend.payout.service.PayoutService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Payouts", description = "PayPal Batch Payouts API multi-recipient settlement engine with Human-in-the-Loop authorization and idempotency protection (Task D)")
 @Slf4j
 @RestController
 @RequestMapping("/api/trips/{tripId}/payout")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class PayoutController {
 
     private final PayoutService payoutService;
 
-    /**
-     * Human-in-the-Loop Proposal:
-     * GET /api/trips/{tripId}/payout/proposal
-     * Prepares batch payout line items and returns summary for organizer approval.
-     */
+    @Operation(summary = "Human-in-the-Loop payout proposal", description = "Prepares batch payout line items for net creditors, validates platform escrow, and generates an idempotency key for review")
     @GetMapping("/proposal")
     public ResponseEntity<PayoutProposalResponse> getPayoutProposal(@PathVariable String tripId) {
         log.info("Generating payout proposal for trip {}", tripId);
@@ -30,11 +30,7 @@ public class PayoutController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Batch Payout Confirmation:
-     * POST /api/trips/{tripId}/payout/confirm
-     * Disburses funds via PayPal Batch Payouts API with PayPal-Request-Id idempotency protection.
-     */
+    @Operation(summary = "Confirm and execute batch payout", description = "Executes POST /v1/payments/payouts with PayPal-Request-Id header to reimburse participants atomically with zero duplicate risk")
     @PostMapping("/confirm")
     public ResponseEntity<PayoutConfirmResponse> confirmBatchPayout(
             @PathVariable String tripId,
@@ -47,11 +43,7 @@ public class PayoutController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Batch Payout Status:
-     * GET /api/trips/{tripId}/payout/{batchId}
-     * Queries PayPal Batch Payouts API for real-time status.
-     */
+    @Operation(summary = "Query payout batch status", description = "Checks real-time disbursement and acknowledgment status of a PayPal payout batch")
     @GetMapping("/{batchId}")
     public ResponseEntity<PayoutBatchStatusResponse> getPayoutBatchStatus(
             @PathVariable String tripId,

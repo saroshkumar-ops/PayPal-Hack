@@ -5,6 +5,8 @@ import com.shrihari.backend.payment.dto.CaptureOrderResponse;
 import com.shrihari.backend.payment.dto.CreateOrderRequest;
 import com.shrihari.backend.payment.dto.CreateOrderResponse;
 import com.shrihari.backend.payment.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Payments", description = "PayPal Orders API v2 creation, redirect success capture, and programmatic capture flow (Task C)")
 @Slf4j
 @RestController
 @RequestMapping("/api/payment")
@@ -22,27 +25,21 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @Operation(summary = "Create PayPal checkout order", description = "Creates a PayPal Orders v2 transaction for an individual split debt and returns the sandbox approval URL")
     @PostMapping("/create-order")
     public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         CreateOrderResponse response = paymentService.createOrderForSplit(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Programmatic Direct Capture Endpoint: POST /api/payment/capture/{orderId}
-     * Used by the Web Simulator, AG Grid, or manual capture triggers.
-     */
+    @Operation(summary = "Capture PayPal order (Direct)", description = "Direct server-to-server call to capture approved order and transition split to SETTLED")
     @PostMapping("/capture/{orderId}")
     public ResponseEntity<CaptureOrderResponse> captureDirect(@PathVariable String orderId) {
         CaptureOrderResponse response = paymentService.captureOrder(orderId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Primary Redirect Capture Path: GET /api/payment/success?token={orderId}
-     * Invoked when buyer finishes approval on PayPal and returns to return_url.
-     * Executes POST /v2/checkout/orders/{id}/capture and completes the transaction.
-     */
+    @Operation(summary = "Buyer redirect return URL", description = "Captures the PayPal order upon redirect and renders a celebratory confirmation page or JSON")
     @GetMapping("/success")
     public ResponseEntity<?> paymentSuccess(
             @RequestParam(value = "token", required = false) String token,

@@ -213,6 +213,23 @@ The application will start on **`http://localhost:8080`**.
 
 ---
 
+## 6. Interactive Swagger / OpenAPI Documentation
+
+TripSheriff includes interactive Swagger UI documentation and OpenAPI 3.0 specification:
+- **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI v3 JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+The interactive dashboard categorizes endpoints across all core features:
+- **Trips**: Trip lifecycle & time-warp debt age simulator (`/api/trips`, `/api/trips/{tripId}/sim-time`)
+- **Members**: Participant registration, roles, and roast consent (`/api/trips/{tripId}/members`)
+- **Expenses**: Equal remainder distribution, Exact splits, and Itemized splits with OCR drift tolerance (`/api/trips/{tripId}/expenses`)
+- **Ledger**: Double-entry ledger math and Bipartite Minimum Cash Flow debt simplification graph (`/api/trips/{tripId}/ledger`, `/api/trips/{tripId}/settlements`)
+- **Payments**: PayPal Orders v2 creation, redirect capture, and direct capture (`/api/payment/create-order`, `/api/payment/success`, `/api/payment/capture/{orderId}`)
+- **Payouts**: PayPal Batch Payouts API proposal, multi-recipient disbursement, and idempotency protection (`/api/trips/{tripId}/payout/proposal`, `/api/trips/{tripId}/payout/confirm`)
+
+
+---
+
 ## 5. Contract Compliance
 
 The output of `GET /api/trips/{tripId}/ledger` adheres 100% to **Contract 1 (`contracts/ledger.json`)**:

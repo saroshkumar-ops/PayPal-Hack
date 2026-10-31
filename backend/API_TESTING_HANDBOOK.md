@@ -7,6 +7,8 @@ This handbook provides ready-to-use `curl` commands, JSON payloads, and expected
 ## 1. Quick Info & Base URL
 
 * **Base URL**: `http://localhost:8080`
+* **Swagger UI (Interactive API Tester)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+* **OpenAPI v3 JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 * **H2 Console**: `http://localhost:8080/h2-console`
   * JDBC URL: `jdbc:h2:mem:tripsheriff`
   * User: `sa` | Password: *(empty)*
