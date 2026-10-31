@@ -9,7 +9,7 @@ interface SimulatorPageProps {
   onSendMessage: (text: string) => void;
   onSimulateExpense: () => void;
   onAdvanceTime: (hours: number) => void;
-  onPayDebt: (userId: string, amountCents: number) => void;
+  onPayDebt: (userId: string, amountCents: number, expenseId?: string) => void;
   onOpenReceiptModal: () => void;
   isLoading: boolean;
 }
@@ -169,8 +169,19 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     )}
                   </div>
 
-                  {/* Public Deadbeat Roast Poster (Tier 4) */}
-                  {msg.roast_tier === 'PUBLIC_ROAST' && (
+                  {/* Dynamic Pillow WANTED meme poster card from AI microservice */}
+                  {msg.image_card_base64 && (
+                    <div className="mt-3 rounded-xl overflow-hidden border border-[#4E6A83] max-w-xs shadow-md">
+                      <img
+                        src={`data:image/png;base64,${msg.image_card_base64}`}
+                        alt="WANTED Deadbeat Meme Poster"
+                        className="w-full h-auto block"
+                      />
+                    </div>
+                  )}
+
+                  {/* Public Deadbeat Roast Poster (Tier 4 fallback) */}
+                  {msg.roast_tier === 'PUBLIC_ROAST' && !msg.image_card_base64 && (
                     <div className="mt-3 p-3 rounded-xl bg-[#10161C] border border-[#4E6A83] text-left">
                       <div className="text-[10px] font-mono font-bold text-[#E7EDF2] uppercase tracking-wider">
                         WANTED: DEADBEAT TRAVELER
@@ -192,9 +203,9 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                           key={idx}
                           onClick={() => {
                             if (btn.payload) {
-                              onPayDebt(btn.payload.userId, btn.payload.amountCents);
+                              onPayDebt(btn.payload.userId, btn.payload.amountCents, btn.payload.expenseId);
                             } else {
-                              onPayDebt('user_02', 8000);
+                              onPayDebt('user_02', 8000, 'exp_8821');
                             }
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] transition-all cursor-pointer"

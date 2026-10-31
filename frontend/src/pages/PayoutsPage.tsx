@@ -63,6 +63,10 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                 <span className="text-[#E7EDF2] truncate max-w-[180px]">{organizer.paypal_email}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-[#8199AE]">Escrow Balance:</span>
+                <span className="text-[#E7EDF2] font-semibold">${((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} USD</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-[#8199AE]">Net Reimbursement:</span>
                 <span className="text-[#E7EDF2] font-bold">${(organizerOwedCents / 100).toFixed(2)} USD</span>
               </div>

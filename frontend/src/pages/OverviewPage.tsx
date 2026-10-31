@@ -84,15 +84,25 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <span className="font-mono text-xs text-[#8199AE]">•••• 8821</span>
           </div>
 
-          <div className="my-5 sm:my-6">
-            <div className="text-xs text-[#8199AE] uppercase tracking-wider font-medium">
-              Net Reimbursable Balance
+          <div className="my-5 sm:my-6 space-y-3">
+            <div>
+              <div className="text-xs text-[#8199AE] uppercase tracking-wider font-medium">
+                Net Reimbursable Balance
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-[#E7EDF2] tracking-tight mt-1">
+                ${(organizerOwedCents / 100).toFixed(2)}{' '}
+                <span className="text-xs text-[#8199AE] font-normal">USD</span>
+              </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-[#E7EDF2] tracking-tight mt-1">
-              ${(organizerOwedCents / 100).toFixed(2)}{' '}
-              <span className="text-xs text-[#8199AE] font-normal">USD</span>
+
+            <div className="flex items-center justify-between pt-2 border-t border-[#33475A]/60 text-xs">
+              <span className="text-[#8199AE]">Sandbox Escrow:</span>
+              <span className="font-mono font-semibold text-[#E7EDF2]">
+                ${((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} USD
+              </span>
             </div>
-            <div className="text-[11px] text-[#8199AE] mt-1 font-mono truncate">
+
+            <div className="text-[11px] text-[#8199AE] font-mono truncate">
               Receiver: {organizer.paypal_email}
             </div>
           </div>

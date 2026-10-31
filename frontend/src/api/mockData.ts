@@ -86,6 +86,11 @@ export const INITIAL_LEDGER: TripLedger = {
     user_02: -11000, // Alex owes $110
     user_03: -8000, // Dave owes $80
   },
+  platform_escrow_cents: 0,
+  simplified_settlements: [
+    { from_user_id: 'user_02', to_user_id: 'user_01', amount_cents: 11000, formatted_amount: '110.00' },
+    { from_user_id: 'user_03', to_user_id: 'user_01', amount_cents: 8000, formatted_amount: '80.00' },
+  ],
 };
 
 export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
