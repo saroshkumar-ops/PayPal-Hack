@@ -368,14 +368,41 @@ async def handle_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text.startswith("/"):
         return  # Handled by command handlers
 
+    # Strip surrounding quotes if user wrapped their message in quotes
+    if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+        text = text[1:-1].strip()
+
     sender = message.from_user
     profile = get_or_create_user_profile(sender.id, sender.username, sender.first_name)
 
+    # 1. Start with sender in active members
+    sender_handle = f"@{sender.username}" if sender.username else None
     active_members = [
+        MemberSummary(user_id=profile["user_id"], name=sender.first_name, handle=sender_handle)
+    ]
+
+    # 2. Add demo trip members
+    demo_members = [
         MemberSummary(user_id="user_01", name="Sarah", handle="@sarah_c"),
         MemberSummary(user_id="user_02", name="Alex", handle="@alex_travels"),
         MemberSummary(user_id="user_03", name="Dave", handle="@dave_k"),
     ]
+    active_members.extend(demo_members)
+
+    # 3. Dynamically detect any @mentions in text (e.g. @Sudhanva_k) and register them
+    bot_name = (settings.TELEGRAM_BOT_USERNAME or "TripSheriffBot").lower()
+    for handle in re.findall(r"@([a-zA-Z0-9_]+)", text):
+        if handle.lower() == bot_name:
+            continue
+        handle_with_at = f"@{handle}"
+        if not any(m.handle and m.handle.lower() == handle_with_at.lower() for m in active_members):
+            active_members.append(
+                MemberSummary(
+                    user_id=f"tg_{handle.lower()}",
+                    name=handle,
+                    handle=handle_with_at,
+                )
+            )
 
     decide_req = AgentDecideRequest(
         trip_id="trip_bali_2026",
@@ -391,14 +418,18 @@ async def handle_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         if decision.action == "LOG_EXPENSE" and decision.parsed_data:
             parsed = decision.parsed_data
             amount_dollars = parsed.amount_cents / 100
-            split_count = len(parsed.split_with_user_ids) or 3
+            split_count = len(parsed.split_with_user_ids) or 2
             per_person = amount_dollars / split_count
 
             # Build inline buttons for each debtor to settle via PayPal
             buttons = []
             for uid in parsed.split_with_user_ids:
                 if uid != parsed.payer_id:
-                    name_label = "Alex" if "02" in uid else "Dave" if "03" in uid else uid
+                    name_label = uid
+                    for m in active_members:
+                        if m.user_id == uid:
+                            name_label = m.name or (m.handle or uid)
+                            break
                     buttons.append([
                         InlineKeyboardButton(
                             f"💳 Settle ${per_person:.2f} ({name_label})",
@@ -410,15 +441,21 @@ async def handle_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 InlineKeyboardButton("📊 View AG Grid Ledger", url=settings.WEB_SIMULATOR_URL)
             ])
 
-            await message.reply_text(
-                decision.reply_text,
-                reply_markup=InlineKeyboardMarkup(buttons),
-                parse_mode=ParseMode.MARKDOWN,
-            )
+            try:
+                await message.reply_text(
+                    decision.reply_text,
+                    reply_markup=InlineKeyboardMarkup(buttons),
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+            except Exception:
+                await message.reply_text(
+                    decision.reply_text,
+                    reply_markup=InlineKeyboardMarkup(buttons),
+                )
             return
 
         elif decision.action in ["CHECK_BALANCES", "DISPUTE_OR_PAUSE"]:
-            await message.reply_text(decision.reply_text, parse_mode=ParseMode.MARKDOWN)
+            await message.reply_text(decision.reply_text)
             return
 
     except Exception as exc:
