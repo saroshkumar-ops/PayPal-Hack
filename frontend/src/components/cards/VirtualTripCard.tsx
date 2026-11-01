@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Wifi, ShieldCheck, Sparkles } from 'lucide-react';
-import { Logo } from '../common/Logo';
 
 interface VirtualTripCardProps {
   balanceCents: number;
   tripName: string;
   organizerName: string;
+  organizerEmail?: string;
   onPayout: () => void;
 }
 
@@ -14,83 +14,172 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   balanceCents,
   tripName,
   organizerName,
+  organizerEmail = 'sarah.chen@trip.mock',
   onPayout,
 }) => {
   const formattedBalance = (balanceCents / 100).toFixed(2);
 
   return (
-    <div className="relative group perspective-1000">
-      {/* 3D Holographic Card Container */}
-      <motion.div
-        whileHover={{ y: -4, rotateX: 2, rotateY: -2 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        className="relative h-56 w-full rounded-3xl p-6 overflow-hidden border border-white/[0.12] shadow-2xl flex flex-col justify-between"
-        style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0c0a09 100%)',
-          boxShadow: '0 25px 50px -12px rgba(0, 112, 224, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)',
-        }}
+    <div className="relative w-full flex items-center justify-center py-6 select-none">
+      {/* Decorative Squiggle Wire underneath (matching CyberBank hero) */}
+      <svg
+        className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-72 sm:w-80 h-16 pointer-events-none opacity-40"
+        viewBox="0 0 320 60"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Holographic foil sweep animation */}
-        <div 
-          className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay transition-opacity duration-700 group-hover:opacity-75"
-          style={{
-            background: 'radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.4) 0%, rgba(147, 51, 234, 0.3) 40%, transparent 80%)',
-          }}
+        <path
+          d="M 10 30 Q 60 5 110 35 T 210 25 Q 260 55 310 20"
+          stroke="#8199AE"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray="4 2"
         />
+      </svg>
 
-        {/* Ambient Top Glow Line */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />
+      <div className="relative w-full max-w-[420px] h-[280px] sm:h-[300px] flex items-center justify-center">
+        {/* ============================================================== */}
+        {/* BACK CARD (Secondary Cyan/Slate Tilted Card)                     */}
+        {/* ============================================================== */}
+        <motion.div
+          initial={{ rotate: -10, y: 20, x: -10 }}
+          animate={{ rotate: -10, y: 20, x: -10 }}
+          whileHover={{ rotate: -6, y: 12, x: -6 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 20 }}
+          className="absolute w-[290px] sm:w-[330px] h-[175px] sm:h-[200px] rounded-2xl sm:rounded-3xl p-5 border border-[#4E6A83]/30 shadow-2xl flex flex-col justify-between overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #10161C 0%, #1F2C38 55%, #33475A 100%)',
+            boxShadow: '0 20px 40px -15px rgba(16, 22, 28, 0.9), inset 0 1px 0 rgba(183, 198, 211, 0.1)',
+          }}
+        >
+          {/* Subtle grid texture */}
+          <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#8199AE_1px,transparent_1px)] [background-size:16px_16px]" />
 
-        {/* Card Header */}
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-2.5">
-            <Logo size="sm" showText={false} />
+          {/* Back Card Top: Contactless & Brand */}
+          <div className="flex items-center justify-between relative z-10">
+            <Wifi className="w-4 h-4 text-[#8199AE] rotate-90" />
+            <span className="text-[10px] font-mono tracking-widest text-[#8199AE] uppercase truncate max-w-[180px]">
+              {tripName.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Back Card Mid: Card Number */}
+          <div className="relative z-10 font-mono text-xs sm:text-sm tracking-[0.2em] text-[#B7C6D3]/70 font-semibold">
+            1253 •••• •••• 3090
+          </div>
+
+          {/* Back Card Bottom: Expiry & CVV */}
+          <div className="flex items-center justify-between relative z-10 text-[10px] font-mono text-[#8199AE]">
             <div>
-              <div className="text-[11px] font-extrabold tracking-wider text-white uppercase flex items-center gap-1.5 font-mono">
-                TripSheriff Treasury
-                <Sparkles className="w-3 h-3 text-[#8199AE] animate-pulse" />
+              <span className="text-[9px] uppercase tracking-wider block text-[#4E6A83]">Expires</span>
+              <span>09/28</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase tracking-wider block text-[#4E6A83]">CVV</span>
+              <span>341</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================================== */}
+        {/* FRONT CARD (Primary Holographic Iridescent Tilted Card)        */}
+        {/* ============================================================== */}
+        <motion.div
+          initial={{ rotate: -20, y: -10, x: 15 }}
+          animate={{ rotate: -20, y: -10, x: 15 }}
+          whileHover={{ rotate: -15, y: -18, x: 12, scale: 1.02 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+          className="absolute w-[305px] sm:w-[350px] h-[190px] sm:h-[215px] rounded-2xl sm:rounded-3xl p-5 border border-[#8199AE]/40 shadow-2xl flex flex-col justify-between overflow-hidden cursor-pointer"
+          style={{
+            background: 'linear-gradient(135deg, #1F2C38 0%, #33475A 35%, #4E6A83 70%, #8199AE 100%)',
+            boxShadow: '0 25px 50px -12px rgba(16, 22, 28, 0.95), inset 0 1px 2px rgba(231, 237, 242, 0.4)',
+          }}
+        >
+          {/* Holographic Iridescent Sweeper */}
+          <div 
+            className="pointer-events-none absolute inset-0 opacity-45 mix-blend-color-dodge"
+            style={{
+              background: 'radial-gradient(circle at 85% 15%, rgba(231, 237, 242, 0.5) 0%, rgba(183, 198, 211, 0.3) 30%, transparent 70%)',
+            }}
+          />
+
+          {/* Radiant Sunburst Ray Marks (above top right, just like the video!) */}
+          <div className="absolute -top-1 -right-1 w-14 h-14 pointer-events-none opacity-40">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path d="M 32 8 L 38 2" stroke="#E7EDF2" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M 28 4 L 30 -2" stroke="#E7EDF2" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M 36 12 L 42 14" stroke="#E7EDF2" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          {/* Front Card Header: Branding & Network */}
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-[#10161C] border border-[#4E6A83] flex items-center justify-center">
+                <Sparkles className="w-3 h-3 text-[#B7C6D3]" />
               </div>
-              <div className="text-[10px] text-zinc-400 font-medium">{tripName}</div>
+              <span className="text-[11px] font-bold tracking-tight text-[#E7EDF2] font-mono uppercase">
+                TripSheriff
+              </span>
             </div>
-          </div>
-          <Wifi className="w-5 h-5 text-zinc-400 rotate-90" />
-        </div>
 
-        {/* EMV Gold Chip & Contactless */}
-        <div className="relative z-10 flex items-center gap-3 my-1">
-          <div className="w-11 h-8 rounded-lg bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 border border-amber-300/60 p-1 flex flex-col justify-between shadow-inner">
-            <div className="w-full h-[1px] bg-amber-700/50" />
-            <div className="w-full h-[1px] bg-amber-700/50" />
-          </div>
-          <span className="font-mono text-[11px] text-zinc-400 tracking-widest">
-            •••• 8821
-          </span>
-        </div>
-
-        {/* Card Footer: Balance & Payout Trigger */}
-        <div className="flex items-end justify-between relative z-10 pt-2 border-t border-white/[0.08]">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
-              Net Reimbursable
-            </div>
-            <div className="text-2xl font-bold font-mono tracking-tight text-white flex items-baseline gap-1">
-              <span className="text-emerald-400">${formattedBalance}</span>
-              <span className="text-xs text-zinc-400 font-sans font-normal">USD</span>
-            </div>
-            <div className="text-[10px] text-zinc-400 mt-0.5">
-              Cardholder: <span className="text-zinc-200 font-medium">{organizerName.toUpperCase()}</span>
+            <div className="flex items-center gap-2">
+              <Wifi className="w-4 h-4 text-[#E7EDF2] rotate-90" />
+              <span className="text-xs font-black tracking-wider text-[#E7EDF2] font-mono">
+                RuPay
+              </span>
             </div>
           </div>
 
-          <button
-            onClick={onPayout}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-95 cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Batch Payout
-          </button>
-        </div>
-      </motion.div>
+          {/* EMV Brushed Chip & Grouped Card Digits */}
+          <div className="relative z-10 my-0.5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-6 rounded-md bg-gradient-to-br from-[#B7C6D3] via-[#8199AE] to-[#33475A] border border-[#E7EDF2]/40 p-1 flex flex-col justify-between shadow-inner">
+                <div className="w-full h-[1px] bg-[#10161C]/50" />
+                <div className="w-full h-[1px] bg-[#10161C]/50" />
+              </div>
+              <span className="text-[10px] text-[#E7EDF2]/90 font-mono tracking-wider">
+                PAYPAL TREASURY
+              </span>
+            </div>
+
+            <div className="font-mono text-sm sm:text-base font-bold tracking-[0.22em] text-[#E7EDF2] drop-shadow-md">
+              4532 8912 3521 8821
+            </div>
+          </div>
+
+          {/* Front Card Bottom: Balance & Payout Trigger */}
+          <div className="flex items-end justify-between relative z-10 pt-2 border-t border-[#E7EDF2]/20">
+            <div>
+              <div className="text-[9px] uppercase tracking-wider text-[#B7C6D3] font-semibold">
+                Reimbursable Balance
+              </div>
+              <div className="text-base sm:text-lg font-extrabold font-mono text-[#E7EDF2] tracking-tight flex items-baseline gap-1">
+                <span>₹{formattedBalance}</span>
+                <span className="text-[10px] text-[#B7C6D3] font-sans font-normal">INR</span>
+              </div>
+              <div className="text-[9px] text-[#B7C6D3] font-mono truncate max-w-[160px]">
+                {organizerName.toUpperCase()}
+              </div>
+              <div className="text-[8px] text-[#8199AE] font-mono truncate max-w-[160px]">
+                {organizerEmail}
+              </div>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPayout();
+              }}
+              title="1-Click Batch Payout to Organizer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#10161C] hover:bg-[#1F2C38] border border-[#8199AE]/40 text-[#E7EDF2] text-[11px] font-semibold shadow-lg transition-all active:scale-95 cursor-pointer"
+            >
+              <ShieldCheck className="w-3 h-3 text-[#B7C6D3]" />
+              <span>Batch Payout</span>
+            </button>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
