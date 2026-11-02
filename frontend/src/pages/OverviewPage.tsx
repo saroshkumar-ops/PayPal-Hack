@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -32,6 +32,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   onOpenReceiptModal,
   onOpenPayoutModal,
 }) => {
+  const [spotlightPos, setSpotlightPos] = useState({ x: 0, y: 0, active: false });
+
   const totalSpendCents = ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
   let settledCents = 0;
   let pendingCents = 0;
@@ -50,6 +52,19 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpotlightPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true,
+    });
+  };
+
+  const handleHeroMouseLeave = () => {
+    setSpotlightPos((prev) => ({ ...prev, active: false }));
+  };
+
   const scrollToFeatures = () => {
     const el = document.getElementById('bento-features');
     if (el) {
@@ -60,16 +75,32 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   return (
     <div className="space-y-12 w-full py-3">
       {/* ================================================================ */}
-      {/* 1. HERO SECTION (CYBERBANK FINTECH SHOWCASE)                     */}
+      {/* 1. HERO SECTION (CYBERBANK FINTECH SHOWCASE WITH INTERACTIVE GLOW)*/}
       {/* ================================================================ */}
       <motion.section 
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
         className="relative rounded-[32px] sm:rounded-[44px] bg-[#10161C] border border-[#33475A] shadow-2xl overflow-hidden pt-10 sm:pt-16 px-6 sm:px-12 lg:px-16 pb-16 sm:pb-20"
       >
         {/* Subtle blueprint grid background */}
         <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#8199AE_1.5px,transparent_1.5px)] [background-size:32px_32px]" />
+
+        {/* Dynamic Interactive Spotlight that follows mouse */}
+        {spotlightPos.active && (
+          <div
+            className="absolute pointer-events-none rounded-full blur-3xl transition-opacity duration-300"
+            style={{
+              width: 500,
+              height: 500,
+              left: spotlightPos.x - 250,
+              top: spotlightPos.y - 250,
+              background: 'radial-gradient(circle, rgba(78, 106, 131, 0.22) 0%, rgba(129, 153, 174, 0.08) 50%, transparent 75%)',
+            }}
+          />
+        )}
 
         {/* Ambient Top Glow */}
         <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#4E6A83]/15 rounded-full blur-3xl pointer-events-none" />
@@ -81,8 +112,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <motion.div 
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
+              whileHover={{ scale: 1.04, borderColor: '#8199AE' }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#1F2C38] border border-[#33475A] text-xs sm:text-sm font-mono text-[#B7C6D3] shadow-sm"
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#1F2C38] border border-[#33475A] text-xs sm:text-sm font-mono text-[#B7C6D3] shadow-sm cursor-default"
             >
               <Sparkles className="w-4 h-4 text-[#B7C6D3] animate-pulse" />
               <span className="uppercase tracking-widest font-bold">Autonomous Travel Treasury</span>
@@ -100,7 +132,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
             {/* Action CTA Pills with Micro-Interactions */}
             <div className="flex flex-wrap items-center gap-4">
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   to="/simulator"
                   className="inline-flex items-center gap-3.5 px-7 py-4 rounded-full bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-sm sm:text-base font-bold transition-all no-underline shadow-xl shadow-black/50 group"
@@ -112,26 +144,27 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 </Link>
               </motion.div>
 
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.98 }}>
                 <button
                   onClick={onOpenReceiptModal}
-                  className="inline-flex items-center gap-2.5 px-6 py-4 rounded-full bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#E7EDF2] text-sm sm:text-base font-bold transition-all cursor-pointer shadow-md"
+                  className="inline-flex items-center gap-2.5 px-6 py-4 rounded-full bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#E7EDF2] text-sm sm:text-base font-bold transition-all cursor-pointer shadow-md group"
                 >
-                  <Sparkles className="w-4 h-4 text-[#8199AE]" />
+                  <Sparkles className="w-4 h-4 text-[#8199AE] group-hover:rotate-12 transition-transform" />
                   <span>Scan Receipt (Gemini)</span>
                 </button>
               </motion.div>
             </div>
 
-            {/* Social Proof Avatar Stack (Bigger & High Contrast) */}
+            {/* Social Proof Avatar Stack (Interactive Hover Expansion) */}
             <div className="flex items-center gap-4 pt-2">
               <div className="flex -space-x-3">
                 {ledger.members.map((m, idx) => (
                   <motion.div
                     key={m.user_id}
-                    whileHover={{ y: -3, scale: 1.1 }}
-                    title={m.name}
-                    className="w-10 h-10 rounded-full bg-[#1F2C38] border-2 border-[#10161C] flex items-center justify-center text-sm font-bold text-[#E7EDF2] shadow-md cursor-pointer"
+                    whileHover={{ y: -6, scale: 1.25, zIndex: 30 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                    title={`${m.name} (${m.role})`}
+                    className="w-10 h-10 rounded-full bg-[#1F2C38] border-2 border-[#10161C] flex items-center justify-center text-sm font-bold text-[#E7EDF2] shadow-md cursor-pointer hover:border-[#8199AE]"
                     style={{ zIndex: 10 - idx }}
                   >
                     {m.name.charAt(0)}
@@ -149,38 +182,50 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               </div>
             </div>
 
-            {/* Bottom 3-Stat Counter Row (Bigger, Bold, Clean) */}
-            <div className="pt-8 border-t border-[#33475A]/70 grid grid-cols-3 gap-6">
-              <div>
+            {/* Bottom 3-Stat Counter Row (Interactive Hover Feedback) */}
+            <div className="pt-8 border-t border-[#33475A]/70 grid grid-cols-3 gap-3 sm:gap-6">
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
                   ₹{(totalSpendCents / 100).toFixed(0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
                   Total Volume
                 </div>
-              </div>
+              </motion.div>
 
-              <div>
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
                   {settledPercentage}%
                 </div>
-                <div className="text-xs sm:text-sm text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
                   Settled Rate
                 </div>
-              </div>
+              </motion.div>
 
-              <div>
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
                   ₹0.00
                 </div>
-                <div className="text-xs sm:text-sm text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
                   Rounding Drift
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
 
-          {/* Right Column: 3D Dual Floating Cards with Live Data */}
+          {/* Right Column: Interactive 3D Dual Cards Stage */}
           <div className="lg:col-span-5 flex justify-center lg:justify-end">
             <VirtualTripCard
               balanceCents={organizerOwedCents}
@@ -192,11 +237,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           </div>
         </div>
 
-        {/* Distinctive Bottom Curved Notch with Down Arrow */}
+        {/* Distinctive Bottom Curved Notch with Interactive Down Arrow */}
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center">
           <motion.button
-            whileHover={{ y: 2, scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            animate={{ y: [0, 4, 0] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+            whileHover={{ y: 6, scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
             onClick={scrollToFeatures}
             aria-label="Scroll to features"
             className="w-12 h-12 rounded-full bg-[#1F2C38] border border-[#33475A] shadow-2xl flex items-center justify-center text-[#E7EDF2] hover:bg-[#33475A] transition-colors cursor-pointer group"
@@ -219,7 +266,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         ].map((item, idx) => (
           <motion.div
             key={idx}
-            whileHover={{ y: -2, scale: 1.03 }}
+            whileHover={{ y: -3, scale: 1.05 }}
             className="px-5 py-2.5 rounded-full bg-[#1F2C38] border border-[#33475A] text-xs sm:text-sm font-mono font-semibold text-[#8199AE] hover:text-[#E7EDF2] flex items-center gap-2.5 shadow-sm transition-colors cursor-default"
           >
             {item.icon}
@@ -229,7 +276,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       </section>
 
       {/* ================================================================ */}
-      {/* 3. "WHAT DO WE OFFER?" BENTO FEATURE GRID (HIGHLY VISUAL)        */}
+      {/* 3. "WHAT DO WE OFFER?" BENTO FEATURE GRID                        */}
       {/* ================================================================ */}
       <section id="bento-features" className="space-y-8 pt-6">
         <div className="text-center max-w-xl mx-auto space-y-2">
