@@ -2,20 +2,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Receipt, 
   ShieldCheck, 
   Clock, 
   ArrowRight, 
   PlusCircle, 
-  Sparkles,
-  PieChart,
-  BarChart3,
-  ChevronDown,
-  Quote,
-  Layers,
-  Coins,
-  Star,
-  CheckCircle
+  Sparkles, 
+  PieChart, 
+  BarChart3, 
+  ChevronDown, 
+  Layers, 
+  Coins, 
+  CheckCircle 
 } from 'lucide-react';
 import type { TripLedger } from '../types';
 import { VirtualTripCard } from '../components/cards/VirtualTripCard';
@@ -438,157 +435,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               <div className="text-xs text-[#B7C6D3]">1-Click PayPal</div>
             </div>
           </motion.button>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* 5. "WHAT OUR TRAVELERS ARE SAYING" (HIGH IMPACT QUOTES)          */}
-      {/* ================================================================ */}
-      <section className="space-y-8 pt-4">
-        <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-3xl sm:text-4xl font-black text-[#E7EDF2] tracking-tight m-0">
-            What our travelers are saying
-          </h2>
-          <p className="text-sm sm:text-base text-[#8199AE] m-0 font-medium">
-            Real crew feedback on zero-drift settlements and AI escalations.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Quote 1: Alex */}
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 flex flex-col justify-between shadow-md"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <Quote className="w-7 h-7 text-[#8199AE]" />
-                <div className="flex gap-1 text-[#E7EDF2]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current text-[#B7C6D3]" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-[#E7EDF2] leading-relaxed mb-6 italic font-medium">
-                "The Gemini receipt scanner parsed our ₹14,500 beachfront dinner in seconds. Everyone paid their fair share with zero arguments."
-              </p>
-            </div>
-            <div className="flex items-center gap-3.5 pt-4 border-t border-[#33475A]">
-              <div className="w-10 h-10 rounded-full bg-[#10161C] border border-[#4E6A83] flex items-center justify-center text-sm font-bold text-[#E7EDF2]">
-                AR
-              </div>
-              <div>
-                <div className="text-sm font-bold text-[#E7EDF2]">Alex Rivera</div>
-                <div className="text-xs text-[#8199AE]">Trip Member • @alex_travels</div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Quote 2: Dave */}
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 flex flex-col justify-between shadow-md"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <Quote className="w-7 h-7 text-[#8199AE]" />
-                <div className="flex gap-1 text-[#E7EDF2]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current text-[#B7C6D3]" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-[#E7EDF2] leading-relaxed mb-6 italic font-medium">
-                "I ignored the 48-hour reminder and TripSheriff roasted me in our group chat! Settled my share instantly via PayPal checkout."
-              </p>
-            </div>
-            <div className="flex items-center gap-3.5 pt-4 border-t border-[#33475A]">
-              <div className="w-10 h-10 rounded-full bg-[#10161C] border border-[#4E6A83] flex items-center justify-center text-sm font-bold text-[#E7EDF2]">
-                DK
-              </div>
-              <div>
-                <div className="text-sm font-bold text-[#E7EDF2]">Dave Kim</div>
-                <div className="text-xs text-[#8199AE]">Trip Member • @dave_k</div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Quote 3: Sarah (Organizer) */}
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 flex flex-col justify-between shadow-md"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <Quote className="w-7 h-7 text-[#8199AE]" />
-                <div className="flex gap-1 text-[#E7EDF2]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current text-[#B7C6D3]" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-[#E7EDF2] leading-relaxed mb-6 italic font-medium">
-                "As the organizer, I fronted ₹14,500 for the villa. TripSheriff tracked every rupee and delivered a 1-click batch payout to my wallet."
-              </p>
-            </div>
-            <div className="flex items-center gap-3.5 pt-4 border-t border-[#33475A]">
-              <div className="w-10 h-10 rounded-full bg-[#10161C] border border-[#4E6A83] flex items-center justify-center text-sm font-bold text-[#E7EDF2]">
-                SC
-              </div>
-              <div>
-                <div className="text-sm font-bold text-[#E7EDF2]">Sarah Chen</div>
-                <div className="text-xs text-[#8199AE]">Trip Organizer • @sarah_c</div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* 6. RECENT EXPENSES LIST (WITH AG GRID JUMP LINK)                 */}
-      {/* ================================================================ */}
-      <section className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 sm:p-8 shadow-xl">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#33475A]">
-          <div>
-            <span className="text-sm sm:text-base font-bold text-[#E7EDF2] uppercase tracking-wider font-mono">
-              Recent Logged Expenses
-            </span>
-            <div className="text-xs sm:text-sm text-[#8199AE] mt-0.5">
-              Live entries tracked with integer-cent accuracy
-            </div>
-          </div>
-          <Link
-            to="/ledger"
-            className="text-xs sm:text-sm text-[#E7EDF2] hover:text-[#B7C6D3] no-underline flex items-center gap-2 font-semibold px-4 py-2 rounded-xl bg-[#10161C] border border-[#33475A] hover:border-[#4E6A83] transition-all shadow-sm"
-          >
-            <span>Open AG Grid</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {ledger.expenses.slice(0, 4).map((exp) => (
-            <motion.div
-              key={exp.expense_id}
-              whileHover={{ x: 4 }}
-              className="flex items-center justify-between p-4 rounded-2xl bg-[#10161C] border border-[#33475A] hover:border-[#4E6A83] transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[#1F2C38] border border-[#33475A] flex items-center justify-center shrink-0">
-                  <Receipt className="w-5 h-5 text-[#8199AE]" />
-                </div>
-                <div>
-                  <div className="text-sm sm:text-base font-bold text-[#E7EDF2]">{exp.description}</div>
-                  <div className="text-xs text-[#8199AE] mt-0.5">
-                    Category: {exp.category} • Fronted by Sarah
-                  </div>
-                </div>
-              </div>
-              <div className="text-right font-mono font-black text-base sm:text-lg text-[#E7EDF2]">
-                ₹{(exp.amount_cents / 100).toFixed(2)}
-              </div>
-            </motion.div>
-          ))}
         </div>
       </section>
     </div>
