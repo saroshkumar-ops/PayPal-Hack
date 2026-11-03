@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 # Ensure .env inside ai directory is loaded regardless of current working directory
 _ai_dir = Path(__file__).resolve().parent.parent
-load_dotenv(dotenv_path=_ai_dir / ".env")
-load_dotenv()
+load_dotenv(dotenv_path=_ai_dir / ".env", override=True)
+load_dotenv(override=True)
 
 
 class Settings(BaseModel):
@@ -23,6 +23,20 @@ class Settings(BaseModel):
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     GROQ_TEXT_MODEL: str = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
     GROQ_VISION_MODEL: str = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
+
+    # Telegram Gateway Configuration (Task A)
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_BOT_USERNAME: str = os.getenv("TELEGRAM_BOT_USERNAME", "TripSheriffBot")
+
+    # Meta WhatsApp Cloud API Configuration
+    WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+    WHATSAPP_PHONE_NUMBER_ID: str = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN", "tripsheriff_webhook_verify_2026")
+    WHATSAPP_API_VERSION: str = os.getenv("WHATSAPP_API_VERSION", "v21.0")
+
+    # Cross-Service URLs
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8080")
+    WEB_SIMULATOR_URL: str = os.getenv("WEB_SIMULATOR_URL", "https://tripsheriff.devpost.com")
 
     ALLOWED_ORIGINS: List[str] = ["*"]
 

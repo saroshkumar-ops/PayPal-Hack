@@ -49,6 +49,9 @@ public class Settlement {
     @Column(name = "paypal_payout_batch_id", length = 128)
     private String paypalPayoutBatchId;
 
+    @Column(name = "idempotency_key", length = 128)
+    private String idempotencyKey;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

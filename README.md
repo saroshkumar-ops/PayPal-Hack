@@ -98,7 +98,19 @@ TripSheriff operates as a **platform-mediated prototype**. In a production comme
 
 ## 🛠️ Quickstart (For Hackathon Judges)
 
-### Option 1: Instant Web Simulator Mode (Zero Telegram Config)
+### Option 1: 1-Click Launch (Windows PowerShell)
+Simply run the master startup script:
+```powershell
+.\start-all.ps1
+```
+This automatically verifies/installs all dependencies, starts the **Python AI Microservice** (Port 8001), **Java Spring Boot Backend** (Port 8080), and **React Frontend** (Port 3000), checks health, and opens `http://localhost:3000/simulator` in your browser.
+
+To stop all services:
+```powershell
+.\stop-all.ps1
+```
+
+### Option 2: Instant Web Simulator Mode (Zero Telegram Config)
 1. Clone the repo and install dependencies:
    ```bash
    git clone https://github.com/saroshkumar-ops/PayPal-Hack.git

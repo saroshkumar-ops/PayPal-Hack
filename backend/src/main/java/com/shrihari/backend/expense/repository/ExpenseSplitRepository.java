@@ -17,5 +17,7 @@ public interface ExpenseSplitRepository extends JpaRepository<ExpenseSplit, Stri
 
     Optional<ExpenseSplit> findByPaypalOrderId(String paypalOrderId);
 
+    Optional<ExpenseSplit> findByExpenseIdAndUserId(String expenseId, String userId);
+
     List<ExpenseSplit> findByUserIdAndPaidStatus(String userId, PaymentStatus paidStatus);
 }

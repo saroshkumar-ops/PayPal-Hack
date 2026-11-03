@@ -22,6 +22,8 @@ public class PayPalProperties {
 
     private String brandName = "TripSheriff AI";
 
+    private String webhookId;
+
     @Value("${app.base-url:http://localhost:8080}")
     private String appBaseUrl;
 

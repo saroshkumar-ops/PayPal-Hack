@@ -39,12 +39,20 @@ backend/src/main/java/com/shrihari/backend/
 │   ├── model/               # Settlement.java, SettlementStatus.java
 │   ├── repository/          # SettlementRepository.java
 │   └── dto/                 # LedgerResponse.java, SettlementTransaction.java
-└── payment/                 # Feature: PayPal Orders & Two-Step Capture (Task C)
-    ├── client/              # PayPalClient.java (OAuth2 token cache, Orders v2, Capture)
-    ├── config/              # PayPalProperties.java (Auto-Mock fallback & credentials binding)
-    ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
-    ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
-    └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
+├── payment/                 # Feature: PayPal Orders & Two-Step Capture (Task C)
+│   ├── client/              # PayPalClient.java (OAuth2 token cache, Orders v2, Capture, Batch Payouts)
+│   ├── config/              # PayPalProperties.java (Auto-Mock fallback & credentials binding)
+│   ├── service/             # PaymentService.java (Orchestration, ExpenseSplit status updates)
+│   ├── controller/          # PaymentController.java (/create-order, /success, /cancel, /capture)
+│   └── dto/                 # CreateOrderRequest, CreateOrderResponse, CaptureOrderResponse
+├── payout/                  # Feature: PayPal Batch Payouts & Settlement Engine (Task D)
+│   ├── service/             # PayoutService.java (Proposal, idempotency validation, batch execution)
+│   ├── controller/          # PayoutController.java (/proposal, /confirm, /{batchId})
+│   └── dto/                 # PayoutBatchItemDto, PayoutProposalResponse, PayoutConfirmRequest, etc.
+└── webhook/                 # Feature: PayPal Webhook Ingestion & Real-Time Event Dispatcher (Task E)
+    ├── service/             # WebhookService.java, EventBroadcaster.java (SSE emitter registry)
+    ├── controller/          # WebhookController.java (/api/paypal/webhook, /api/trips/{tripId}/events)
+    └── dto/                 # CelebrationEvent.java, WebhookProcessResult.java
 ```
 
 ---
@@ -133,7 +141,73 @@ When creating an order with `intent: "CAPTURE"`, buyer approval alone does **not
 
 ---
 
-## 4. Database Setup (H2 $\to$ PostgreSQL)
+## 4. PayPal Batch Payouts API & Settlement Engine (Task D)
+
+When a trip concludes, TripSheriff settles all accumulated group reimbursements via the **PayPal Batch Payouts API** (`POST /v1/payments/payouts`).
+
+### A. Human-in-the-Loop Proposal (`GET /api/trips/{tripId}/payout/proposal`)
+TripSheriff **never** disburses funds without explicit organizer approval:
+- Inspects the current double-entry ledger to identify net creditors (`balance > 0`).
+- Validates collected `platform_escrow_cents` vs total owed.
+- Generates Contract 3 compliant line items mapped to each creditor's registered `paypal_email`.
+- Generates a UUID `idempotency_key` pre-configured for the payout execution.
+- Returns a proposal preview with `requires_confirmation = true`.
+
+### B. Batch Execution (`POST /api/trips/{tripId}/payout/confirm`)
+Organizer reviews and authorizes the disbursement:
+- Transmits Contract 3 `batch_payout_payload` with `sender_batch_header` and multiple recipient `items`.
+- Injects mandatory `PayPal-Request-Id: {idempotency_uuid}` HTTP header.
+- Reimburses multiple participants (e.g. Sarah for Villa, Dave for Dinner) in a single atomic transaction.
+
+### C. Strict Idempotency Protection
+- If an organizer double-clicks or network retries occur, `PayoutService` checks for existing `Settlement` records with that `idempotency_key`.
+- If already processed, it immediately returns the original response with `"is_idempotent_replay": true` and **zero duplicate PayPal API calls or ledger debits**.
+
+### D. Closed-Loop Ledger Finality
+Upon successful payout confirmation:
+- Creates persistent `Settlement` records (`status = COMPLETED`, `fromUserId = "PLATFORM_ESCROW"`, `paypalPayoutBatchId`, `idempotencyKey`).
+- `LedgerEngine` automatically updates:
+  - Disbursed payouts debit each recipient's positive balance to zero.
+  - Decrements `platform_escrow_cents` by the exact disbursement total.
+
+### E. Batch Status Query (`GET /api/trips/{tripId}/payout/{batchId}`)
+- Queries `GET /v1/payments/payouts/{batchId}` on PayPal Sandbox to verify real-time status and delivery confirmations.
+
+---
+
+## 5. PayPal Webhook Ingestion & Real-Time Event Dispatcher (Task E)
+
+TripSheriff listens to real-time asynchronous PayPal webhook events, verifies signatures, and closes the feedback loop with instant celebrations across chat and dashboards.
+
+### A. Webhook Listener (`POST /api/paypal/webhook`)
+- Listens to incoming PayPal notifications.
+- Verifies transmission signatures via PayPal's `/v1/notifications/verify-webhook-signature` using:
+  - `paypal-transmission-id`
+  - `paypal-transmission-time`
+  - `paypal-transmission-sig`
+  - `paypal-cert-url`
+  - `paypal-auth-algo`
+- Forged or tampered signatures are rejected immediately with `400 Bad Request`.
+
+### B. Event Handlers
+1. **`PAYMENT.CAPTURE.COMPLETED`**:
+   - Decodes `custom_id` (`tripId|debtorId|expenseId`).
+   - Marks the debtor's split as `SETTLED` in the database.
+   - Clears debtor debt and credits `platform_escrow_cents` in the ledger.
+   - Broadcasts real-time celebration message:
+     `"🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Seafood via PayPal!"`
+2. **`CHECKOUT.ORDER.APPROVED`**:
+   - Fallback capture: executes `POST /v2/checkout/orders/{id}/capture` if redirect capture was bypassed.
+3. **`PAYOUTSBATCH.SUCCESS`**:
+   - Broadcasts reimbursement landing confirmation to group trip participants.
+
+### C. Server-Sent Events (SSE) Stream
+- `GET /api/trips/{tripId}/events`: Subscribes clients (Telegram bot, Web Simulator, AG Grid) to real-time celebration alerts without polling.
+- `GET /api/events`: Global multi-trip event feed for judge simulators and admin panels.
+
+---
+
+## 6. Database Setup (H2 $\to$ PostgreSQL)
 
 ### Local Development (H2 In-Memory)
 By default, the application runs with an embedded **H2 in-memory database** with PostgreSQL compatibility mode:
@@ -172,6 +246,23 @@ All unit and integration tests (including split remainder tests and circular deb
 ./mvnw spring-boot:run
 ```
 The application will start on **`http://localhost:8080`**.
+
+---
+
+## 6. Interactive Swagger / OpenAPI Documentation
+
+TripSheriff includes interactive Swagger UI documentation and OpenAPI 3.0 specification:
+- **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI v3 JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+The interactive dashboard categorizes endpoints across all core features:
+- **Trips**: Trip lifecycle & time-warp debt age simulator (`/api/trips`, `/api/trips/{tripId}/sim-time`)
+- **Members**: Participant registration, roles, and roast consent (`/api/trips/{tripId}/members`)
+- **Expenses**: Equal remainder distribution, Exact splits, and Itemized splits with OCR drift tolerance (`/api/trips/{tripId}/expenses`)
+- **Ledger**: Double-entry ledger math and Bipartite Minimum Cash Flow debt simplification graph (`/api/trips/{tripId}/ledger`, `/api/trips/{tripId}/settlements`)
+- **Payments**: PayPal Orders v2 creation, redirect capture, and direct capture (`/api/payment/create-order`, `/api/payment/success`, `/api/payment/capture/{orderId}`)
+- **Payouts**: PayPal Batch Payouts API proposal, multi-recipient disbursement, and idempotency protection (`/api/trips/{tripId}/payout/proposal`, `/api/trips/{tripId}/payout/confirm`)
+
 
 ---
 

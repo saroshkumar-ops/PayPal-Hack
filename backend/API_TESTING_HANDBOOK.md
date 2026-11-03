@@ -7,6 +7,8 @@ This handbook provides ready-to-use `curl` commands, JSON payloads, and expected
 ## 1. Quick Info & Base URL
 
 * **Base URL**: `http://localhost:8080`
+* **Swagger UI (Interactive API Tester)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+* **OpenAPI v3 JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 * **H2 Console**: `http://localhost:8080/h2-console`
   * JDBC URL: `jdbc:h2:mem:tripsheriff`
   * User: `sa` | Password: *(empty)*
@@ -523,4 +525,330 @@ curl -X POST http://localhost:8080/api/trips/trip_bali_2026/sim-time \
   "message": "Fast-forwarded trip time by +24 hours. Total simulated advance: 24 hours."
 }
 ```
+
+---
+
+## 7. PayPal Batch Payouts API Walkthrough (Task D)
+
+Task D handles the conclusion of the trip, reimbursing multiple creditors (e.g. Sarah for Villa, Dave for Dinner) via the **PayPal Batch Payouts API** (`POST /v1/payments/payouts`) with mandatory Human-in-the-Loop approval and strict idempotency protection.
+
+### Step 1: Human-in-the-Loop Proposal Preview
+Before any money moves, the organizer requests a payout proposal. The system verifies positive balances, checks platform escrow, and formats Contract 3 line items.
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/payout/proposal
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "currency": "USD",
+  "platform_escrow_cents": 16000,
+  "formatted_platform_escrow": "160.00",
+  "total_payout_cents": 16000,
+  "formatted_total_payout": "160.00",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "requires_confirmation": true,
+  "items": [
+    {
+      "user_id": "user_01",
+      "member_name": "Sarah",
+      "receiver_email": "sarah.organizer@personal.example.com",
+      "amount_cents": 16000,
+      "formatted_amount": "160.00",
+      "currency": "USD",
+      "note": "TripSheriff: Net reimbursement for Bali Summer Vacation 2026 (Sarah)",
+      "sender_item_id": "settle_user_01_179342999"
+    }
+  ],
+  "warning": null
+}
+```
+
+---
+
+### Step 2: Organizer Authorizes Batch Payout (Multi-Recipient Disbursement)
+The organizer clicks **[Confirm Payout]** in the Telegram Bot or Web Simulator. The backend dispatches `POST /v1/payments/payouts` with the `PayPal-Request-Id: {idempotency_key}` header.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/trips/trip_bali_2026/payout/confirm \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+    "email_subject": "TripSheriff: Bali Trip Reimbursement Arrived!",
+    "email_message": "All trip expenses are settled. Funds have been deposited to your PayPal account."
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "total_disbursed_cents": 16000,
+  "formatted_total_disbursed": "160.00",
+  "currency": "USD",
+  "items": [
+    {
+      "user_id": "user_01",
+      "member_name": "Sarah",
+      "receiver_email": "sarah.organizer@personal.example.com",
+      "amount_cents": 16000,
+      "formatted_amount": "160.00",
+      "currency": "USD",
+      "note": "TripSheriff: Net reimbursement for Bali Summer Vacation 2026 (Sarah)",
+      "sender_item_id": "settle_user_01_179342999"
+    }
+  ],
+  "settled_recipients_count": 1,
+  "is_idempotent_replay": false,
+  "executed_at": "2026-10-31T12:20:00Z",
+  "message": "Batch payout executed successfully. Reimbursed 1 members (USD 160.00)"
+}
+```
+
+---
+
+### Step 3: Test Strict Idempotency Protection (Replay Attack / Double Clicks)
+Re-submit the exact same `idempotency_key`. The service recognizes the key, prevents duplicate execution, and returns the previous result with `is_idempotent_replay: true`.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/trips/trip_bali_2026/payout/confirm \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa"
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "idempotency_key": "9d8e6a12-4c22-4a0b-9311-bf39110022fa",
+  "total_disbursed_cents": 16000,
+  "formatted_total_disbursed": "160.00",
+  "currency": "USD",
+  "settled_recipients_count": 1,
+  "is_idempotent_replay": true,
+  "message": "Idempotent replay: batch payout was previously executed."
+}
+```
+
+---
+
+### Step 4: Verify Final Zero-Balance Ledger
+Inspect the ledger after payout completion. Sarah's credit is now $0.00 and `platform_escrow_cents` is $0.00. The trip is 100% financially settled.
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/ledger
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "trip_id": "trip_bali_2026",
+  "currency": "USD",
+  "net_balances_cents": {
+    "user_01": 0,
+    "user_02": 0,
+    "user_03": 0
+  },
+  "platform_escrow_cents": 0,
+  "simplified_settlements": []
+}
+```
+
+---
+
+### Step 5: Query PayPal Batch Status
+Check real-time processing status of the payout batch directly from PayPal:
+
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/trips/trip_bali_2026/payout/5UE86K84MZN4E
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "payout_batch_id": "5UE86K84MZN4E",
+  "batch_status": "SUCCESS",
+  "sender_batch_id": "batch_payout_trip_bali_2026_179342999",
+  "total_amount": "160.00",
+  "currency": "USD",
+  "created_at": "2026-10-31T12:20:00Z",
+  "items_count": 1
+}
+```
+
+---
+
+## 8. PayPal Webhooks & Real-Time Event Dispatcher Walkthrough (Task E)
+
+Task E listens to asynchronous PayPal webhook notifications, validates transmission signatures, settles ledger splits, and broadcasts real-time celebration events over Server-Sent Events (SSE).
+
+### Step 1: Subscribe to Trip Real-Time Events (SSE)
+Open a terminal to stream events in real time (or connect via Web EventSource):
+
+**Request:**
+```bash
+curl -N -H "Accept: text/event-stream" http://localhost:8080/api/trips/trip_bali_2026/events
+```
+
+**Expected Initial Stream Output:**
+```
+event:CONNECTED
+data:{"message":"Subscribed to trip events","trip_id":"trip_bali_2026"}
+```
+
+---
+
+### Step 2: Ingest Valid `PAYMENT.CAPTURE.COMPLETED` Webhook
+Simulates PayPal Sandbox firing the payment capture completed notification:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-id: tx_99182377" \
+  -H "paypal-transmission-time: 2026-10-31T14:30:05Z" \
+  -H "paypal-transmission-sig: VALID_MOCK_SIGNATURE" \
+  -H "paypal-cert-url: https://api.sandbox.paypal.com/v1/notifications/certs/CERT-1" \
+  -H "paypal-auth-algo: SHA256withRSA" \
+  -d '{
+    "id": "WH-EVT-99881122",
+    "event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "create_time": "2026-10-31T14:30:00Z",
+    "resource": {
+      "id": "CAP-MOCK-99112233",
+      "custom_id": "trip_bali_2026|user_02|exp_8821",
+      "status": "COMPLETED",
+      "amount": {
+        "value": "80.00",
+        "currency_code": "USD"
+      }
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "PAYMENT.CAPTURE.COMPLETED",
+  "event_id": "WH-EVT-99881122",
+  "message": "🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Villa Deposit via PayPal!",
+  "processed": true
+}
+```
+
+**SSE Event Received in Terminal 1:**
+```
+event:PAYMENT.CAPTURE.COMPLETED
+data:{"event_id":"WH-EVT-99881122","event_type":"PAYMENT.CAPTURE.COMPLETED","trip_id":"trip_bali_2026","debtor_id":"user_02","debtor_name":"Alex","amount_cents":8000,"formatted_amount":"80.00","currency":"USD","message":"🎉 HALLELUJAH! Alex has settled $80.00 for Sunset Villa Deposit via PayPal!","timestamp":"2026-10-31T14:30:06Z"}
+```
+
+---
+
+### Step 3: Test Forged / Tampered Signature Rejection
+Send a webhook with an invalid or tampered signature:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-id: tx_fake_01" \
+  -H "paypal-transmission-time: 2026-10-31T14:35:00Z" \
+  -H "paypal-transmission-sig: FORGED_TAMPERED_SIG" \
+  -H "paypal-cert-url: https://fake.cert.url" \
+  -H "paypal-auth-algo: SHA256withRSA" \
+  -d '{
+    "id": "WH-EVT-FORGED",
+    "event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "resource": { "id": "CAP-FAKE" }
+  }'
+```
+
+**Expected Response (`400 Bad Request`):**
+```json
+{
+  "status": "REJECTED",
+  "error": "Invalid PayPal transmission signature"
+}
+```
+
+---
+
+### Step 4: Fallback Capture on `CHECKOUT.ORDER.APPROVED`
+If the buyer approved payment on PayPal but closed the browser before returning to the success redirect URL:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-sig: VALID_SIG" \
+  -d '{
+    "id": "WH-EVT-APPROVED-01",
+    "event_type": "CHECKOUT.ORDER.APPROVED",
+    "resource": {
+      "id": "5O190127TN364715T"
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "CHECKOUT.ORDER.APPROVED",
+  "event_id": "WH-EVT-APPROVED-01",
+  "message": "Successfully triggered automatic capture for order 5O190127TN364715T",
+  "processed": true
+}
+```
+
+---
+
+### Step 5: `PAYOUTSBATCH.SUCCESS` Disbursement Delivery Notice
+Dispatches a group celebration that batch reimbursements have landed:
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/paypal/webhook \
+  -H "Content-Type: application/json" \
+  -H "paypal-transmission-sig: VALID_SIG" \
+  -d '{
+    "id": "WH-EVT-PAYOUT-01",
+    "event_type": "PAYOUTSBATCH.SUCCESS",
+    "resource": {
+      "batch_header": {
+        "payout_batch_id": "5UE86K84MZN4E",
+        "amount": { "value": "160.00", "currency": "USD" },
+        "sender_batch_header": { "sender_batch_id": "batch_payout_bali_01" }
+      }
+    }
+  }'
+```
+
+**Expected Response (`200 OK`):**
+```json
+{
+  "status": "SUCCESS",
+  "event_type": "PAYOUTSBATCH.SUCCESS",
+  "event_id": "WH-EVT-PAYOUT-01",
+  "message": "💸 Batch Payout Delivered! Group trip reimbursements (USD 160.00) have successfully landed in members' PayPal accounts.",
+  "processed": true
+}
+```
+
+
 

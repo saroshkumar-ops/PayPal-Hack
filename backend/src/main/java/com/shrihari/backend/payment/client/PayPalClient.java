@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import com.shrihari.backend.payout.dto.PayoutBatchItemDto;
+import com.shrihari.backend.payout.dto.PayoutBatchStatusResponse;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -39,7 +42,26 @@ public class PayPalClient {
     // Cache of mock orders created during mock mode
     private final Map<String, MockOrderRecord> mockOrders = new HashMap<>();
 
-    private record MockOrderRecord(String orderId, String customId, long amountCents, String currency) {}
+    // Cache of mock payout batches created during mock mode
+    private final Map<String, MockPayoutBatchRecord> mockPayoutBatches = new HashMap<>();
+
+    public record MockOrderRecord(String orderId, String customId, long amountCents, String currency) {}
+
+    public record MockPayoutBatchRecord(
+            String payoutBatchId,
+            String senderBatchId,
+            String status,
+            String totalAmount,
+            String currency,
+            int itemsCount,
+            Instant createdAt
+    ) {}
+
+    public record PayoutBatchExecutionResult(
+            String payoutBatchId,
+            String batchStatus,
+            String senderBatchId
+    ) {}
 
     /**
      * Retrieves or refreshes OAuth2 Bearer token from PayPal.
@@ -267,4 +289,237 @@ public class PayPalClient {
             throw new RuntimeException("Error communicating with PayPal Capture API: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Executes the PayPal Batch Payouts API according to Contract 3.
+     * POST /v1/payments/payouts with PayPal-Request-Id idempotency protection.
+     */
+    public PayoutBatchExecutionResult executeBatchPayout(
+            String senderBatchId,
+            List<PayoutBatchItemDto> items,
+            String emailSubject,
+            String emailMessage,
+            String idempotencyKey) {
+
+        long totalCents = items.stream().mapToLong(PayoutBatchItemDto::getAmountCents).sum();
+        String totalFormatted = CurrencyUtils.centsToFormattedString(totalCents);
+        String currency = items.isEmpty() ? "USD" : items.get(0).getCurrency();
+
+        if (payPalProperties.isMock()) {
+            String mockBatchId = "5U" + UUID.randomUUID().toString().replace("-", "").substring(0, 11).toUpperCase();
+            mockPayoutBatches.put(mockBatchId, new MockPayoutBatchRecord(
+                    mockBatchId,
+                    senderBatchId,
+                    "SUCCESS",
+                    totalFormatted,
+                    currency,
+                    items.size(),
+                    Instant.now()
+            ));
+
+            log.info("[MOCK PAYPAL] Executed batch payout {} (senderBatchId: {}, items: {}, total: {} {})",
+                    mockBatchId, senderBatchId, items.size(), totalFormatted, currency);
+            return new PayoutBatchExecutionResult(mockBatchId, "SUCCESS", senderBatchId);
+        }
+
+        String token = getAccessToken();
+        Map<String, Object> senderBatchHeader = Map.of(
+                "sender_batch_id", senderBatchId,
+                "email_subject", emailSubject != null ? emailSubject : "TripSheriff: Your Trip Reimbursement is Here!",
+                "email_message", emailMessage != null ? emailMessage : "The trip ledger has been settled. Funds have been disbursed."
+        );
+
+        List<Map<String, Object>> payoutItems = new ArrayList<>();
+        for (PayoutBatchItemDto item : items) {
+            payoutItems.add(Map.of(
+                    "recipient_type", "EMAIL",
+                    "amount", Map.of(
+                            "value", item.getFormattedAmount(),
+                            "currency", item.getCurrency()
+                    ),
+                    "receiver", item.getReceiverEmail(),
+                    "note", item.getNote() != null ? item.getNote() : "TripSheriff Settlement",
+                    "sender_item_id", item.getSenderItemId()
+            ));
+        }
+
+        Map<String, Object> payload = Map.of(
+                "sender_batch_header", senderBatchHeader,
+                "items", payoutItems
+        );
+
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(payload);
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(payPalProperties.getBaseUrl() + "/v1/payments/payouts"))
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .timeout(Duration.ofSeconds(15));
+
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                requestBuilder.header("PayPal-Request-Id", idempotencyKey);
+            }
+
+            HttpRequest request = requestBuilder.build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                JsonNode root = objectMapper.readTree(response.body());
+                JsonNode batchHeader = root.path("batch_header");
+                String payoutBatchId = batchHeader.path("payout_batch_id").asText();
+                String batchStatus = batchHeader.path("batch_status").asText();
+
+                log.info("Successfully executed PayPal batch payout {} with status {}", payoutBatchId, batchStatus);
+                return new PayoutBatchExecutionResult(payoutBatchId, batchStatus, senderBatchId);
+            } else {
+                throw new IllegalStateException("Failed to execute PayPal batch payout: HTTP " + response.statusCode() + " " + response.body());
+            }
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Error communicating with PayPal Batch Payouts API: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Queries the status of a PayPal payout batch: GET /v1/payments/payouts/{id}
+     */
+    public PayoutBatchStatusResponse getPayoutBatch(String payoutBatchId) {
+        if (payPalProperties.isMock() || mockPayoutBatches.containsKey(payoutBatchId)) {
+            MockPayoutBatchRecord mock = mockPayoutBatches.get(payoutBatchId);
+            if (mock != null) {
+                return PayoutBatchStatusResponse.builder()
+                        .payoutBatchId(mock.payoutBatchId())
+                        .batchStatus(mock.status())
+                        .senderBatchId(mock.senderBatchId())
+                        .totalAmount(mock.totalAmount())
+                        .currency(mock.currency())
+                        .createdAt(mock.createdAt())
+                        .itemsCount(mock.itemsCount())
+                        .build();
+            }
+            return PayoutBatchStatusResponse.builder()
+                    .payoutBatchId(payoutBatchId)
+                    .batchStatus("SUCCESS")
+                    .senderBatchId("batch_mock_" + payoutBatchId)
+                    .totalAmount("160.00")
+                    .currency("USD")
+                    .createdAt(Instant.now())
+                    .itemsCount(1)
+                    .build();
+        }
+
+        String token = getAccessToken();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(payPalProperties.getBaseUrl() + "/v1/payments/payouts/" + payoutBatchId))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .GET()
+                .timeout(Duration.ofSeconds(10))
+                .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                JsonNode root = objectMapper.readTree(response.body());
+                JsonNode batchHeader = root.path("batch_header");
+                String status = batchHeader.path("batch_status").asText();
+                String senderBatchId = batchHeader.path("sender_batch_header").path("sender_batch_id").asText();
+                String amount = batchHeader.path("amount").path("value").asText();
+                String currency = batchHeader.path("amount").path("currency").asText();
+                int itemsCount = root.path("items").size();
+
+                return PayoutBatchStatusResponse.builder()
+                        .payoutBatchId(payoutBatchId)
+                        .batchStatus(status)
+                        .senderBatchId(senderBatchId)
+                        .totalAmount(amount)
+                        .currency(currency)
+                        .createdAt(Instant.now())
+                        .itemsCount(itemsCount)
+                        .build();
+            } else {
+                throw new IllegalStateException("Failed to get PayPal batch payout status: HTTP " + response.statusCode() + " " + response.body());
+            }
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Error communicating with PayPal Batch Payouts API: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Validates PayPal webhook signatures via POST /v1/notifications/verify-webhook-signature
+     */
+    public boolean verifyWebhookSignature(Map<String, String> headers, JsonNode webhookEventJson) {
+        String transmissionId = getHeader(headers, "paypal-transmission-id");
+        String transmissionTime = getHeader(headers, "paypal-transmission-time");
+        String transmissionSig = getHeader(headers, "paypal-transmission-sig");
+        String certUrl = getHeader(headers, "paypal-cert-url");
+        String authAlgo = getHeader(headers, "paypal-auth-algo");
+
+        if (payPalProperties.isMock() || payPalProperties.getWebhookId() == null || payPalProperties.getWebhookId().isBlank()) {
+            if (transmissionSig == null || transmissionSig.isBlank()) {
+                log.warn("[MOCK PAYPAL] Missing paypal-transmission-sig header");
+                return false;
+            }
+            if (transmissionSig.toUpperCase().contains("FORGED") || transmissionSig.toUpperCase().contains("INVALID")) {
+                log.warn("[MOCK PAYPAL] Rejected forged webhook signature: {}", transmissionSig);
+                return false;
+            }
+            log.info("[MOCK PAYPAL] Successfully verified webhook signature for event {}",
+                    webhookEventJson.path("event_type").asText());
+            return true;
+        }
+
+        String token = getAccessToken();
+        String webhookId = payPalProperties.getWebhookId();
+
+        Map<String, Object> verifyBody = Map.of(
+                "auth_algo", authAlgo != null ? authAlgo : "",
+                "cert_url", certUrl != null ? certUrl : "",
+                "transmission_id", transmissionId != null ? transmissionId : "",
+                "transmission_sig", transmissionSig != null ? transmissionSig : "",
+                "transmission_time", transmissionTime != null ? transmissionTime : "",
+                "webhook_id", webhookId,
+                "webhook_event", webhookEventJson
+        );
+
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(verifyBody);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(payPalProperties.getBaseUrl() + "/v1/notifications/verify-webhook-signature"))
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .timeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                JsonNode resNode = objectMapper.readTree(response.body());
+                String status = resNode.path("verification_status").asText();
+                boolean verified = "SUCCESS".equalsIgnoreCase(status);
+                log.info("PayPal webhook verification returned: {} (verified: {})", status, verified);
+                return verified;
+            } else {
+                log.error("Failed to verify webhook signature: HTTP {} {}", response.statusCode(), response.body());
+                return false;
+            }
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Error communicating with PayPal webhook verification endpoint: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private String getHeader(Map<String, String> headers, String targetHeader) {
+        if (headers == null) return null;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(targetHeader)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
 }
+
