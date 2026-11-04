@@ -129,21 +129,24 @@ class RoastCardGenerator:
 
         # ── Name ─────────────────────────────────────────────────────────
         font_name = _try_font(30, bold=True)
-        display_name = debtor_handle or debtor_name
+        display_name = (debtor_handle or debtor_name or "Deadbeat")[:28]
         draw.text((W // 2, 285), display_name, fill=_TEXT_DARK, font=font_name, anchor="mm")
 
         # ── Amount / bounty ───────────────────────────────────────────────
-        amount_str = f"BOUNTY:  ${amount_cents / 100:,.2f}"
+        safe_amount = abs(int(amount_cents))
+        amount_str = f"BOUNTY:  ${safe_amount / 100:,.2f}"
         font_bounty = _try_font(22, bold=True)
         draw.text((W // 2, 318), amount_str, fill=_RED_WANTED, font=font_bounty, anchor="mm")
 
         # ── Crime ─────────────────────────────────────────────────────────
         font_crime = _try_font(14, bold=False)
-        crime_text = f"CRIME: Unpaid \"{description[:36]}\""
+        clean_desc = (description or "Unpaid Group Expense")[:32]
+        crime_text = f"CRIME: Unpaid \"{clean_desc}\""
         draw.text((W // 2, 344), crime_text, fill=_SUBTEXT, font=font_crime, anchor="mm")
 
         if creditor_name:
-            victim_text = f"VICTIM: {creditor_name} (still waiting)"
+            clean_creditor = creditor_name[:24]
+            victim_text = f"VICTIM: {clean_creditor} (still waiting)"
             draw.text((W // 2, 364), victim_text, fill=_SUBTEXT, font=font_crime, anchor="mm")
 
         # ── Divider ───────────────────────────────────────────────────────

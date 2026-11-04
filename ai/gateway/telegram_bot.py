@@ -132,11 +132,17 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             f"• **Current Roast Consent**: `{profile['roast_consent']}`\n\n"
             f"Select your consensual roast tolerance below to protect your dignity:"
         )
-        await update.message.reply_text(
-            welcome_private,
-            reply_markup=consent_keyboard,
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await update.message.reply_text(
+                welcome_private,
+                reply_markup=consent_keyboard,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await update.message.reply_text(
+                welcome_private,
+                reply_markup=consent_keyboard,
+            )
         return
 
     # 2. Group chat introduction
@@ -161,11 +167,17 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Tap below to link your PayPal sandbox email and calibrate your roast tolerance:"
     )
 
-    await update.message.reply_text(
-        group_welcome,
-        reply_markup=group_keyboard,
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    try:
+        await update.message.reply_text(
+            group_welcome,
+            reply_markup=group_keyboard,
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    except Exception:
+        await update.message.reply_text(
+            group_welcome,
+            reply_markup=group_keyboard,
+        )
 
 
 async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -199,7 +211,10 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 keyboard = InlineKeyboardMarkup([
                     [InlineKeyboardButton("📊 Open AG Grid Dashboard", url=f"{get_web_simulator_url()}#ledger")]
                 ])
-                await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+                try:
+                    await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+                except Exception:
+                    await update.message.reply_text(msg, reply_markup=keyboard)
                 return
     except Exception as exc:
         logger.debug(f"Java backend offline ({exc}), using local simulation")
@@ -221,7 +236,10 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             InlineKeyboardButton("📊 View AG Grid", url=get_web_simulator_url()),
         ]
     ])
-    await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text(msg, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(msg, reply_markup=keyboard)
 
 
 async def roast_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -241,7 +259,10 @@ async def roast_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         }
         tier = mapping.get(args[0].upper(), "PUBLIC_ROAST")
 
-    await update.message.reply_text("🤠 *TripSheriff is inspecting the ledger and drafting the summon...*", parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text("🤠 *TripSheriff is inspecting the ledger and drafting the summon...*", parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text("🤠 TripSheriff is inspecting the ledger and drafting the summon...")
 
     roast_req = EscalateRoastRequest(
         trip_id="trip_bali_2026",
@@ -277,18 +298,31 @@ async def roast_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         card_bytes = base64.b64decode(card_b64)
 
-        await update.message.reply_photo(
-            photo=io.BytesIO(card_bytes),
-            caption=f"🚨 **TRIPSHERIFF BOUNTY ALERT**\n\n{roast_resp.generated_text}",
-            reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await update.message.reply_photo(
+                photo=io.BytesIO(card_bytes),
+                caption=f"🚨 **TRIPSHERIFF BOUNTY ALERT**\n\n{roast_resp.generated_text}",
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await update.message.reply_photo(
+                photo=io.BytesIO(card_bytes),
+                caption=f"🚨 TRIPSHERIFF BOUNTY ALERT\n\n{roast_resp.generated_text}",
+                reply_markup=keyboard,
+            )
     else:
-        await update.message.reply_text(
-            f"⚠️ **Tier {tier} Notice:**\n\n{roast_resp.generated_text}",
-            reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await update.message.reply_text(
+                f"⚠️ **Tier {tier} Notice:**\n\n{roast_resp.generated_text}",
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await update.message.reply_text(
+                f"⚠️ Tier {tier} Notice:\n\n{roast_resp.generated_text}",
+                reply_markup=keyboard,
+            )
 
 
 async def sim_time_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -348,7 +382,10 @@ async def sim_time_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         ]
     ])
 
-    await update.message.reply_text(reply_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text(reply_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(reply_text, reply_markup=keyboard)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -362,7 +399,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "• **Text in group** — Log expenses naturally: *'Paid $90 for groceries split with @alex'*\n"
         "• **Send receipt photo** — Multimodal OCR extracts items & splits bill\n"
     )
-    await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(help_text)
 
 
 # ---------------------------------------------------------------------------
@@ -518,11 +558,17 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             ]
         ]
 
-        await status_msg.edit_text(
-            reply,
-            reply_markup=InlineKeyboardMarkup(buttons),
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await status_msg.edit_text(
+                reply,
+                reply_markup=InlineKeyboardMarkup(buttons),
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await status_msg.edit_text(
+                reply,
+                reply_markup=InlineKeyboardMarkup(buttons),
+            )
 
     except Exception as exc:
         logger.error(f"Failed to process receipt photo: {exc}", exc_info=True)
@@ -548,11 +594,17 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         consent = data.replace("consent_", "")
         profile["roast_consent"] = consent
         icons = {"MILD": "🌶️ Mild", "SPICY": "🌶️🌶️ Spicy", "NO_ROAST": "😇 No Roast"}
-        await query.edit_message_text(
-            f"✅ **Roast Consent Updated!**\n\nYour tolerance is set to **{icons.get(consent, consent)}**.\n"
-            "TripSheriff will strictly respect your boundary during debt enforcement.",
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await query.edit_message_text(
+                f"✅ **Roast Consent Updated!**\n\nYour tolerance is set to **{icons.get(consent, consent)}**.\n"
+                "TripSheriff will strictly respect your boundary during debt enforcement.",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await query.edit_message_text(
+                f"✅ Roast Consent Updated!\n\nYour tolerance is set to {icons.get(consent, consent)}.\n"
+                "TripSheriff will strictly respect your boundary during debt enforcement.",
+            )
 
     elif data.startswith("trigger_roast_"):
         tier = data.replace("trigger_roast_", "")
@@ -570,10 +622,15 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             paypal_checkout_url="https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T",
         )
         roast_resp = await PersonalityMatrixService.generate_escalated_message(roast_req)
-        await query.message.reply_text(
-            f"📢 **{tier} Broadcast:**\n\n{roast_resp.generated_text}",
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        try:
+            await query.message.reply_text(
+                f"📢 **{tier} Broadcast:**\n\n{roast_resp.generated_text}",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await query.message.reply_text(
+                f"📢 {tier} Broadcast:\n\n{roast_resp.generated_text}",
+            )
 
 
 # ---------------------------------------------------------------------------
