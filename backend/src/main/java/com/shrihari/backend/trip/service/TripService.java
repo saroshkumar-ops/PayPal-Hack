@@ -58,6 +58,12 @@ public class TripService {
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + tripId));
     }
 
+    @Transactional
+    public Trip findTripEntityForUpdate(String tripId) {
+        return tripRepository.findByIdForUpdate(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + tripId));
+    }
+
     @Transactional(readOnly = true)
     public List<TripResponse> getAllTrips() {
         return tripRepository.findAll().stream()

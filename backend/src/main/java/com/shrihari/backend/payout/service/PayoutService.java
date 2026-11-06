@@ -118,7 +118,7 @@ public class PayoutService {
      */
     @Transactional
     public PayoutConfirmResponse confirmBatchPayout(String tripId, PayoutConfirmRequest request) {
-        Trip trip = tripService.findTripEntity(tripId);
+        Trip trip = tripService.findTripEntityForUpdate(tripId);
 
         String idempotencyKey = request.getIdempotencyKey();
         if (idempotencyKey == null || idempotencyKey.isBlank()) {

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class PayoutController {
 
     private final PayoutService payoutService;
+    private final com.shrihari.backend.idempotency.service.IdempotencyService idempotencyService;
 
     @Operation(summary = "Human-in-the-Loop payout proposal", description = "Prepares batch payout line items for net creditors, validates platform escrow, and generates an idempotency key for review")
     @GetMapping("/proposal")

@@ -29,8 +29,8 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseResponse createExpense(String tripId, ExpenseCreateRequest request) {
-        // 1. Verify trip exists
-        tripService.findTripEntity(tripId);
+        // 1. Verify trip exists and obtain pessimistic lock for concurrent calculation safety
+        tripService.findTripEntityForUpdate(tripId);
 
         // Resolve amountCents from amount if amountCents not directly provided
         if (request.getAmountCents() == null && request.getAmount() != null) {
