@@ -80,3 +80,4 @@ class DemoAndMemberUpdateIntegrationTest {
                 .andExpect(jsonPath("$[?(@.user_id == 'user_alex')].roast_consent", contains("NO_ROAST")));
     }
 }
+

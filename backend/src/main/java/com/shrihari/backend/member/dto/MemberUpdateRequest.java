@@ -21,3 +21,4 @@ public class MemberUpdateRequest {
     @JsonProperty("roast_consent")
     private String roastConsent; // "MILD", "SPICY", "NO_ROAST"
 }
+
