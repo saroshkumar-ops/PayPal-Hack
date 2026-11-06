@@ -30,6 +30,13 @@ export interface MemberCreateRequest {
   roast_consent?: RoastConsent;
 }
 
+export interface MemberUpdateRequest {
+  name?: string;
+  paypal_email?: string;
+  role?: string;
+  roast_consent?: RoastConsent;
+}
+
 export interface ExpenseSplit {
   user_id: string;
   owes_cents: number;
@@ -106,6 +113,15 @@ export interface TripCreateRequest {
   trip_id: string;
   name: string;
   currency?: string;
+}
+
+export interface DemoSeedResponse {
+  message: string;
+  trip: TripResponse;
+  member_ids: string[];
+  members: Member[];
+  expenses: Expense[];
+  ledger: TripLedger;
 }
 
 export interface SimTimeRequest {
