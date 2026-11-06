@@ -408,10 +408,10 @@ class AgentRouterService:
             if matched_ids:
                 return matched_ids
 
-        # Try matching member names
+        # Try matching member names with word-boundary checks
         named_ids: list[str] = []
         for member in request.active_members:
-            if member.name.lower() in lower and member.user_id not in named_ids:
+            if re.search(r"\b" + re.escape(member.name.lower()) + r"\b", lower) and member.user_id not in named_ids:
                 named_ids.append(member.user_id)
         if request.sender_id not in named_ids:
             named_ids.insert(0, request.sender_id)

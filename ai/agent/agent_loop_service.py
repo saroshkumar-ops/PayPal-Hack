@@ -58,6 +58,8 @@ _RATE_LIMIT_HOURS = 12.0
 
 def _hours_to_tier(hours: float, consent: str, reminders_sent: int, sim_mode: bool) -> str:
     """Maps overdue hours to escalation tier, respecting consent and reminder cap."""
+    safe_hours = max(0.0, float(hours))
+    safe_reminders = max(0, int(reminders_sent))
     if sim_mode:
         # In demo/sim mode, compress tiers to 1-hour windows
         tier_windows: list[tuple[float, str]] = [
@@ -72,12 +74,12 @@ def _hours_to_tier(hours: float, consent: str, reminders_sent: int, sim_mode: bo
 
     tier = "POLITE_CONCIERGE"
     for threshold, t in tier_windows:
-        if hours <= threshold:
+        if safe_hours <= threshold:
             tier = t
             break
 
     # Hard-cap at ITINERARY_EMBARGO after max reminders
-    if reminders_sent >= _MAX_REMINDERS:
+    if safe_reminders >= _MAX_REMINDERS:
         tier = "ITINERARY_EMBARGO"
 
     # Apply consent restrictions
@@ -100,15 +102,18 @@ def _calculate_heat_score(debt: DebtEntry, sim_mode: bool) -> int:
     """
     # Hours component: 0–50
     reference_hours = 72.0 if not sim_mode else 4.0
-    hour_score = min(50, int((debt.hours_overdue / reference_hours) * 50))
+    hours_clamped = max(0.0, float(debt.hours_overdue))
+    hour_score = min(50, int((hours_clamped / reference_hours) * 50))
 
     # Amount component: 0–25
-    amount_score = min(25, int((debt.amount_cents / 10_000) * 25))
+    amount_clamped = max(0, int(debt.amount_cents))
+    amount_score = min(25, int((amount_clamped / 10_000) * 25))
 
     # Persistence component: 0–25
-    persistence_score = min(25, debt.reminders_sent * 6)
+    reminders_clamped = max(0, int(debt.reminders_sent))
+    persistence_score = min(25, reminders_clamped * 6)
 
-    return hour_score + amount_score + persistence_score
+    return max(0, min(100, hour_score + amount_score + persistence_score))
 
 
 class AgentLoopService:
