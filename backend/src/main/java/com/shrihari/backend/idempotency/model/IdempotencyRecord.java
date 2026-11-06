@@ -37,3 +37,4 @@ public class IdempotencyRecord {
     @Builder.Default
     private Instant createdAt = Instant.now();
 }
+

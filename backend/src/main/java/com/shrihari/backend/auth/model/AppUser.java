@@ -43,3 +43,4 @@ public class AppUser {
     @Builder.Default
     private Instant createdAt = Instant.now();
 }
+

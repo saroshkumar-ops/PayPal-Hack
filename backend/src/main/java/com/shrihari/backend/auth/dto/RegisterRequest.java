@@ -19,3 +19,4 @@ public class RegisterRequest {
     @JsonProperty("paypal_email")
     private String paypalEmail;
 }
+
