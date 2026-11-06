@@ -114,6 +114,15 @@ class ReceiptItemizerService:
         if drift != 0 and all_members:
             highest_user = max(all_members, key=lambda u: shares[u].total_cents)
             shares[highest_user].total_cents += drift
+            h_share = shares[highest_user]
+            h_claimed = ", ".join(h_share.claimed_item_names) if h_share.claimed_item_names else "No direct items claimed"
+            h_share.breakdown_text = (
+                f"Items: {curr_sym}{h_share.items_subtotal_cents / 100:.2f} ({h_claimed}) | "
+                f"Shared Pool: {curr_sym}{h_share.unclaimed_pool_share_cents / 100:.2f} | "
+                f"Tax: {curr_sym}{h_share.proportional_tax_cents / 100:.2f} | "
+                f"Tip: {curr_sym}{h_share.proportional_tip_cents / 100:.2f} | "
+                f"Total: {curr_sym}{h_share.total_cents / 100:.2f}"
+            )
 
         final_sum = sum(s.total_cents for s in shares.values())
         is_balanced = (final_sum == receipt.total_cents)

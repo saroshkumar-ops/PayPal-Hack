@@ -24,7 +24,7 @@ public class ExpenseSplit {
     @Column(name = "id", nullable = false, updatable = false, length = 64)
     private String id;
 
-    @Column(name = "expense_id", nullable = false, length = 64)
+    @Column(name = "expense_id", length = 64)
     private String expenseId;
 
     @Column(name = "user_id", nullable = false, length = 64)

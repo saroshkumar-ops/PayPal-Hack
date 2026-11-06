@@ -36,4 +36,14 @@ public class TripMemberController {
     public ResponseEntity<List<MemberResponse>> getMembers(@PathVariable String tripId) {
         return ResponseEntity.ok(memberService.getMembers(tripId));
     }
+
+    @Operation(summary = "Update member details", description = "Updates participant details including PayPal email, role, and roast consent tier")
+    @PutMapping("/{userId}")
+    public ResponseEntity<MemberResponse> updateMember(
+            @PathVariable String tripId,
+            @PathVariable String userId,
+            @RequestBody com.shrihari.backend.member.dto.MemberUpdateRequest request) {
+        MemberResponse response = memberService.updateMember(tripId, userId, request);
+        return ResponseEntity.ok(response);
+    }
 }
