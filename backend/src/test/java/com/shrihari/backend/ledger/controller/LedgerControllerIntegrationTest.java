@@ -40,7 +40,7 @@ class LedgerControllerIntegrationTest {
     @Test
     @DisplayName("End-to-End Contract 1 Flow: Create Trip, Members, Expense, and verify Ledger & Settlements")
     void testEndToEndContractOneFlow() throws Exception {
-        String tripId = "trip_bali_2026";
+        String tripId = "trip_ledger_e2e_2026";
 
         // 1. Create Trip
         TripCreateRequest tripReq = TripCreateRequest.builder()

@@ -15,6 +15,38 @@ This handbook provides ready-to-use `curl` commands, JSON payloads, and expected
 
 ---
 
+## 1.1 One-Click Demo Seeder (`POST /api/demo/seed`)
+
+Resets and seeds the presentation showcase trip (`trip_bali_2026`) with 4 members, 2 fronted expenses, and simplified debts in a single call.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/demo/seed
+```
+
+**Expected Response (`200 OK`):**
+Returns the full snapshot with `trip`, `member_ids`, `members`, `expenses`, and `ledger` (so no additional round-trip calls are needed by the frontend).
+
+---
+
+## 1.2 Update Trip Member Details (`PUT /api/trips/{tripId}/members/{userId}`)
+
+Update roast consent (`MILD`, `SPICY`, `NO_ROAST`), PayPal sandbox email, name, or role.
+
+**Request:**
+```bash
+curl -X PUT http://localhost:8080/api/trips/trip_bali_2026/members/user_alex \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alex Hunter",
+    "paypal_email": "alex.new@personal.example.com",
+    "role": "MEMBER",
+    "roast_consent": "MILD"
+  }'
+```
+
+---
+
 ## 2. Step-by-Step Happy Path Walkthrough (Contract 1 Scenario)
 
 ### Step 1: Create a Trip

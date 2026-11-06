@@ -72,6 +72,31 @@ public class TripMemberService {
                 .toList();
     }
 
+    @Transactional
+    public MemberResponse updateMember(String tripId, String userId, com.shrihari.backend.member.dto.MemberUpdateRequest request) {
+        tripService.findTripEntity(tripId);
+        TripMember member = findMemberEntity(tripId, userId);
+
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            member.setName(request.getName().trim());
+        }
+        if (request.getHandle() != null) {
+            member.setHandle(request.getHandle().trim());
+        }
+        if (request.getPaypalEmail() != null) {
+            member.setPaypalEmail(request.getPaypalEmail().trim());
+        }
+        if (request.getRole() != null) {
+            member.setRole(MemberRole.fromString(request.getRole()));
+        }
+        if (request.getRoastConsent() != null) {
+            member.setRoastConsent(RoastConsent.fromString(request.getRoastConsent()));
+        }
+
+        TripMember updated = memberRepository.save(member);
+        return MemberResponse.fromEntity(updated);
+    }
+
     @Transactional(readOnly = true)
     public TripMember findMemberEntity(String tripId, String userId) {
         return memberRepository.findByTripIdAndUserId(tripId, userId)
