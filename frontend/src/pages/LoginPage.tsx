@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { authService } from '../api/services';
 import { Logo } from '../components/common/Logo';
-import { CyberBackground } from '../components/common/CyberBackground';
 import { Button } from '../components/ui/Button';
 import type { AuthResponseDto } from '../types';
 
@@ -97,9 +96,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col items-center justify-center p-4 sm:p-6 font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative overflow-hidden">
-      <CyberBackground />
-
+    <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col items-center justify-center p-4 sm:p-6 font-body selection:bg-white/20 selection:text-white relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

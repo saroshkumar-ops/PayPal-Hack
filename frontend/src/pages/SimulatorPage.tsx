@@ -186,7 +186,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             <button
               onClick={() => onPayDebt(topDebtor.user_id, topDebtorOwedCents)}
               disabled={isLoading}
-              className="px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_16px_rgba(255,196,57,0.25)]"
+              className="px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" />
               <span>Settle {topDebtor.name.split(' ')[0]} ({cur}{(topDebtorOwedCents / 100).toFixed(2)})</span>
@@ -460,7 +460,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                               onClick={() => toggleClaimant(item.id, member.user_id)}
                               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                                 isClaimed
-                                  ? 'bg-[#171A23] border border-[#C6FF3D]/60 text-[#C6FF3D] shadow-[0_0_10px_rgba(198,255,61,0.15)]'
+                                  ? 'bg-[#171A23] border border-[#C6FF3D]/60 text-[#C6FF3D]'
                                   : 'bg-transparent border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] opacity-50'
                               }`}
                             >

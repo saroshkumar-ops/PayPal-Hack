@@ -257,7 +257,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                     onClick={() => setSelectedLogId(isSelected ? null : log.id)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer font-mono text-xs ${
                       isSelected
-                        ? 'bg-[#171A23] border-[#C6FF3D] shadow-[0_0_16px_rgba(198,255,61,0.15)]'
+                        ? 'bg-[#171A23] border-[#C6FF3D]'
                         : 'bg-[#07080D] border-white/8 hover:border-white/16'
                     }`}
                   >

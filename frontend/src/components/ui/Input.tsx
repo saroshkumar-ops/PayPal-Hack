@@ -24,10 +24,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'w-full bg-[#07080D] border border-white/8 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm text-[#EDEEF2] placeholder-[#8A8FA3] font-body transition-all duration-150',
               'hover:border-white/16',
-              'focus:outline-none focus:border-[#C6FF3D] focus:shadow-[0_0_20px_-2px_rgba(198,255,61,0.25)]',
+              'focus:outline-none focus:border-[#C6FF3D]',
               icon && 'pl-10',
               rightElement && 'pr-11',
-              error && 'border-[#FF5C7A] focus:border-[#FF5C7A] focus:shadow-[0_0_20px_-2px_rgba(255,92,122,0.25)]',
+              error && 'border-[#FF5C7A] focus:border-[#FF5C7A]',
               className
             )}
             {...props}

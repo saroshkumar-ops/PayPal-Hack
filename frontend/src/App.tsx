@@ -13,7 +13,6 @@ import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
 import { CreatePartyModal } from './components/bits/CreatePartyModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
-import { CyberBackground } from './components/common/CyberBackground';
 import { LenisProvider } from './components/common/LenisProvider';
 
 import { 
@@ -426,10 +425,9 @@ export function App() {
     return (
       <LenisProvider>
         <div className="min-h-screen bg-[#07080D] flex flex-col items-center justify-center relative font-body text-[#EDEEF2]">
-          <CyberBackground />
           <div className="z-10 flex flex-col items-center space-y-4">
-            <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-[#C6FF3D]/40 flex items-center justify-center">
-              <div className="w-5 h-5 rounded-full border-2 border-[#C6FF3D] border-t-transparent animate-spin" />
+            <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             </div>
             <div className="text-xs font-mono text-[#8A8FA3]">Connecting to Master Ledger...</div>
           </div>
@@ -442,10 +440,7 @@ export function App() {
   return (
     <LenisProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative">
-          {/* Subtle Cyber Grid & Grain Background Layer */}
-          <CyberBackground />
-
+        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
           {/* Top Cyber Ledger Navbar */}
           <Navbar
             tripName={ledger.trip_name || ledger.name}

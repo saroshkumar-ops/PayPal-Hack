@@ -134,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono">
             <span
               className={`w-2 h-2 rounded-full ${
-                isBackendConnected ? 'bg-[#C6FF3D] shadow-[0_0_8px_#C6FF3D]' : 'bg-[#FF5C7A]'
+                isBackendConnected ? 'bg-[#C6FF3D]' : 'bg-[#FF5C7A]'
               }`}
             />
             <span className="text-[#8A8FA3]">

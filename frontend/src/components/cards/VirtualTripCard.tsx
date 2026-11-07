@@ -116,7 +116,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
             <motion.div
               className="pointer-events-none absolute inset-0 opacity-30 mix-blend-color-dodge transition-opacity duration-300"
               style={{
-                background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(198, 255, 61, 0.25) 0%, rgba(255, 255, 255, 0.06) 40%, transparent 70%)`,
+                background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(255, 255, 255, 0.08) 0%, transparent 60%)`,
               }}
             />
 
@@ -170,7 +170,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                   onPayout();
                 }}
                 disabled={balanceCents <= 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] disabled:opacity-40 disabled:cursor-not-allowed text-[#07080D] text-xs font-bold font-body transition-all shadow-[0_0_16px_rgba(255,196,57,0.2)] cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] disabled:opacity-40 disabled:cursor-not-allowed text-[#07080D] text-xs font-bold font-body transition-all cursor-pointer"
               >
                 <span>Batch Payout</span>
               </button>

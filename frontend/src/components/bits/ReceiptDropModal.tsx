@@ -177,7 +177,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     initial={{ top: '0%' }}
                     animate={{ top: ['0%', '100%', '0%'] }}
                     transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-                    className="absolute left-0 right-0 h-1 bg-[#C6FF3D] shadow-[0_0_20px_4px_#C6FF3D] pointer-events-none z-10"
+                    className="absolute left-0 right-0 h-0.5 bg-[#C6FF3D] pointer-events-none z-10"
                   />
                 )}
 

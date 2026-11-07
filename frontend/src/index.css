@@ -14,7 +14,6 @@
   --color-text: #EDEEF2;
   --color-muted: #8A8FA3;
   --color-accent: #C6FF3D;
-  --color-accent-glow: rgba(198, 255, 61, 0.25);
   --color-paid: #C6FF3D;
   --color-owes: #FF5C7A;
   --color-paypal: #FFC439;
@@ -27,11 +26,10 @@
   --surface-2: #171A23;
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --border-accent: rgba(198, 255, 61, 0.4);
+  --border-accent: rgba(255, 255, 255, 0.16);
   --text: #EDEEF2;
   --muted: #8A8FA3;
   --accent: #C6FF3D;
-  --accent-glow: rgba(198, 255, 61, 0.25);
   --paid: #C6FF3D;
   --owes: #FF5C7A;
   --paypal: #FFC439;
@@ -79,14 +77,9 @@
   --radius-xl: 22px;
   --radius-full: 9999px;
 
-  /* Shadows and Glows */
+  /* Shadows */
   --shadow-hairline: 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-hairline-accent: 0 0 0 1px rgba(198, 255, 61, 0.35);
   --shadow-surface: 0 8px 32px -4px rgba(0, 0, 0, 0.7);
-  --glow-accent: 0 0 24px 0 rgba(198, 255, 61, 0.25);
-  --glow-accent-strong: 0 0 40px 6px rgba(198, 255, 61, 0.35);
-  --glow-owes: 0 0 24px 0 rgba(255, 92, 122, 0.25);
-  --glow-paypal: 0 0 24px 0 rgba(255, 196, 57, 0.25);
 
   color-scheme: dark;
 }
@@ -128,40 +121,19 @@
   }
 }
 
-/* ==========================================================================
-   SUBTLE GRAIN OVERLAY & SCANLINE TEXTURE
-   ========================================================================== */
-.cyber-grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.028;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
 /* Hairline glass panel utility */
 .glass-panel {
-  background: rgba(15, 17, 23, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(15, 17, 23, 0.95);
   border: 1px solid var(--border);
 }
 
 .glass-panel-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel-hover:hover {
   border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-/* Glowing acid-lime border on focus or active highlight */
-.border-lime-glow {
-  border-color: var(--accent);
-  box-shadow: 0 0 20px -2px rgba(198, 255, 61, 0.3);
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================

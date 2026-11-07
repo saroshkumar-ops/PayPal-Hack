@@ -390,7 +390,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                       whileTap={{ scale: 0.98 }}
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between h-28 ${
                         isSelected
-                          ? 'bg-[#171A23] border-[#C6FF3D] shadow-[0_0_16px_rgba(198,255,61,0.15)]'
+                          ? 'bg-[#171A23] border-[#C6FF3D]'
                           : 'bg-[#0F1117] border-white/8 hover:border-white/16'
                       }`}
                     >

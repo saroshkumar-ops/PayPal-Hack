@@ -34,7 +34,7 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
             {isActive && (
               <motion.div
                 layoutId="activeTabPill"
-                className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-600/90 to-indigo-600/90 shadow-lg shadow-blue-500/25 border border-white/20"
+                className="absolute inset-0 rounded-lg bg-[#171A23] border border-white/12"
                 transition={{ type: 'spring', stiffness: 450, damping: 35 }}
               />
             )}

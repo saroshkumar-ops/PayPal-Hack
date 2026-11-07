@@ -32,18 +32,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const variantStyles = {
-      // 10% Acid Lime reserved for primary conversion actions
+      // Clean Acid Lime for primary conversion actions
       primary:
-        'bg-[#C6FF3D] text-[#07080D] font-display font-semibold hover:bg-[#b8f52f] shadow-[0_0_24px_rgba(198,255,61,0.25)] hover:shadow-[0_0_32px_rgba(198,255,61,0.4)] border border-[#C6FF3D]',
-      // 30% Dark surface with hairline border
+        'bg-[#C6FF3D] text-[#07080D] font-display font-semibold hover:bg-[#b8f52f] border border-[#C6FF3D]',
+      // Dark surface with hairline border
       secondary:
         'bg-[#171A23] text-[#EDEEF2] border border-white/8 hover:border-white/16 hover:bg-[#1f232f] hover:text-white',
       // Strict PayPal Gold (#FFC439) for checkout actions
       paypal:
-        'bg-[#FFC439] text-[#07080D] font-bold hover:bg-[#f5b828] shadow-[0_0_20px_rgba(255,196,57,0.25)] border border-[#FFC439]',
+        'bg-[#FFC439] text-[#07080D] font-bold hover:bg-[#f5b828] border border-[#FFC439]',
       // Debt / Owes action (Coral #FF5C7A)
       owes:
-        'bg-[#FF5C7A] text-[#07080D] font-bold hover:bg-[#f04f6e] shadow-[0_0_20px_rgba(255,92,122,0.25)] border border-[#FF5C7A]',
+        'bg-[#FF5C7A] text-[#07080D] font-bold hover:bg-[#f04f6e] border border-[#FF5C7A]',
       ghost:
         'bg-transparent text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/4 border border-transparent',
       outline:
