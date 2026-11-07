@@ -10,9 +10,15 @@ export const ENDPOINTS = {
     BY_ID: (tripId: string) => `/api/trips/${tripId}`,
     SIM_TIME: (tripId: string) => `/api/trips/${tripId}/sim-time`,
     MEMBERS: (tripId: string) => `/api/trips/${tripId}/members`,
+    MEMBER_BY_ID: (tripId: string, userId: string) => `/api/trips/${tripId}/members/${userId}`,
     EXPENSES: (tripId: string) => `/api/trips/${tripId}/expenses`,
     LEDGER: (tripId: string) => `/api/trips/${tripId}/ledger`,
     SETTLEMENTS: (tripId: string) => `/api/trips/${tripId}/settlements`,
+  },
+
+  // One-Click Demo Seeder
+  DEMO: {
+    SEED: '/api/demo/seed',
   },
 
   // PayPal Financial Gateway (Tasks C, D, E)

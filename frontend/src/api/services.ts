@@ -9,6 +9,8 @@ import type {
   TripCreateRequest,
   Member,
   MemberCreateRequest,
+  MemberUpdateRequest,
+  DemoSeedResponse,
   Expense,
   ExpenseCreateRequest,
   SettlementTransaction,
@@ -157,6 +159,24 @@ export const memberService = {
       return res.data;
     } catch {
       return mockLedger.members;
+    }
+  },
+
+  /** Update trip member (PUT /api/trips/{tripId}/members/{userId}) */
+  updateMember: async (tripId: string, userId: string, update: MemberUpdateRequest): Promise<Member> => {
+    try {
+      const res = await backendClient.put<Member>(ENDPOINTS.TRIPS.MEMBER_BY_ID(tripId, userId), update);
+      return res.data;
+    } catch {
+      const idx = mockLedger.members.findIndex(m => m.user_id === userId);
+      if (idx !== -1) {
+        if (update.name) mockLedger.members[idx].name = update.name;
+        if (update.paypal_email) mockLedger.members[idx].paypal_email = update.paypal_email;
+        if (update.role) mockLedger.members[idx].role = update.role.toLowerCase() as any;
+        if (update.roast_consent) mockLedger.members[idx].roast_consent = update.roast_consent;
+        return mockLedger.members[idx];
+      }
+      throw new Error('Member not found');
     }
   },
 };
@@ -896,3 +916,13 @@ function recalcBalances() {
 
   mockLedger.net_balances_cents = balances;
 }
+
+/**
+ * 8. One-Click Demo Seeder
+ */
+export const demoService = {
+  seedDemo: async (): Promise<DemoSeedResponse> => {
+    const res = await backendClient.post<DemoSeedResponse>(ENDPOINTS.DEMO.SEED);
+    return res.data;
+  },
+};

@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
-  Receipt, 
   ShieldCheck, 
   Clock, 
   ArrowRight, 
   PlusCircle, 
-  Terminal,
-  Sparkles 
+  Sparkles, 
+  PieChart, 
+  BarChart3, 
+  ChevronDown, 
+  Layers, 
+  Coins, 
+  CheckCircle 
 } from 'lucide-react';
 import type { TripLedger } from '../types';
+import { VirtualTripCard } from '../components/cards/VirtualTripCard';
 
 interface OverviewPageProps {
   ledger: TripLedger;
@@ -26,6 +32,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   onOpenReceiptModal,
   onOpenPayoutModal,
 }) => {
+  const [spotlightPos, setSpotlightPos] = useState({ x: 0, y: 0, active: false });
+
   const totalSpendCents = ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
   let settledCents = 0;
   let pendingCents = 0;
@@ -44,218 +52,438 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpotlightPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true,
+    });
+  };
+
+  const handleHeroMouseLeave = () => {
+    setSpotlightPos((prev) => ({ ...prev, active: false }));
+  };
+
+  const scrollToFeatures = () => {
+    const el = document.getElementById('bento-features');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="space-y-6 w-full py-1">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#33475A]">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#E7EDF2] tracking-tight m-0">
-            {ledger.trip_name}
-          </h1>
-          <p className="text-xs sm:text-sm text-[#8199AE] m-0 mt-1">
-            Trip Treasury overview • {ledger.members.length} travelers • Integer-cent accounting
+    <div className="space-y-12 w-full py-3">
+      {/* ================================================================ */}
+      {/* 1. HERO SECTION (CYBERBANK FINTECH SHOWCASE WITH INTERACTIVE GLOW)*/}
+      {/* ================================================================ */}
+      <motion.section 
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
+        className="relative rounded-[32px] sm:rounded-[44px] bg-[#10161C] border border-[#33475A] shadow-2xl overflow-hidden pt-10 sm:pt-16 px-6 sm:px-12 lg:px-16 pb-16 sm:pb-20"
+      >
+        {/* Subtle blueprint grid background */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#8199AE_1.5px,transparent_1.5px)] [background-size:32px_32px]" />
+
+        {/* Dynamic Interactive Spotlight that follows mouse */}
+        {spotlightPos.active && (
+          <div
+            className="absolute pointer-events-none rounded-full blur-3xl transition-opacity duration-300"
+            style={{
+              width: 500,
+              height: 500,
+              left: spotlightPos.x - 250,
+              top: spotlightPos.y - 250,
+              background: 'radial-gradient(circle, rgba(78, 106, 131, 0.22) 0%, rgba(129, 153, 174, 0.08) 50%, transparent 75%)',
+            }}
+          />
+        )}
+
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#4E6A83]/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          {/* Left Column: Bold Typography, CTA, Avatars, Key Stats */}
+          <div className="lg:col-span-7 space-y-8">
+            {/* Top pill badge */}
+            <motion.div 
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              whileHover={{ scale: 1.04, borderColor: '#8199AE' }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#1F2C38] border border-[#33475A] text-xs sm:text-sm font-mono text-[#B7C6D3] shadow-sm cursor-default"
+            >
+              <Sparkles className="w-4 h-4 text-[#B7C6D3] animate-pulse" />
+              <span className="uppercase tracking-widest font-bold">Autonomous Travel Treasury</span>
+            </motion.div>
+
+            {/* Main Headline & Punchy Subtitle */}
+            <div className="space-y-4">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#E7EDF2] tracking-tight leading-[1.08] m-0">
+                Digital banking made for group trips
+              </h1>
+              <p className="text-base sm:text-lg text-[#8199AE] max-w-xl leading-relaxed m-0 font-medium">
+                Zero-drift integer-cent splits, real-time PayPal settlements, and escalation-aware trip treasury.
+              </p>
+            </div>
+
+            {/* Action CTA Pills with Micro-Interactions */}
+            <div className="flex flex-wrap items-center gap-4">
+              <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  to="/simulator"
+                  className="inline-flex items-center gap-3.5 px-7 py-4 rounded-full bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-sm sm:text-base font-bold transition-all no-underline shadow-xl shadow-black/50 group"
+                >
+                  <span>Try Judge Simulator</span>
+                  <span className="w-8 h-8 rounded-full bg-[#E7EDF2] text-[#10161C] flex items-center justify-center transition-transform group-hover:translate-x-1 shadow-md">
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              </motion.div>
+
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <button
+                  onClick={onOpenReceiptModal}
+                  className="inline-flex items-center gap-2.5 px-6 py-4 rounded-full bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#E7EDF2] text-sm sm:text-base font-bold transition-all cursor-pointer shadow-md group"
+                >
+                  <Sparkles className="w-4 h-4 text-[#8199AE] group-hover:rotate-12 transition-transform" />
+                  <span>Scan Receipt (Gemini)</span>
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Social Proof Avatar Stack (Interactive Hover Expansion) */}
+            <div className="flex items-center gap-4 pt-2">
+              <div className="flex -space-x-3">
+                {ledger.members.map((m, idx) => (
+                  <motion.div
+                    key={m.user_id}
+                    whileHover={{ y: -6, scale: 1.25, zIndex: 30 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                    title={`${m.name} (${m.role})`}
+                    className="w-10 h-10 rounded-full bg-[#1F2C38] border-2 border-[#10161C] flex items-center justify-center text-sm font-bold text-[#E7EDF2] shadow-md cursor-pointer hover:border-[#8199AE]"
+                    style={{ zIndex: 10 - idx }}
+                  >
+                    {m.name.charAt(0)}
+                  </motion.div>
+                ))}
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-bold text-[#E7EDF2]">
+                  {ledger.members.length} Active Travelers <span className="text-[#8199AE] font-normal">• {ledger.trip_name || ledger.name || 'Goa Beach Trip 2026'}</span>
+                </div>
+                <div className="text-xs sm:text-sm text-[#4E6A83] font-semibold flex items-center gap-1.5 mt-0.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-[#8199AE]" />
+                  <span>100% Zero-drift settled</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom 3-Stat Counter Row (Interactive Hover Feedback) */}
+            <div className="pt-8 border-t border-[#33475A]/70 grid grid-cols-3 gap-3 sm:gap-6">
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
+                  ₹{(totalSpendCents / 100).toFixed(0)}
+                </div>
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                  Total Volume
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
+                  {settledPercentage}%
+                </div>
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                  Settled Rate
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ y: -4, scale: 1.04 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="p-3 sm:p-4 rounded-2xl bg-[#1F2C38]/40 hover:bg-[#1F2C38] border border-transparent hover:border-[#4E6A83] transition-all cursor-default"
+              >
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-[#E7EDF2] tracking-tight">
+                  ₹0.00
+                </div>
+                <div className="text-[11px] sm:text-xs text-[#8199AE] font-bold uppercase tracking-wider mt-1">
+                  Rounding Drift
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive 3D Dual Cards Stage */}
+          <div className="lg:col-span-5 flex justify-center lg:justify-end">
+            <VirtualTripCard
+              balanceCents={organizerOwedCents}
+              tripName={ledger.trip_name || ledger.name || 'Goa Beach Trip 2026'}
+              organizerName={organizer.name}
+              organizerEmail={organizer.paypal_email || 'sarah.chen@trip.mock'}
+              onPayout={onOpenPayoutModal}
+            />
+          </div>
+        </div>
+
+        {/* Distinctive Bottom Curved Notch with Interactive Down Arrow */}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center">
+          <motion.button
+            animate={{ y: [0, 4, 0] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+            whileHover={{ y: 6, scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={scrollToFeatures}
+            aria-label="Scroll to features"
+            className="w-12 h-12 rounded-full bg-[#1F2C38] border border-[#33475A] shadow-2xl flex items-center justify-center text-[#E7EDF2] hover:bg-[#33475A] transition-colors cursor-pointer group"
+          >
+            <ChevronDown className="w-6 h-6 text-[#8199AE] group-hover:text-[#E7EDF2] transition-colors" />
+          </motion.button>
+        </div>
+      </motion.section>
+
+      {/* ================================================================ */}
+      {/* 2. PARTNER / ARCHITECTURE PILL MARQUEE                           */}
+      {/* ================================================================ */}
+      <section className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 py-2">
+        {[
+          { label: 'PayPal Orders v2', icon: <ShieldCheck className="w-4 h-4 text-[#B7C6D3]" /> },
+          { label: 'Gemini 2.5 Flash OCR', icon: <Sparkles className="w-4 h-4 text-[#B7C6D3]" /> },
+          { label: 'Spring Boot 3.4', icon: <Layers className="w-4 h-4 text-[#B7C6D3]" /> },
+          { label: 'AG Grid Enterprise', icon: <Coins className="w-4 h-4 text-[#B7C6D3]" /> },
+          { label: 'Sim-Time Escalation', icon: <Clock className="w-4 h-4 text-[#B7C6D3]" /> },
+        ].map((item, idx) => (
+          <motion.div
+            key={idx}
+            whileHover={{ y: -3, scale: 1.05 }}
+            className="px-5 py-2.5 rounded-full bg-[#1F2C38] border border-[#33475A] text-xs sm:text-sm font-mono font-semibold text-[#8199AE] hover:text-[#E7EDF2] flex items-center gap-2.5 shadow-sm transition-colors cursor-default"
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </motion.div>
+        ))}
+      </section>
+
+      {/* ================================================================ */}
+      {/* 3. "WHAT DO WE OFFER?" BENTO FEATURE GRID                        */}
+      {/* ================================================================ */}
+      <section id="bento-features" className="space-y-8 pt-6">
+        <div className="text-center max-w-xl mx-auto space-y-2">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#E7EDF2] tracking-tight m-0">
+            What do we offer?
+          </h2>
+          <p className="text-sm sm:text-base text-[#8199AE] m-0 font-medium">
+            Zero-drift mathematics, multimodal itemization, and automated checkout.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Link
-            to="/simulator"
-            className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-xs font-semibold transition-all no-underline shadow-sm"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Bento Card 1: Zero Drift Guarantee */}
+          <motion.div 
+            whileHover={{ y: -6, borderColor: '#4E6A83' }}
+            transition={{ duration: 0.2 }}
+            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 sm:p-8 flex flex-col justify-between shadow-lg"
           >
-            <Terminal className="w-3.5 h-3.5" />
-            Open Chat Simulator
-          </Link>
-        </div>
-      </div>
-
-      {/* Hero Bento: Virtual Card + Stat Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Virtual Card (4 cols on widescreen) */}
-        <div className="lg:col-span-4 rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5 sm:p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-[#33475A]">
             <div>
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[#8199AE]">
-                PayPal Travel Treasury
+              <div className="w-14 h-14 rounded-2xl bg-[#10161C] border border-[#33475A] flex items-center justify-center mb-6 shadow-inner">
+                <ShieldCheck className="w-7 h-7 text-[#E7EDF2]" />
               </div>
-              <div className="text-xs font-semibold text-[#E7EDF2] mt-0.5">
-                Fronted by {organizer.name}
+
+              <h3 className="text-xl sm:text-2xl font-bold text-[#E7EDF2] m-0">
+                Security Guarantee
+              </h3>
+              <p className="text-sm text-[#8199AE] mt-2 mb-6 leading-relaxed">
+                Deterministic integer-paisa split algorithm ensures exact mathematical balance with zero drift.
+              </p>
+            </div>
+
+            {/* Visual Mini-Widget: Live Drift Equilibrium Gauge */}
+            <div className="p-4 rounded-2xl bg-[#10161C] border border-[#33475A] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#8199AE] font-semibold">Ledger Drift:</span>
+                <span className="text-[#E7EDF2] font-bold">₹0.00 / 0%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#1F2C38] overflow-hidden">
+                <div className="h-full bg-[#4E6A83] rounded-full w-full" />
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#8199AE] pt-1">
+                <span>100% Balanced</span>
+                <span className="text-[#B7C6D3] font-semibold">Verified</span>
               </div>
             </div>
-            <span className="font-mono text-xs text-[#8199AE]">•••• 8821</span>
-          </div>
+          </motion.div>
 
-          <div className="my-5 sm:my-6 space-y-3">
+          {/* Bento Card 2: Proportional Itemization */}
+          <motion.div 
+            whileHover={{ y: -6, borderColor: '#4E6A83' }}
+            transition={{ duration: 0.2 }}
+            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 sm:p-8 flex flex-col justify-between shadow-lg"
+          >
             <div>
-              <div className="text-xs text-[#8199AE] uppercase tracking-wider font-medium">
-                Net Reimbursable Balance
+              <div className="w-14 h-14 rounded-2xl bg-[#10161C] border border-[#33475A] flex items-center justify-center mb-6 shadow-inner">
+                <PieChart className="w-7 h-7 text-[#E7EDF2]" />
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-[#E7EDF2] tracking-tight mt-1">
-                ₹{(organizerOwedCents / 100).toFixed(2)}{' '}
-                <span className="text-xs text-[#8199AE] font-normal">INR</span>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-[#E7EDF2] m-0">
+                Proportional Splits
+              </h3>
+              <p className="text-sm text-[#8199AE] mt-2 mb-6 leading-relaxed">
+                Gemini OCR extracts line items. Taxes and tips are apportioned by actual consumption ratio.
+              </p>
+            </div>
+
+            {/* Visual Mini-Widget: Proportional Ratio Split Bar */}
+            <div className="p-4 rounded-2xl bg-[#10161C] border border-[#33475A] space-y-2.5">
+              <div className="text-xs font-mono text-[#8199AE] font-semibold">
+                Dynamic Tax & Tip Share
               </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-[#33475A]/60 text-xs">
-              <span className="text-[#8199AE]">Sandbox Escrow:</span>
-              <span className="font-mono font-semibold text-[#E7EDF2]">
-                ₹{((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} INR
-              </span>
-            </div>
-
-            <div className="text-[11px] text-[#8199AE] font-mono truncate">
-              Receiver: {organizer.paypal_email}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-[#33475A] flex items-center justify-between">
-            <span className="text-xs text-[#8199AE]">1-Click Settlement</span>
-            <button
-              onClick={onOpenPayoutModal}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] text-xs font-semibold transition-all cursor-pointer shadow-sm"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Batch Payout
-            </button>
-          </div>
-        </div>
-
-        {/* 3 Metrics Cards (8 cols on widescreen) */}
-        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Metric 1 */}
-          <div className="rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#8199AE] uppercase tracking-wider">
-                Total Expenses
-              </span>
-              <Receipt className="w-4 h-4 text-[#8199AE]" />
-            </div>
-            <div className="my-2">
-              <div className="text-2xl font-bold font-mono text-[#E7EDF2]">
-                ₹{(totalSpendCents / 100).toFixed(2)}
+              <div className="flex h-2.5 w-full rounded-full overflow-hidden gap-1">
+                <div className="bg-[#E7EDF2] h-full w-[42%]" title="Sarah 42%" />
+                <div className="bg-[#8199AE] h-full w-[33%]" title="Alex 33%" />
+                <div className="bg-[#4E6A83] h-full w-[25%]" title="Dave 25%" />
               </div>
-              <div className="text-[11px] text-[#8199AE] mt-0.5">Across {ledger.expenses.length} logged items</div>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-[#10161C] overflow-hidden mt-2">
-              <div
-                className="h-full bg-[#4E6A83] rounded-full"
-                style={{ width: `${settledPercentage}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Metric 2 */}
-          <div className="rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#8199AE] uppercase tracking-wider">
-                Settled Rate
-              </span>
-              <ShieldCheck className="w-4 h-4 text-[#8199AE]" />
-            </div>
-            <div className="my-2">
-              <div className="text-2xl font-bold font-mono text-[#E7EDF2]">
-                {settledPercentage}%
-              </div>
-              <div className="text-[11px] text-[#8199AE] mt-0.5">
-                ₹{(settledCents / 100).toFixed(2)} settled via PayPal
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#8199AE]">
+                <span>Sarah 42%</span>
+                <span>Alex 33%</span>
+                <span>Dave 25%</span>
               </div>
             </div>
-            <div className="text-[11px] text-[#8199AE]">Zero floating-point drift</div>
-          </div>
+          </motion.div>
 
-          {/* Metric 3 */}
-          <div className="rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#8199AE] uppercase tracking-wider">
-                Pending Debts Pool
-              </span>
-              <Clock className="w-4 h-4 text-[#8199AE]" />
+          {/* Bento Card 3: Autonomous Escalations */}
+          <motion.div 
+            whileHover={{ y: -6, borderColor: '#4E6A83' }}
+            transition={{ duration: 0.2 }}
+            className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 sm:p-8 flex flex-col justify-between shadow-lg"
+          >
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-[#10161C] border border-[#33475A] flex items-center justify-center mb-6 shadow-inner">
+                <BarChart3 className="w-7 h-7 text-[#E7EDF2]" />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-[#E7EDF2] m-0">
+                Automated Escalation
+              </h3>
+              <p className="text-sm text-[#8199AE] mt-2 mb-6 leading-relaxed">
+                Sim-time engine advances overdue debts through 5 roast tiers and triggers 1-click PayPal orders.
+              </p>
             </div>
-            <div className="flex items-center justify-between my-2">
-              <div>
-                <div className="text-2xl font-bold font-mono text-[#E7EDF2]">
-                  ₹{(pendingCents / 100).toFixed(2)}
+
+            {/* Visual Mini-Widget: 3-Tier Escalation Step Progress */}
+            <div className="p-4 rounded-2xl bg-[#10161C] border border-[#33475A] space-y-2">
+              <div className="text-xs font-mono text-[#8199AE] font-semibold">
+                Sim-Time Escalation Pipeline
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 pt-1">
+                <div className="p-1.5 rounded-lg bg-[#1F2C38] text-center border border-[#33475A]">
+                  <span className="text-[10px] font-mono text-[#8199AE] block">24h</span>
+                  <span className="text-xs font-bold text-[#B7C6D3]">Notice</span>
                 </div>
-                <div className="text-[11px] text-[#8199AE] mt-0.5">
-                  Across pending group splits
+                <div className="p-1.5 rounded-lg bg-[#4E6A83]/30 text-center border border-[#4E6A83]">
+                  <span className="text-[10px] font-mono text-[#B7C6D3] block">48h</span>
+                  <span className="text-xs font-bold text-[#E7EDF2]">AI Roast</span>
+                </div>
+                <div className="p-1.5 rounded-lg bg-[#1F2C38] text-center border border-[#33475A]">
+                  <span className="text-[10px] font-mono text-[#8199AE] block">72h</span>
+                  <span className="text-xs font-bold text-[#8199AE]">Embargo</span>
                 </div>
               </div>
-              <Link
-                to="/ledger"
-                className="flex items-center gap-1.5 text-xs text-[#E7EDF2] hover:text-[#B7C6D3] no-underline font-medium"
-              >
-                AG Grid <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
-            <div className="text-[11px] text-[#8199AE]">2 travelers awaiting settlement</div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================================================================ */}
+      {/* 4. QUICK SIMULATION CONTROLS (INTERACTIVE ACTION CARDS)          */}
+      {/* ================================================================ */}
+      <section className="rounded-3xl bg-[#1F2C38] border border-[#33475A] p-7 sm:p-8 shadow-xl">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#33475A]">
+          <div>
+            <span className="text-sm sm:text-base font-bold text-[#E7EDF2] uppercase tracking-wider font-mono">
+              Quick Simulation Controls
+            </span>
+            <div className="text-xs sm:text-sm text-[#8199AE] mt-0.5">
+              Trigger virtual transactions and simulate real-time PayPal operations
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions Panel */}
-      <div className="rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5">
-        <div className="text-xs font-bold text-[#E7EDF2] uppercase tracking-wider mb-3">
-          Quick Simulation Controls
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={onSimulateExpense}
-            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[#10161C] hover:bg-[#33475A] border border-[#33475A] text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4 text-[#8199AE]" />
-            Simulate ₹1,500 Group Dinner
-          </button>
-
-          <button
-            onClick={onAdvanceTime}
-            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[#10161C] hover:bg-[#33475A] border border-[#33475A] text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer"
-          >
-            <Clock className="w-4 h-4 text-[#8199AE]" />
-            Fast-Forward Time +24h
-          </button>
-
-          <button
-            onClick={onOpenReceiptModal}
-            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[#10161C] hover:bg-[#33475A] border border-[#33475A] text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4 text-[#8199AE]" />
-            Scan Receipt (Gemini OCR)
-          </button>
-        </div>
-      </div>
-
-      {/* Recent Activity List */}
-      <div className="rounded-2xl bg-[#1F2C38] border border-[#33475A] p-5">
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#33475A]">
-          <span className="text-xs font-bold text-[#E7EDF2] uppercase tracking-wider">
-            Recent Expenses
+          <span className="text-xs sm:text-sm font-mono text-[#8199AE] px-3 py-1 rounded-lg bg-[#10161C] border border-[#33475A]">
+            Trip: <strong className="text-[#E7EDF2]">{ledger.trip_id}</strong>
           </span>
-          <Link
-            to="/ledger"
-            className="text-xs text-[#8199AE] hover:text-[#E7EDF2] no-underline flex items-center gap-1"
-          >
-            Full Ledger <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
 
-        <div className="space-y-2.5">
-          {ledger.expenses.map((exp) => (
-            <div
-              key={exp.expense_id}
-              className="flex items-center justify-between p-3 rounded-xl bg-[#10161C] border border-[#33475A]"
-            >
-              <div>
-                <div className="text-xs font-semibold text-[#E7EDF2]">{exp.description}</div>
-                <div className="text-[11px] text-[#8199AE]">
-                  Category: {exp.category} • Fronted by Sarah
-                </div>
-              </div>
-              <div className="text-right font-mono font-bold text-sm text-[#E7EDF2]">
-                ₹{(exp.amount_cents / 100).toFixed(2)}
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.button
+            whileHover={{ y: -3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onSimulateExpense}
+            className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#10161C] hover:bg-[#33475A]/60 border border-[#33475A] text-left transition-all cursor-pointer shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#1F2C38] border border-[#33475A] flex items-center justify-center shrink-0">
+              <PlusCircle className="w-5 h-5 text-[#8199AE]" />
             </div>
-          ))}
+            <div>
+              <div className="text-sm font-bold text-[#E7EDF2]">Simulate Dinner</div>
+              <div className="text-xs text-[#8199AE]">₹1,500 Group Split</div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ y: -3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onAdvanceTime}
+            className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#10161C] hover:bg-[#33475A]/60 border border-[#33475A] text-left transition-all cursor-pointer shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#1F2C38] border border-[#33475A] flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-[#8199AE]" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[#E7EDF2]">Advance Time</div>
+              <div className="text-xs text-[#8199AE]">+24h Sim-Time</div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ y: -3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenReceiptModal}
+            className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#10161C] hover:bg-[#33475A]/60 border border-[#33475A] text-left transition-all cursor-pointer shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#1F2C38] border border-[#33475A] flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-[#8199AE]" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[#E7EDF2]">Scan Receipt</div>
+              <div className="text-xs text-[#8199AE]">Multimodal Vision</div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ y: -3, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenPayoutModal}
+            className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#4E6A83] hover:bg-[#33475A] border border-[#33475A] text-left transition-all cursor-pointer shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#10161C] border border-[#8199AE]/40 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-[#E7EDF2]" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-[#E7EDF2]">Batch Payout</div>
+              <div className="text-xs text-[#B7C6D3]">1-Click PayPal</div>
+            </div>
+          </motion.button>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

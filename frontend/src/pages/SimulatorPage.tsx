@@ -476,7 +476,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
               {/* Embedded AG Grid Container */}
               <div className="flex-1 rounded-xl overflow-hidden border border-[#33475A] bg-[#10161C]">
-                <div className="ag-theme-quartz-dark w-full h-full">
+                <div className="ag-theme-quartz ag-theme-quartz-dark w-full h-full">
                   <AgGridReact
                     rowData={rowData}
                     columnDefs={colDefs}
