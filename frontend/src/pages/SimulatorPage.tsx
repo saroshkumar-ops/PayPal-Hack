@@ -8,8 +8,9 @@ import {
   Sparkles, 
   Copy, 
   Check, 
-  Zap,
-  Receipt
+  Zap, 
+  Receipt, 
+  Layers 
 } from 'lucide-react';
 import type { ChatMessage, TripLedger, EscalationTier } from '../types';
 import { Button } from '../components/ui/Button';
@@ -129,6 +130,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
   const organizerFirstName = organizer ? organizer.name.split(' ')[0] : 'Organizer';
 
+  // Partner member for suggestion prompt
+  const friendMember = ledger.members.find((m) => m.user_id !== organizer?.user_id) || ledger.members[0];
+  const friendFirstName = friendMember ? friendMember.name.split(' ')[0] : 'friend';
+
   // Dynamically determine the delinquent debtor with lowest net balance
   const topDebtor = ledger.members
     .filter((m) => (ledger.net_balances_cents[m.user_id] || 0) < 0)
@@ -148,10 +153,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
           </div>
           <div>
             <h2 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-              Split Simulator & Operations Room
+              Operations War Room & Simulator
             </h2>
             <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-              Live intent parser, item apportioning, and delinquency tracking
+              Live natural language intent interceptor, interactive bill claims, and escalation heat telemetry
             </p>
           </div>
         </div>
@@ -163,7 +168,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Receipt className="w-3.5 h-3.5 text-[#C6FF3D]" />
-            <span>Scan Receipt</span>
+            <span>Dissect Bill (OCR)</span>
           </button>
 
           <button
@@ -172,7 +177,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-[#FF5C7A]/20 border border-white/10 hover:border-[#FF5C7A]/40 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Flame className="w-3.5 h-3.5 text-[#FF5C7A]" />
-            <span>Advance +24h</span>
+            <span>Fast-Forward +24h</span>
           </button>
 
           {topDebtor ? (
@@ -214,9 +219,40 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
           {/* Messages Feed */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-none">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#8A8FA3]">
-                <Receipt className="w-8 h-8 text-[#8A8FA3]/50 mb-2" />
-                <p className="text-xs font-mono">No messages yet. Send an expense description below.</p>
+              <div className="h-full flex flex-col justify-center space-y-4 p-4 text-xs font-mono">
+                <div className="text-center space-y-1 mb-2">
+                  <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center mx-auto text-[#C6FF3D]">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="text-sm font-display font-bold text-[#EDEEF2]">Natural Language Ledger</div>
+                  <p className="text-[11px] text-[#8A8FA3] font-body m-0">
+                    Type expenses like a regular chat message. The AI parser extracts payers, amounts, and splits.
+                  </p>
+                </div>
+
+                {/* Example Quick Prompts */}
+                <div className="space-y-2">
+                  <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">Tap to try an example:</div>
+                  <button
+                    onClick={() => setInputText(`Paid 120 for dinner split with @${friendFirstName}`)}
+                    className="w-full p-2.5 rounded-xl bg-[#07080D] hover:bg-[#171A23] border border-white/8 text-left text-[11px] text-[#EDEEF2] transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <span>"Paid 120 for dinner split with @{friendFirstName}"</span>
+                    <span className="text-[#C6FF3D] text-[10px]">Use</span>
+                  </button>
+                  <button
+                    onClick={() => setInputText(`Fronted 60 for airport taxi split equally`)}
+                    className="w-full p-2.5 rounded-xl bg-[#07080D] hover:bg-[#171A23] border border-white/8 text-left text-[11px] text-[#EDEEF2] transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <span>"Fronted 60 for airport taxi split equally"</span>
+                    <span className="text-[#C6FF3D] text-[10px]">Use</span>
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#171A23]/50 border border-white/6 text-[11px] text-[#8A8FA3] flex items-center gap-2">
+                  <Paperclip className="w-3.5 h-3.5 text-[#C6FF3D] shrink-0" />
+                  <span>Tip: Or click the paperclip below to scan any receipt photo!</span>
+                </div>
               </div>
             ) : (
               messages.map((msg) => {
@@ -269,8 +305,8 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                                   onClick={() => {
                                     if (btn.payload) {
                                       onPayDebt(btn.payload.userId, btn.payload.amountCents, btn.payload.expenseId);
-                                    } else {
-                                      onPayDebt(topDebtor?.user_id || 'user_alex', 6000, 'exp_villa_demo_01');
+                                    } else if (topDebtor) {
+                                      onPayDebt(topDebtor.user_id, topDebtorOwedCents);
                                     }
                                   }}
                                   icon={<CreditCard className="w-3.5 h-3.5" />}
@@ -346,8 +382,49 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             {/* Bill Line Items with Claimant Chips */}
             <div className="space-y-3">
               {interactiveItems.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3]">
-                  No expense records in ledger. Upload a receipt or add an expense to dissect line items.
+                <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#C6FF3D]/15 flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4 text-[#C6FF3D]" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-[#EDEEF2] font-body">Interactive Item Dissection Demo</div>
+                      <div className="text-[11px] text-[#8A8FA3] font-body mt-0.5">
+                        When you upload a receipt, each item appears here. Below is a preview showing how tapping member chips divides costs:
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Interactive Sample Bill Item */}
+                  <div className="p-3.5 rounded-xl bg-[#171A23] border border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div>
+                      <div className="font-semibold text-[#EDEEF2] font-body">Sample Bill Item (e.g. Group Dinner Platter)</div>
+                      <div className="font-mono text-xs font-bold text-[#C6FF3D] mt-0.5">
+                        {cur}60.00 <span className="text-[10px] text-[#8A8FA3] font-normal">(Shared equally by selected chips)</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {ledger.members.slice(0, 3).map((m) => (
+                        <span
+                          key={m.user_id}
+                          className="px-2 py-0.5 rounded-lg bg-[#07080D] border border-[#C6FF3D]/40 text-[#C6FF3D] font-mono text-[11px]"
+                        >
+                          {m.name.split(' ')[0]}: {cur}{(60 / Math.min(3, ledger.members.length)).toFixed(2)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] font-mono text-[#8A8FA3]">Ready to parse real bills:</span>
+                    <button
+                      onClick={onOpenReceiptModal}
+                      className="px-3 py-1.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] font-mono font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      Scan Receipt Now
+                    </button>
+                  </div>
                 </div>
               ) : (
                 interactiveItems.map((item) => {
@@ -440,7 +517,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             {/* Heat Progress Track */}
             <div className="space-y-1.5 font-mono text-xs">
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Delinquency Timer: +{ledger.hours_elapsed}h elapsed</span>
+                <span>Delinquency Clock: +{ledger.hours_elapsed}h elapsed</span>
                 <span className="font-bold text-[#EDEEF2]">{currentTier.heat}% Pressure</span>
               </div>
               <div className="h-2 w-full rounded-full bg-[#07080D] overflow-hidden p-0.5 border border-white/8">
@@ -455,7 +532,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               </div>
             </div>
 
-            {/* AI Roast Preview Card */}
+            {/* AI Roast Preview Card / Explanation */}
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-[#8A8FA3]">
@@ -471,7 +548,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     ? `"${topDebtor.name.split(' ')[0]}, your outstanding balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} has been delinquent for ${ledger.hours_elapsed} hours. Settle up on PayPal before ${organizerFirstName} triggers sanctions."`
                     : `"Gentle reminder: ${topDebtor.name.split(' ')[0]} has ${cur}${(topDebtorOwedCents / 100).toFixed(2)} outstanding in the ledger. Quick PayPal checkout link active above."`
                 ) : (
-                  '"All members have fully cleared their balances. No roasts or escalation pending."'
+                  '"All members currently have balanced positions. As time advances past 24h/48h/72h without settlement, automated comedic reminders trigger based on each member\'s consensual roast tier."'
                 )}
               </p>
             </div>

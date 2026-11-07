@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Radio, CheckCircle, Wallet } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  Radio, 
+  CheckCircle, 
+  Wallet, 
+  HelpCircle, 
+  CreditCard,
+  Zap
+} from 'lucide-react';
 import type { TripLedger, PayPalEventLog } from '../types';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
@@ -17,17 +25,17 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
   onOpenPayoutModal,
 }) => {
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const [showArchGuide, setShowArchGuide] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
 
-  const fallbackMember = {
-    user_id: 'user_temp',
-    name: 'Trip Organizer',
+  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || {
+    user_id: 'organizer',
+    name: 'Party Organizer',
     handle: '@organizer',
     role: 'organizer' as const,
-    paypal_email: 'organizer@trip.mock',
+    paypal_email: '',
     roast_consent: 'MILD' as const,
   };
-  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || fallbackMember;
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
   let settledCents = 0;
@@ -61,6 +69,14 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <button
+            onClick={() => setShowArchGuide(!showArchGuide)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#171A23] hover:bg-white/6 border border-white/10 text-xs font-mono text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-[#C6FF3D]" />
+            <span>{showArchGuide ? 'Hide Architecture' : 'How Escrow Works'}</span>
+          </button>
+
           <Button
             variant="paypal"
             size="lg"
@@ -75,7 +91,74 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
       </div>
 
       {/* ================================================================ */}
-      {/* 2. GRID: BENEFICIARY RAIL (5) & WEBHOOK RADAR (7)                */}
+      {/* 2. VISUAL ARCHITECTURE GUIDE (PAYPAL ESCROW + PAYOUT LIFECYCLE) */}
+      {/* ================================================================ */}
+      {showArchGuide && (
+        <div className="p-6 rounded-3xl bg-[#0F1117] border border-[#FFC439]/30 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-5">
+          <div className="flex items-center justify-between border-b border-white/8 pb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-[#FFC439]" />
+              <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+                End-to-End PayPal Escrow Architecture
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono text-[#8A8FA3]">PayPal Orders v2 + Payouts API v1</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
+            {/* Step 1 */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="flex items-center justify-between text-[#8A8FA3]">
+                <span className="text-[10px] uppercase font-bold text-[#FFC439]">Phase 01</span>
+                <CreditCard className="w-3.5 h-3.5 text-[#FFC439]" />
+              </div>
+              <div className="font-semibold text-[#EDEEF2] font-body">Debtor Checkout</div>
+              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
+                Debtors click their personalized 1-tap link to approve a sandbox order via PayPal Orders v2.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="flex items-center justify-between text-[#8A8FA3]">
+                <span className="text-[10px] uppercase font-bold text-[#C6FF3D]">Phase 02</span>
+                <Radio className="w-3.5 h-3.5 text-[#C6FF3D]" />
+              </div>
+              <div className="font-semibold text-[#EDEEF2] font-body">Webhook Capture</div>
+              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
+                PayPal sends a real-time webhook (`PAYMENT.CAPTURE.COMPLETED`). Funds land safely in platform escrow.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="flex items-center justify-between text-[#8A8FA3]">
+                <span className="text-[10px] uppercase font-bold text-[#38E1FF]">Phase 03</span>
+                <Wallet className="w-3.5 h-3.5 text-[#38E1FF]" />
+              </div>
+              <div className="font-semibold text-[#EDEEF2] font-body">Escrow Accumulation</div>
+              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
+                Balances pool securely without manual bank transfers. The ledger verifies 0.00 drift.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="flex items-center justify-between text-[#8A8FA3]">
+                <span className="text-[10px] uppercase font-bold text-[#C6FF3D]">Phase 04</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-[#C6FF3D]" />
+              </div>
+              <div className="font-semibold text-[#EDEEF2] font-body">Organizer Batch Payout</div>
+              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
+                The organizer clicks "Authorize Batch Payout". PayPal Batch Payouts API disburses pooled funds directly.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 3. GRID: BENEFICIARY RAIL (5) & WEBHOOK RADAR (7)                */}
       {/* ================================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column: Beneficiary Details */}
@@ -119,7 +202,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                 <Wallet className="w-3.5 h-3.5 text-[#C6FF3D]" />
                 <span>Payout Status</span>
               </div>
-              <p className="text-xs text-[#8A8FA3] font-body m-0">
+              <p className="text-xs text-[#8A8FA3] font-body m-0 leading-relaxed">
                 {organizerOwedCents > 0
                   ? `${cur}${(organizerOwedCents / 100).toFixed(2)} is ready for batch disbursement to ${organizer.paypal_email || organizer.name}.`
                   : 'All collected group funds have been fully disbursed. Escrow is settled.'}
@@ -153,8 +236,14 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
           {/* Webhook Log Event Stream */}
           <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1 scrollbar-none">
             {paypalLogs.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3]">
-                No webhook events logged yet. Complete a checkout or payout to stream real-time events.
+              <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center space-y-3">
+                <Radio className="w-8 h-8 text-[#8A8FA3]/50 mx-auto" />
+                <div className="text-xs font-mono text-[#EDEEF2] font-semibold">
+                  Real-Time SSE Listener Active
+                </div>
+                <p className="text-xs text-[#8A8FA3] font-body max-w-sm mx-auto m-0">
+                  When a member simulates a PayPal capture or executes a batch payout, live Webhook JSON packets stream directly into this console.
+                </p>
               </div>
             ) : (
               paypalLogs.map((log) => {

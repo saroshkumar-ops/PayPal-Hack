@@ -7,6 +7,7 @@ import {
   CreditCard, 
   CheckCircle, 
   Sparkles,
+  ShieldCheck,
   Zap
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
@@ -14,16 +15,14 @@ import { Button } from '../ui/Button';
 
 interface LandingIntroProps {
   onCreateParty: () => void;
-  onExploreDemo: () => void;
 }
 
 export const LandingIntro: React.FC<LandingIntroProps> = ({
   onCreateParty,
-  onExploreDemo,
 }) => {
   const [activeStage, setActiveStage] = useState<0 | 1 | 2>(0);
 
-  // Auto-advance stages every 4.5 seconds for an alive, fun presentation
+  // Auto-advance stages every 4.5 seconds for a dynamic visual presentation
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveStage((prev) => ((prev + 1) % 3) as 0 | 1 | 2);
@@ -38,9 +37,9 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#171A23] border border-white/10 text-xs font-mono text-[#C6FF3D] mb-6 shadow-sm"
+        className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#171A23] border border-white/10 text-xs font-mono text-[#C6FF3D] mb-6 shadow-sm"
       >
-        <Sparkles className="w-3.5 h-3.5" />
+        <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
         <span>AUTONOMOUS GROUP TREASURY</span>
       </motion.div>
 
@@ -63,7 +62,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         </p>
       </motion.div>
 
-      {/* Interactive Stage Visualizer (Fun & Animated - No boring walls of text!) */}
+      {/* Interactive Stage Visualizer */}
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -115,7 +114,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                     <span className="w-2 h-2 rounded-full bg-[#C6FF3D] animate-ping" />
                     <span>MULTIMODAL RECEIPT SLICER</span>
                   </div>
-                  <span>200 OK</span>
+                  <span>VISION OCR VERIFIED</span>
                 </div>
 
                 {/* Simulated Paper Bill with Slicing Laser */}
@@ -130,9 +129,9 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
 
                   {/* Sliced Line Items Spreading Out */}
                   {[
-                    { name: 'Jimbaran Grilled Seafood Platter', price: '₹1,200', tag: 'Dave & Alex' },
-                    { name: 'Cliffside Sunset Villa Deposit', price: '₹6,000', tag: 'All 4 Members' },
-                    { name: 'Fresh Coconuts & Cold Brew', price: '₹400', tag: 'Priya & Sarah' },
+                    { name: 'Dinner & Tapas Platter', price: '₹1,200', tag: 'Claimed by 2 Members' },
+                    { name: 'Weekend Villa / Hotel Stay', price: '₹6,000', tag: 'Split Across All Travelers' },
+                    { name: 'Fresh Cold Brew & Pastries', price: '₹400', tag: 'Fronted by Single Member' },
                   ].map((item, idx) => (
                     <motion.div
                       key={idx}
@@ -166,7 +165,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#8A8FA3] border-b border-white/8 pb-2">
                   <span className="text-[#C6FF3D]">BIPARTITE CASH FLOW TOPOLOGY</span>
-                  <span>O(V+E) REDUCED</span>
+                  <span>O(V+E) MINIMIZED</span>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-[#171A23] border border-white/10 space-y-5">
@@ -179,9 +178,9 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                       className="flex flex-col items-center gap-2"
                     >
                       <div className="w-12 h-12 rounded-2xl bg-[#FF5C7A]/15 border border-[#FF5C7A]/40 flex items-center justify-center font-bold font-mono text-[#FF5C7A]">
-                        AL
+                        D1
                       </div>
-                      <span className="text-xs font-semibold text-[#EDEEF2]">Alex</span>
+                      <span className="text-xs font-semibold text-[#EDEEF2]">Debtor Traveler</span>
                       <span className="text-[10px] font-mono text-[#FF5C7A] font-bold">-₹1,200</span>
                     </motion.div>
 
@@ -209,15 +208,15 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                       className="flex flex-col items-center gap-2"
                     >
                       <div className="w-12 h-12 rounded-2xl bg-[#C6FF3D]/15 border border-[#C6FF3D]/40 flex items-center justify-center font-bold font-mono text-[#C6FF3D]">
-                        SA
+                        C1
                       </div>
-                      <span className="text-xs font-semibold text-[#EDEEF2]">Sarah</span>
+                      <span className="text-xs font-semibold text-[#EDEEF2]">Fronting Member</span>
                       <span className="text-[10px] font-mono text-[#C6FF3D] font-bold">+₹1,200</span>
                     </motion.div>
                   </div>
 
                   <div className="p-3 rounded-xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3]">
-                    6 chaotic group splits reduced into 1 clean transit. Zero remainder drift.
+                    Multi-person circular splits collapsed into direct transfers. Zero remainder drift.
                   </div>
                 </div>
               </motion.div>
@@ -278,26 +277,49 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Big Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+        {/* Feature Highlights Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div className="p-3.5 rounded-2xl bg-[#07080D] border border-white/6 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center shrink-0">
+              <Receipt className="w-4 h-4 text-[#C6FF3D]" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#EDEEF2]">1. Multimodal OCR</div>
+              <div className="text-[11px] text-[#8A8FA3] mt-0.5">Upload any receipt to slice items automatically.</div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-[#07080D] border border-white/6 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-[#FFC439]" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#EDEEF2]">2. Minimum Cash Flow</div>
+              <div className="text-[11px] text-[#8A8FA3] mt-0.5">Reduces complex group debts into direct transfers.</div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-[#07080D] border border-white/6 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4 text-[#C6FF3D]" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[#EDEEF2]">3. PayPal Escrow</div>
+              <div className="text-[11px] text-[#8A8FA3] mt-0.5">One-click member checkouts and batch payouts.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button: Create Party */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
           <Button
             variant="primary"
             size="lg"
             onClick={onCreateParty}
             icon={<ArrowRight className="w-4 h-4" />}
-            className="w-full sm:w-auto text-sm font-display font-bold shadow-[0_0_24px_rgba(198,255,61,0.25)] px-8"
+            className="w-full sm:w-auto text-sm font-display font-bold shadow-[0_0_24px_rgba(198,255,61,0.25)] px-10 py-3.5"
           >
-            Create Party
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={onExploreDemo}
-            icon={<Zap className="w-4 h-4" />}
-            className="w-full sm:w-auto text-sm font-display font-medium px-6"
-          >
-            Explore Demo Party
+            Create Your Party
           </Button>
         </div>
       </motion.div>

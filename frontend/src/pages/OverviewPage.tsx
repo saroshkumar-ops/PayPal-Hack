@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
   ArrowRight, 
   Receipt, 
   ChevronRight,
-  Layers
+  Layers,
+  Sparkles,
+  HelpCircle,
+  CreditCard,
+  ShieldCheck,
+  Zap,
+  Info
 } from 'lucide-react';
 import type { TripLedger } from '../types';
 import { VirtualTripCard } from '../components/cards/VirtualTripCard';
@@ -29,6 +35,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   onOpenPayoutModal,
 }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [activeGuideTab, setActiveGuideTab] = useState<'topology' | 'ocr' | 'escrow'>('topology');
 
   const totalSpendCents = ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
   let settledCents = 0;
@@ -48,15 +56,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   const driftCents = Math.abs(Object.values(ledger.net_balances_cents || {}).reduce((acc, val) => acc + val, 0));
   const cur = getCurrencySymbol(ledger.currency);
 
-  const fallbackMember = {
-    user_id: 'user_temp',
-    name: 'Trip Member',
-    handle: '@member',
+  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || {
+    user_id: 'organizer',
+    name: 'Party Organizer',
+    handle: '@organizer',
     role: 'organizer' as const,
     paypal_email: '',
     roast_consent: 'MILD' as const,
   };
-  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || fallbackMember;
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
   // Simplified settlements directly from backend
@@ -92,7 +99,15 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
+          >
+            <HelpCircle className="w-3 h-3 text-[#C6FF3D]" />
+            <span>{showGuide ? 'Hide Guide' : 'How This Works'}</span>
+          </button>
+
           <button
             onClick={onAdvanceTime}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
@@ -104,7 +119,176 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       </div>
 
       {/* ================================================================ */}
-      {/* 2. PRIMARY COCKPIT (GRAPH / EXECUTION RAIL)                      */}
+      {/* 2. INTERACTIVE VISUAL EXPLANATION & ARCHITECTURE GUIDE (TOGGLE)  */}
+      {/* ================================================================ */}
+      <AnimatePresence>
+        {showGuide && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-3xl bg-[#0F1117] border border-[#C6FF3D]/30 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/8 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#C6FF3D]/10 border border-[#C6FF3D]/30 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-[#C6FF3D]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+                      How Group Treasury Works
+                    </h3>
+                    <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
+                      Visual operational guide for splitting, optimizing, and settling expenses with friends
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center p-1 rounded-xl bg-[#07080D] border border-white/8 text-xs font-mono">
+                  <button
+                    onClick={() => setActiveGuideTab('topology')}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeGuideTab === 'topology'
+                        ? 'bg-[#171A23] text-[#C6FF3D] font-bold border border-white/10'
+                        : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
+                    }`}
+                  >
+                    1. Topology Graph
+                  </button>
+                  <button
+                    onClick={() => setActiveGuideTab('ocr')}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeGuideTab === 'ocr'
+                        ? 'bg-[#171A23] text-[#C6FF3D] font-bold border border-white/10'
+                        : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
+                    }`}
+                  >
+                    2. Receipt Dissection
+                  </button>
+                  <button
+                    onClick={() => setActiveGuideTab('escrow')}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeGuideTab === 'escrow'
+                        ? 'bg-[#171A23] text-[#C6FF3D] font-bold border border-white/10'
+                        : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
+                    }`}
+                  >
+                    3. PayPal Escrow
+                  </button>
+                </div>
+              </div>
+
+              {/* Guide Content Panels */}
+              {activeGuideTab === 'topology' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Minimum Cash Flow</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Instead of 10 people sending micro-payments to each other, the algorithm computes the net position of each traveler and calculates the exact minimum number of direct payments needed.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#C6FF3D]" />
+                      <span>Interactive Traveler Nodes</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Click any traveler card in the topology grid below to highlight their active position: green (+ balance) means creditor, coral (- balance) means debtor.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>0.00 Drift Guarantee</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      All balances are stored as 64-bit integer cents. Total debits match total credits with zero mathematical rounding drift across all splits.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeGuideTab === 'ocr' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>Snap or Upload Bill</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Click "Dissect Bill" in the top right. Drop any paper restaurant bill, villa invoice, or grocery receipt.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                      <span>Line-by-Line AI Parsing</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Multimodal Vision AI extracts each dish or item, price, tax, and tip into separate line items automatically.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Claimant Apportioning</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Tap friend names to assign each dish to who ate it. The system computes their exact share with proportional tax and tip.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeGuideTab === 'escrow' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>1-Tap Member Payment</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Each debtor receives a direct PayPal checkout drawer or link. 1 click opens PayPal Orders v2 for instant settlement.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Platform Escrow Vault</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      Collected funds gather safely in platform escrow. Real-time webhooks stream SSE event updates to the telemetry radar.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                    <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                      <span>Batch Organizer Payout</span>
+                    </div>
+                    <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                      When the trip wraps, the organizer clicks "Authorize Batch Payout" to disburse all collected funds to their PayPal in a single API call.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ================================================================ */}
+      {/* 3. PRIMARY COCKPIT (GRAPH / EXECUTION RAIL)                      */}
       {/* ================================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Cockpit: The Cyber Treasury Graph & Cash-Flow Visualizer */}
@@ -149,6 +333,29 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 </Link>
               </div>
             </div>
+
+            {/* Zero Expenses Onboarding Callout if brand new party */}
+            {ledger.expenses.length === 0 && (
+              <div className="p-4 rounded-2xl bg-[#171A23]/60 border border-[#C6FF3D]/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#C6FF3D]/15 flex items-center justify-center shrink-0">
+                    <Info className="w-4 h-4 text-[#C6FF3D]" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#EDEEF2] font-body">Ready to track your first group expense</div>
+                    <div className="text-[11px] text-[#8A8FA3] font-body mt-0.5">
+                      Upload a receipt or type an expense in the Simulator to activate debt reduction vectors.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={onOpenReceiptModal}
+                  className="px-3 py-1.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] font-mono font-bold text-xs transition-colors shrink-0 cursor-pointer"
+                >
+                  Upload First Bill
+                </button>
+              </div>
+            )}
 
             {/* Interactive Bipartite Cash-Flow Node Canvas */}
             <div className="rounded-2xl bg-[#07080D] border border-white/8 p-5 sm:p-6 space-y-4">
@@ -332,7 +539,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="pt-2">
               <Link to="/simulator" className="no-underline block">
                 <Button variant="secondary" size="sm" className="w-full justify-between">
-                  <span>Simulate Payment Link</span>
+                  <span>Enter Operations Room</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>

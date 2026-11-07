@@ -84,7 +84,7 @@ export const tripService = {
     } catch {
       return [{
         trip_id: mockLedger.trip_id,
-        name: mockLedger.trip_name || 'Bali Reunion 2026',
+        name: mockLedger.trip_name || 'Travel Party',
         currency: mockLedger.currency,
         status: 'ACTIVE',
         created_at: new Date().toISOString(),
@@ -100,7 +100,7 @@ export const tripService = {
     } catch {
       return {
         trip_id: tripId,
-        name: mockLedger.trip_name || 'Bali Reunion 2026',
+        name: mockLedger.trip_name || 'Travel Party',
         currency: mockLedger.currency,
         status: 'ACTIVE',
         created_at: new Date().toISOString(),
@@ -261,61 +261,9 @@ export const ledgerService = {
   },
 
   /** Automatically bootstrap live trip data in backend if empty */
-  autoBootstrapTrip: async (tripId: string = 'trip_bali_2026'): Promise<void> => {
-    try {
-      const trips = await backendClient.get<TripResponse[]>(ENDPOINTS.TRIPS.BASE);
-      const exists = trips.data.some(t => t.trip_id === tripId);
-      if (!exists) {
-        // 1. Create Trip
-        await backendClient.post(ENDPOINTS.TRIPS.BASE, {
-          trip_id: tripId,
-          name: 'Bali Reunion 2026',
-          currency: 'INR',
-        });
-
-        // 2. Add Members
-        await backendClient.post(ENDPOINTS.TRIPS.MEMBERS(tripId), {
-          user_id: 'user_01',
-          name: 'Sarah Chen',
-          handle: '@sarah_c',
-          paypal_email: 'sarah.organizer@personal.example.com',
-          role: 'ORGANIZER',
-          roast_consent: 'SPICY',
-        });
-
-        await backendClient.post(ENDPOINTS.TRIPS.MEMBERS(tripId), {
-          user_id: 'user_02',
-          name: 'Alex Rivera',
-          handle: '@alex_travels',
-          paypal_email: 'alex.debtor@personal.example.com',
-          role: 'MEMBER',
-          roast_consent: 'SPICY',
-        });
-
-        await backendClient.post(ENDPOINTS.TRIPS.MEMBERS(tripId), {
-          user_id: 'user_03',
-          name: 'Dave Kim',
-          handle: '@dave_k',
-          paypal_email: 'dave.payer@personal.example.com',
-          role: 'MEMBER',
-          roast_consent: 'MILD',
-        });
-
-        // 3. Add Initial Sunset Villa Deposit Expense
-        await backendClient.post(ENDPOINTS.TRIPS.EXPENSES(tripId), {
-          expense_id: 'exp_8821',
-          paid_by: 'user_01',
-          amount_cents: 24000,
-          description: 'Sunset Villa Deposit',
-          category: 'LODGING',
-          split_type: 'EQUAL',
-        });
-
-        console.info(`[AutoBootstrap] Successfully seeded ${tripId} into live backend.`);
-      }
-    } catch (e) {
-      console.warn('[AutoBootstrap] Skipped backend seeding (service offline or already initialized).', e);
-    }
+  autoBootstrapTrip: async (_tripId: string): Promise<void> => {
+    // No-op: user creates their own party
+    return;
   },
 };
 
@@ -482,7 +430,7 @@ export const paymentService = {
       const res = await backendClient.post(ENDPOINTS.PAYMENT.CONFIRM_BATCH_PAYOUT(tripId));
       return res.data;
     } catch {
-      const sarah = mockLedger.members.find(m => m.user_id === 'user_01')!;
+      const organizer = mockLedger.members.find(m => m.role === 'organizer') || mockLedger.members[0] || { name: 'Organizer', paypal_email: 'organizer@party.pay' };
       const payoutCents = Math.max(0, mockLedger.net_balances_cents['user_01'] || 19000);
       const batchId = `PAYOUT_BATCH_${Date.now().toString().slice(-6)}`;
 
@@ -497,7 +445,7 @@ export const paymentService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'PAYOUTSBATCH.SUCCESS',
-        summary: `Disbursed ₹${(payoutCents / 100).toFixed(2)} INR reimbursement to ${sarah.paypal_email} via PayPal Batch Payouts API`,
+        summary: `Disbursed ₹${(payoutCents / 100).toFixed(2)} INR reimbursement to ${organizer.paypal_email} via PayPal Batch Payouts API`,
         status: 'SUCCESS',
         amount: `₹${(payoutCents / 100).toFixed(2)} INR`,
         reference_id: batchId,
@@ -512,7 +460,7 @@ export const paymentService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'BATCH PAYOUT DISBURSED',
-        text: `**Trip Treasury Settled!**\n\nReimbursed **₹${(payoutCents / 100).toFixed(2)} INR** to organizer ${sarah.name} (${sarah.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced!`,
+        text: `**Trip Treasury Settled!**\n\nReimbursed **₹${(payoutCents / 100).toFixed(2)} INR** to organizer ${organizer.name} (${organizer.paypal_email}) via **PayPal Batch Payouts API**.\n\nAll accounts balanced!`,
       };
       mockChat.push(chatAnnouncement);
 
@@ -858,7 +806,7 @@ export const simulatorService = {
       debtor_id: debtor.user_id,
       debtor_name: debtor.name,
       debtor_handle: debtor.handle,
-      creditor_name: 'Sarah Chen',
+      creditor_name: mockLedger.members.find(m => m.role === 'organizer')?.name || 'Organizer',
       amount_cents: 8000,
       currency: 'INR',
       expense_description: 'Sunset Villa Deposit',
@@ -882,7 +830,7 @@ export const simulatorService = {
       buttons: [
         {
           text: 'Settle ₹80.00 via PayPal Sandbox',
-          action: 'PAY_ALEX',
+          action: 'PAY_SETTLEMENT',
           payload: { userId: debtor.user_id, amountCents: 8000 },
         },
       ],

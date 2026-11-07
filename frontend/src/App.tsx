@@ -22,7 +22,6 @@ import {
   chatService, 
   simulatorService, 
   paymentService, 
-  demoService,
   checkHealth 
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog } from './types';
@@ -129,24 +128,6 @@ export function App() {
     setLedger(EMPTY_LEDGER);
     setMessages([]);
     setLandingMode('create');
-  };
-
-  // One-click demo party seeder
-  const handleSeedDemo = async () => {
-    setIsLoading(true);
-    try {
-      const res = await demoService.seedDemo();
-      if (res && res.ledger) {
-        handlePartyCreated(res.ledger, 'trip_bali_2026');
-      } else {
-        const l = await ledgerService.getLedger('trip_bali_2026');
-        handlePartyCreated(l, 'trip_bali_2026');
-      }
-    } catch (err) {
-      console.error('Demo seed error:', err);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const currentTripId = ledger.trip_id || activeTripId || '';
@@ -263,7 +244,6 @@ export function App() {
             {landingMode === 'intro' ? (
               <LandingIntro
                 onCreateParty={() => setLandingMode('create')}
-                onExploreDemo={handleSeedDemo}
               />
             ) : (
               <PartyOnboarding

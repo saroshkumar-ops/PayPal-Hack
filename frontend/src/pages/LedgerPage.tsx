@@ -1,8 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { Link } from 'react-router-dom';
 import type { TripLedger } from '../types';
-import { Search, Lock } from 'lucide-react';
+import { 
+  Search, 
+  Lock, 
+  HelpCircle, 
+  Receipt, 
+  ShieldCheck
+} from 'lucide-react';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
 
@@ -12,6 +19,7 @@ interface LedgerPageProps {
 
 export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   const [quickFilterText, setQuickFilterText] = useState('');
+  const [showExplanation, setShowExplanation] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
 
   const totalSpendCents = useMemo(() => {
@@ -55,7 +63,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         status: isAllSettled ? 'SETTLED' : 'PENDING',
       };
     });
-  }, [ledger]);
+  }, [ledger, cur]);
 
   // AG Grid Column Definitions
   const colDefs = useMemo<ColDef[]>(() => {
@@ -138,7 +146,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         ),
       },
     ];
-  }, []);
+  }, [cur]);
 
   const settlements = ledger.simplified_settlements || [];
 
@@ -173,7 +181,16 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         </div>
 
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
-          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
+            <button
+              onClick={() => setShowExplanation(!showExplanation)}
+              className="text-[#C6FF3D] hover:underline text-[10px] font-mono flex items-center gap-1 cursor-pointer"
+            >
+              <HelpCircle className="w-3 h-3" />
+              <span>{showExplanation ? 'Hide' : 'Explain'}</span>
+            </button>
+          </div>
           <div className="text-xl sm:text-2xl font-mono font-bold tabular-nums flex items-center gap-1.5">
             <span className={driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}>
               {cur}{(driftCents / 100).toFixed(2)}
@@ -187,7 +204,42 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       </div>
 
       {/* ================================================================ */}
-      {/* 2. BIPARTITE MINIMUM CASH FLOW SUMMARY CARDS                     */}
+      {/* 2. VISUAL EXPLANATION OF DOUBLE-ENTRY AUDIT ENGINE               */}
+      {/* ================================================================ */}
+      {showExplanation && (
+        <div className="p-5 rounded-3xl bg-[#0F1117] border border-[#C6FF3D]/30 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#C6FF3D]">
+            <ShieldCheck className="w-4 h-4" />
+            <span>HOW THE DOUBLE-ENTRY AUDIT ENGINE WORKS</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="text-[#EDEEF2] font-semibold font-body">1. Strict Double-Entry Balance</div>
+              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                Every bill paid by one member is matched with corresponding debts assigned to participating travelers. The sum of all net positions across the group is always strictly zero.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="text-[#C6FF3D] font-semibold font-body">2. 64-Bit Integer Cents</div>
+              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                Floating-point math causes rounding errors (e.g. 10 / 3 = 3.3333333333). Our backend stores every currency unit in integer cents, guaranteeing 0.00 drift across unlimited splits.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+              <div className="text-[#FFC439] font-semibold font-body">3. Minimum Cash Flow (Bipartite)</div>
+              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
+                Instead of everyone paying everyone back, the graph matching engine finds the optimal shortest path: debtor balances settle directly to creditors with the minimal number of payments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 3. BIPARTITE MINIMUM CASH FLOW SUMMARY CARDS                     */}
       {/* ================================================================ */}
       <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/8 pb-3">
@@ -205,8 +257,11 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         </div>
 
         {settlements.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3]">
-            All debts settled. No active transit transactions.
+          <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3] space-y-2">
+            <div>All debts settled. No active transit transactions.</div>
+            <div className="text-[11px] text-[#8A8FA3]/70 font-body">
+              When expenses are added, the minimum cash flow solver computes direct settlement cards here.
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -244,7 +299,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       </div>
 
       {/* ================================================================ */}
-      {/* 3. HIGH-DENSITY AG GRID AUDIT LEDGER                              */}
+      {/* 4. HIGH-DENSITY AG GRID AUDIT LEDGER                              */}
       {/* ================================================================ */}
       <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-5 sm:p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
         {/* Search & Stats Bar */}
@@ -266,19 +321,36 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           </div>
         </div>
 
-        {/* AG Grid Container */}
-        <div className="w-full h-[520px] ag-theme-quartz-dark rounded-2xl overflow-hidden border border-white/8">
-          <AgGridReact
-            rowData={rowData}
-            columnDefs={colDefs}
-            quickFilterText={quickFilterText}
-            pagination={true}
-            paginationPageSize={10}
-            animateRows={true}
-            rowHeight={48}
-            headerHeight={44}
-          />
-        </div>
+        {/* AG Grid Container or Empty Explanation */}
+        {rowData.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center space-y-3">
+            <Receipt className="w-8 h-8 text-[#8A8FA3]/50 mx-auto" />
+            <div className="text-sm font-display font-bold text-[#EDEEF2]">Audit Trail Ready</div>
+            <p className="text-xs text-[#8A8FA3] font-body max-w-md mx-auto m-0">
+              Every expense, OCR receipt scan, and PayPal capture is verified and immutably recorded here with full split breakdowns.
+            </p>
+            <div className="pt-2">
+              <Link to="/simulator" className="no-underline">
+                <button className="px-4 py-2 rounded-xl bg-[#171A23] hover:bg-[#C6FF3D]/10 border border-white/10 hover:border-[#C6FF3D]/30 text-xs font-mono text-[#EDEEF2] hover:text-[#C6FF3D] transition-all cursor-pointer">
+                  Go to Simulator to Log First Expense
+                </button>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full h-[520px] ag-theme-quartz-dark rounded-2xl overflow-hidden border border-white/8">
+            <AgGridReact
+              rowData={rowData}
+              columnDefs={colDefs}
+              quickFilterText={quickFilterText}
+              pagination={true}
+              paginationPageSize={10}
+              animateRows={true}
+              rowHeight={48}
+              headerHeight={44}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
