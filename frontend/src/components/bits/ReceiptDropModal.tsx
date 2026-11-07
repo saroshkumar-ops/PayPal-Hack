@@ -13,7 +13,9 @@ interface ReceiptDropModalProps {
   onConfirmExpense: (
     description: string, 
     amountCents: number, 
-    items?: { name: string; priceCents: number; claimedBy?: string }[]
+    items?: { name: string; priceCents: number; claimedBy?: string }[],
+    taxCents?: number,
+    tipCents?: number
   ) => void;
 }
 
@@ -94,7 +96,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     onConfirmExpense(
       extractedReceipt.merchant,
       extractedReceipt.totalCents,
-      extractedReceipt.items
+      extractedReceipt.items,
+      extractedReceipt.taxCents,
+      extractedReceipt.tipCents
     );
     onClose();
   };

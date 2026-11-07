@@ -12,6 +12,7 @@ import { LandingIntro } from './components/landing/LandingIntro';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
+import { AuthModal } from './components/bits/AuthModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
 import { CyberBackground } from './components/common/CyberBackground';
 import { LenisProvider } from './components/common/LenisProvider';
@@ -22,9 +23,10 @@ import {
   chatService, 
   simulatorService, 
   paymentService, 
+  authService,
   checkHealth 
 } from './api/services';
-import type { TripLedger, ChatMessage, PayPalEventLog } from './types';
+import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
 
 export function App() {
@@ -38,6 +40,29 @@ export function App() {
   const [paypalLogs, setPaypalLogs] = useState<PayPalEventLog[]>([]);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(() => {
+    return authService.getCurrentUser();
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Verify auth on mount
+  useEffect(() => {
+    authService.getProfile().then((profile) => {
+      if (profile) setCurrentUser(profile);
+    });
+  }, []);
+
+  const handleAuthSuccess = (user: AuthResponseDto) => {
+    setCurrentUser(user);
+    triggerCelebrationConfetti();
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+  };
 
   // Modals state
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
@@ -140,8 +165,10 @@ export function App() {
     if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await chatService.sendMessage(currentTripId, text, organizerId);
-      await loadData();
+      await chatService.sendMessage(currentTripId, text, organizerId, ledger.members);
+      await loadData(currentTripId);
+    } catch (err) {
+      console.error('Failed to send message:', err);
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +180,7 @@ export function App() {
     setIsLoading(true);
     try {
       const res = await simulatorService.advanceTime(currentTripId, hours);
-      await loadData();
+      await loadData(currentTripId);
       return res;
     } finally {
       setIsLoading(false);
@@ -188,7 +215,7 @@ export function App() {
         checkoutDrawer.amountCents,
         checkoutDrawer.expenseId
       );
-      await loadData();
+      await loadData(currentTripId);
       setCheckoutDrawer((prev) => ({ ...prev, isOpen: false }));
       triggerCelebrationConfetti();
     } finally {
@@ -200,21 +227,71 @@ export function App() {
   const handleConfirmScannedExpense = async (
     description: string,
     amountCents: number,
-    items?: { name: string; priceCents: number; claimedBy?: string }[]
+    items?: { name: string; priceCents: number; claimedBy?: string }[],
+    taxCents?: number,
+    tipCents?: number
   ) => {
     if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await expenseService.createExpense(currentTripId, {
-        paid_by: organizerId,
-        amount_cents: amountCents,
-        description: description,
-        category: 'FOOD',
-        split_type: items && items.length > 0 ? 'ITEMIZED' : 'EQUAL',
-      });
-      await loadData();
+      let formattedItems: ItemClaimDto[] | undefined = undefined;
+      if (items && items.length > 0) {
+        formattedItems = items.map((it) => {
+          const matched = ledger.members.find(
+            (m) => m.name.toLowerCase() === it.claimedBy?.toLowerCase() || m.user_id === it.claimedBy
+          );
+          const userId = matched ? matched.user_id : organizerId;
+          return {
+            name: it.name,
+            price_cents: it.priceCents,
+            claimed_by_user_ids: [userId],
+          };
+        });
+      }
+
+      const allMemberIds = ledger.members && ledger.members.length > 0 
+        ? ledger.members.map(m => m.user_id) 
+        : [organizerId];
+
+      if (formattedItems && formattedItems.length > 0) {
+        try {
+          await expenseService.createExpense(currentTripId, {
+            paid_by: organizerId,
+            amount_cents: amountCents,
+            description: description,
+            category: 'FOOD',
+            split_type: 'ITEMIZED',
+            items: formattedItems,
+            tax_cents: taxCents || 0,
+            tip_cents: tipCents || 0,
+          });
+        } catch (itemErr) {
+          console.warn('Itemized split rejected, falling back to equal split:', itemErr);
+          await expenseService.createExpense(currentTripId, {
+            paid_by: organizerId,
+            amount_cents: amountCents,
+            description: description,
+            category: 'FOOD',
+            split_type: 'EQUAL',
+            split_with_user_ids: allMemberIds,
+          });
+        }
+      } else {
+        await expenseService.createExpense(currentTripId, {
+          paid_by: organizerId,
+          amount_cents: amountCents,
+          description: description,
+          category: 'FOOD',
+          split_type: 'EQUAL',
+          split_with_user_ids: allMemberIds,
+        });
+      }
+
+      await loadData(currentTripId);
       setIsReceiptModalOpen(false);
       triggerCelebrationConfetti();
+    } catch (err) {
+      console.error('Failed to commit scanned expense:', err);
     } finally {
       setIsLoading(false);
     }
@@ -226,7 +303,7 @@ export function App() {
     setIsLoading(true);
     try {
       await paymentService.confirmBatchPayout(currentTripId);
-      await loadData();
+      await loadData(currentTripId);
       setIsPayoutModalOpen(false);
       triggerCelebrationConfetti();
     } finally {
@@ -244,14 +321,23 @@ export function App() {
             {landingMode === 'intro' ? (
               <LandingIntro
                 onCreateParty={() => setLandingMode('create')}
+                currentUser={currentUser}
+                onOpenAuthModal={() => setIsAuthModalOpen(true)}
               />
             ) : (
               <PartyOnboarding
                 onPartyCreated={handlePartyCreated}
                 onBackToIntro={() => setLandingMode('intro')}
+                currentUser={currentUser}
               />
             )}
           </main>
+
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
+          />
         </div>
       </LenisProvider>
     );
@@ -271,6 +357,9 @@ export function App() {
             isBackendConnected={isBackendConnected}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
             onNewParty={handleCreateNewParty}
+            currentUser={currentUser}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onLogout={handleLogout}
           />
 
           {/* Multi-Page Routes */}
@@ -369,6 +458,12 @@ export function App() {
             currency={ledger.currency}
             members={ledger.members}
             onConfirmExpense={handleConfirmScannedExpense}
+          />
+
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
           />
         </div>
       </BrowserRouter>

@@ -8,17 +8,23 @@ import {
   CheckCircle, 
   Sparkles,
   ShieldCheck,
-  Zap
+  Zap,
+  LogIn 
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
+import type { AuthResponseDto } from '../../types';
 
 interface LandingIntroProps {
   onCreateParty: () => void;
+  currentUser?: AuthResponseDto | null;
+  onOpenAuthModal?: () => void;
 }
 
 export const LandingIntro: React.FC<LandingIntroProps> = ({
   onCreateParty,
+  currentUser,
+  onOpenAuthModal,
 }) => {
   const [activeStage, setActiveStage] = useState<0 | 1 | 2>(0);
 
@@ -310,7 +316,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           </div>
         </div>
 
-        {/* Action Button: Create Party */}
+        {/* Action Button: Create Party & Sign In */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
           <Button
             variant="primary"
@@ -321,6 +327,25 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           >
             Create Your Party
           </Button>
+
+          {!currentUser && onOpenAuthModal && (
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={onOpenAuthModal}
+              icon={<LogIn className="w-4 h-4" />}
+              className="w-full sm:w-auto text-sm font-display font-medium px-8 py-3.5"
+            >
+              Sign In to Account
+            </Button>
+          )}
+
+          {currentUser && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#07080D] border border-white/8 text-xs font-mono text-[#C6FF3D]">
+              <span className="w-2 h-2 rounded-full bg-[#C6FF3D]" />
+              <span>Signed in as {currentUser.name} ({currentUser.handle})</span>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

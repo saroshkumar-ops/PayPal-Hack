@@ -29,6 +29,15 @@ export const aiClient: AxiosInstance = axios.create({
   },
 });
 
+// Request interceptor to attach JWT token if present
+backendClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Interceptor for logging & connection diagnosis
 backendClient.interceptors.response.use(
   (response) => response,

@@ -25,7 +25,10 @@ import type {
   AgentDecideRequest,
   AgentDecideResponse,
   EscalateRoastRequest,
-  EscalateRoastResponse
+  EscalateRoastResponse,
+  AuthResponseDto,
+  LoginRequestDto,
+  RegisterRequestDto
 } from '../types';
 import { INITIAL_LEDGER, INITIAL_CHAT_MESSAGES, INITIAL_PAYPAL_LOGS } from './mockData';
 
@@ -190,13 +193,17 @@ export const expenseService = {
     try {
       const res = await backendClient.post<Expense>(ENDPOINTS.TRIPS.EXPENSES(tripId), payload);
       return res.data;
-    } catch {
-      const splitUsers = payload.split_with_user_ids?.length 
+    } catch (err) {
+      console.warn('Backend expense creation failed, using client-side fallback:', err);
+      const splitUsers = (payload.split_with_user_ids && payload.split_with_user_ids.length > 0)
         ? payload.split_with_user_ids 
-        : mockLedger.members.map(m => m.user_id);
+        : (mockLedger.members.length > 0 ? mockLedger.members.map(m => m.user_id) : [payload.paid_by || 'organizer']);
       
-      const splitAmount = Math.round(payload.amount_cents / splitUsers.length);
-      const payer = mockLedger.members.find(m => m.user_id === payload.paid_by) || mockLedger.members[0];
+      const splitCount = splitUsers.length > 0 ? splitUsers.length : 1;
+      const splitAmount = Math.round(payload.amount_cents / splitCount);
+      const payer = mockLedger.members.find(m => m.user_id === payload.paid_by) 
+        || mockLedger.members[0] 
+        || { user_id: payload.paid_by || 'organizer', name: 'Organizer' };
 
       const newExpense: Expense = {
         expense_id: payload.expense_id || `exp_${Date.now().toString().slice(-4)}`,
@@ -243,6 +250,9 @@ export const ledgerService = {
       const ledger = res.data;
       if (!ledger.trip_name && ledger.name) {
         ledger.trip_name = ledger.name;
+      }
+      if (ledger.members && ledger.members.length > 0) {
+        mockLedger = JSON.parse(JSON.stringify(ledger));
       }
       return ledger;
     } catch {
@@ -344,7 +354,9 @@ export const paymentService = {
       // 3. Fetch freshly calculated ledger
       const updatedLedger = await ledgerService.getLedger(tripId);
 
-      const member = updatedLedger.members.find(m => m.user_id === userId) || mockLedger.members[1];
+      const member = updatedLedger.members.find(m => m.user_id === userId) 
+        || mockLedger.members.find(m => m.user_id === userId) 
+        || { name: 'Party Member', user_id: userId, handle: '@member' };
 
       const log: PayPalEventLog = {
         id: `log_${Date.now()}`,
@@ -372,7 +384,9 @@ export const paymentService = {
       return { ledger: updatedLedger, chatAnnouncement, log };
     } catch {
       // Autonomous fallback
-      const member = mockLedger.members.find(m => m.user_id === userId) || mockLedger.members[1];
+      const member = mockLedger.members.find(m => m.user_id === userId) 
+        || mockLedger.members[0] 
+        || { name: 'Party Member', user_id: userId, handle: '@member' };
 
       mockLedger.expenses.forEach(exp => {
         exp.splits.forEach(split => {
@@ -489,24 +503,35 @@ export const aiService = {
       const res = await aiClient.post<AgentDecideResponse>(ENDPOINTS.AI.AGENT_DECIDE, req);
       return res.data;
     } catch {
-      // Fallback regex intent classifier
-      const matchAmount = req.message_text.match(/\₹(\d+(\.\d{2})?)/);
-      if (matchAmount) {
-        const dollars = parseFloat(matchAmount[1]);
+      // Fallback regex intent classifier supporting $, ₹, and raw numbers
+      const matchAmount = req.message_text.match(/(?:[\$₹]\s*(\d+(?:\.\d{1,2})?)|\b(?:paid\s+)?(\d+(?:\.\d{1,2})?)\s*(?:dollars|rupees|bucks|inr|usd)?\b)/i);
+      const parsedVal = matchAmount ? (matchAmount[1] || matchAmount[2]) : null;
+      if (parsedVal) {
+        const dollars = parseFloat(parsedVal);
         const cents = Math.round(dollars * 100);
-        const desc = req.message_text.replace(/\₹\d+(\.\d{2})?/, '').replace(/paid/i, '').replace(/for/i, '').trim() || 'Group Expense';
+        const desc = req.message_text
+          .replace(/[\$₹]\s*\d+(\.\d{1,2})?/, '')
+          .replace(/\b\d+(\.\d{1,2})?\s*(dollars|rupees|bucks|inr|usd)?\b/i, '')
+          .replace(/paid/i, '')
+          .replace(/for/i, '')
+          .replace(/split with.*/i, '')
+          .trim() || 'Group Expense';
+        const currency = mockLedger.currency || 'INR';
+        const sym = currency === 'USD' ? '$' : '₹';
         return {
           action: 'LOG_EXPENSE',
           confidence: 0.95,
           parsed_data: {
             description: desc,
             amount_cents: cents,
-            currency: 'INR',
+            currency: currency,
             payer_id: req.sender_id,
             split_type: 'EQUAL',
-            split_with_user_ids: req.active_members.map(m => m.user_id),
+            split_with_user_ids: req.active_members && req.active_members.length > 0 
+              ? req.active_members.map(m => m.user_id) 
+              : [req.sender_id],
           },
-          reply_text: `Logged **₹${dollars.toFixed(2)} ${desc}** paid by ${req.sender_name}.`,
+          reply_text: `Logged **${sym}${dollars.toFixed(2)} ${desc}** paid by ${req.sender_name}.`,
         };
       }
       return {
@@ -679,6 +704,14 @@ export const chatService = {
       const res = await backendClient.get<ChatMessage[]>(ENDPOINTS.CHAT.HISTORY(tripId));
       return res.data;
     } catch {
+      try {
+        const raw = localStorage.getItem(`chat_history_${tripId}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          mockChat = parsed;
+          return parsed;
+        }
+      } catch {}
       return JSON.parse(JSON.stringify(mockChat));
     }
   },
@@ -686,9 +719,20 @@ export const chatService = {
   sendMessage: async (
     tripId: string, 
     text: string, 
-    senderId: string = 'user_01'
+    senderId: string = 'user_01',
+    activeMembers?: Member[]
   ): Promise<{ userMessage: ChatMessage; botReply?: ChatMessage }> => {
-    const sender = mockLedger.members.find(m => m.user_id === senderId) || mockLedger.members[0];
+    const memberList = (activeMembers && activeMembers.length > 0)
+      ? activeMembers
+      : (mockLedger.members.length > 0 ? mockLedger.members : []);
+
+    const foundSender = memberList.find(m => m.user_id === senderId);
+    const sender = foundSender || memberList[0] || {
+      user_id: senderId,
+      name: 'Organizer',
+      handle: '@organizer',
+    };
+
     const userMessage: ChatMessage = {
       id: `msg_${Date.now()}`,
       sender_id: sender.user_id,
@@ -700,31 +744,40 @@ export const chatService = {
     };
     mockChat.push(userMessage);
 
-    // Call Python AI Intent Router
+    const currency = mockLedger.currency || 'INR';
+    const currSym = currency === 'USD' ? '$' : '₹';
+
+    // Call Python AI Intent Router with real active members
     const aiDecide = await aiService.decideIntent({
       trip_id: tripId,
-      sender_id: senderId,
+      sender_id: sender.user_id,
       sender_name: sender.name,
       message_text: text,
-      active_members: mockLedger.members.map(m => ({
+      active_members: memberList.map(m => ({
         user_id: m.user_id,
         name: m.name,
         handle: m.handle,
       })),
     });
 
+    let botReply: ChatMessage;
+
     if (aiDecide.action === 'LOG_EXPENSE' && aiDecide.parsed_data.amount_cents) {
+      const splitUsers = (aiDecide.parsed_data.split_with_user_ids && aiDecide.parsed_data.split_with_user_ids.length > 0)
+        ? aiDecide.parsed_data.split_with_user_ids
+        : memberList.map(m => m.user_id);
+
       const expense = await expenseService.createExpense(tripId, {
-        paid_by: senderId,
+        paid_by: sender.user_id,
         amount_cents: aiDecide.parsed_data.amount_cents,
         description: aiDecide.parsed_data.description || 'Shared Expense',
         category: 'FOOD',
         split_type: 'EQUAL',
-        split_with_user_ids: aiDecide.parsed_data.split_with_user_ids,
+        split_with_user_ids: splitUsers,
       });
 
-      const pendingSplits = expense.splits.filter(s => s.paid_status === 'PENDING');
-      const botReply: ChatMessage = {
+      const pendingSplits = (expense.splits || []).filter(s => s.paid_status === 'PENDING');
+      botReply = {
         id: `msg_bot_${Date.now()}`,
         sender_id: 'bot_sheriff',
         sender_name: 'TripSheriff AI',
@@ -732,11 +785,11 @@ export const chatService = {
         is_bot: true,
         timestamp: 'Just now',
         badge: 'EXPENSE RECORDED',
-        text: `**Logged ₹${(expense.amount_cents / 100).toFixed(2)} ${expense.description}** fronted by ${sender.name}!\n\nSplit ${expense.splits.length} ways (₹${((expense.splits[0]?.owes_cents || 0) / 100).toFixed(2)} each). 1-click PayPal sandbox links generated:`,
+        text: `**Logged ${currSym}${(expense.amount_cents / 100).toFixed(2)} ${expense.description}** fronted by ${sender.name}!\n\nSplit ${expense.splits?.length || 1} ways (${currSym}${(((expense.splits?.[0]?.owes_cents) || expense.amount_cents) / 100).toFixed(2)} each). 1-click PayPal sandbox links generated:`,
         buttons: pendingSplits.map(s => {
-          const m = mockLedger.members.find(mem => mem.user_id === s.user_id);
+          const m = memberList.find(mem => mem.user_id === s.user_id);
           return {
-            text: `Pay ₹${(s.owes_cents / 100).toFixed(2)} (${m?.name.split(' ')[0] || s.user_id})`,
+            text: `Pay ${currSym}${(s.owes_cents / 100).toFixed(2)} (${m?.name?.split(' ')[0] || s.user_id})`,
             action: `PAY_${s.user_id}`,
             payload: { userId: s.user_id, amountCents: s.owes_cents, expenseId: expense.expense_id },
           };
@@ -749,26 +802,30 @@ export const chatService = {
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString(),
         event_type: 'ORDER.CREATED',
-        summary: `Created PayPal Orders for ${expense.description} (₹${(expense.amount_cents / 100).toFixed(2)} INR)`,
+        summary: `Created PayPal Orders for ${expense.description} (${currSym}${(expense.amount_cents / 100).toFixed(2)} ${currency})`,
         status: 'INFO',
-        amount: `₹${(expense.amount_cents / 100).toFixed(2)} INR`,
+        amount: `${currSym}${(expense.amount_cents / 100).toFixed(2)} ${currency}`,
         reference_id: `order_${tripId}_${expense.expense_id}`,
       });
-
-      return { userMessage, botReply };
+    } else {
+      botReply = {
+        id: `msg_bot_${Date.now()}`,
+        sender_id: 'bot_sheriff',
+        sender_name: 'TripSheriff AI',
+        sender_handle: '@TripSheriffBot',
+        is_bot: true,
+        timestamp: 'Just now',
+        badge: 'ASSISTANT',
+        text: aiDecide.reply_text,
+      };
+      mockChat.push(botReply);
     }
 
-    const botReply: ChatMessage = {
-      id: `msg_bot_${Date.now()}`,
-      sender_id: 'bot_sheriff',
-      sender_name: 'TripSheriff AI',
-      sender_handle: '@TripSheriffBot',
-      is_bot: true,
-      timestamp: 'Just now',
-      badge: 'ASSISTANT',
-      text: aiDecide.reply_text,
-    };
-    mockChat.push(botReply);
+    // Persist chat locally
+    try {
+      localStorage.setItem(`chat_history_${tripId}`, JSON.stringify(mockChat));
+    } catch {}
+
     return { userMessage, botReply };
   },
 };
@@ -794,11 +851,24 @@ export const simulatorService = {
       tier = 'PASSIVE_AGGRESSIVE';
     }
 
-    const debtor = mockLedger.members.find(m => m.user_id === 'user_02') || mockLedger.members[1];
-    if (debtor) {
-      debtor.heat_score = Math.min(100, (debtor.heat_score || 0) + 25);
-      debtor.tier = tier;
-    }
+    const debtor = mockLedger.members.find(m => m.role !== 'organizer') 
+      || mockLedger.members[1] 
+      || mockLedger.members[0] 
+      || {
+        user_id: 'member_01',
+        name: 'Party Member',
+        handle: '@member',
+        role: 'member' as const,
+        roast_consent: 'MILD' as const,
+        heat_score: 0,
+      };
+
+    debtor.heat_score = Math.min(100, (debtor.heat_score || 0) + 25);
+    debtor.tier = tier;
+
+    const organizer = mockLedger.members.find(m => m.role === 'organizer') || mockLedger.members[0] || { name: 'Organizer' };
+    const currency = mockLedger.currency || 'INR';
+    const currSym = currency === 'USD' ? '$' : '₹';
 
     // 3. Call AI Microservice Escalation Roast Generator
     const roastRes = await aiService.generateRoast({
@@ -806,10 +876,10 @@ export const simulatorService = {
       debtor_id: debtor.user_id,
       debtor_name: debtor.name,
       debtor_handle: debtor.handle,
-      creditor_name: mockLedger.members.find(m => m.role === 'organizer')?.name || 'Organizer',
+      creditor_name: organizer.name,
       amount_cents: 8000,
-      currency: 'INR',
-      expense_description: 'Sunset Villa Deposit',
+      currency: currency,
+      expense_description: 'Group Event Deposit',
       hours_overdue: newHours,
       tier,
       roast_consent: debtor.roast_consent,
@@ -829,13 +899,16 @@ export const simulatorService = {
       image_card_base64: roastRes.image_card_base64 || undefined,
       buttons: [
         {
-          text: 'Settle ₹80.00 via PayPal Sandbox',
+          text: `Settle ${currSym}80.00 via PayPal Sandbox`,
           action: 'PAY_SETTLEMENT',
           payload: { userId: debtor.user_id, amountCents: 8000 },
         },
       ],
     };
     mockChat.push(announcement);
+    try {
+      localStorage.setItem(`chat_history_${tripId}`, JSON.stringify(mockChat));
+    } catch {}
 
     return { newHours, announcement };
   },
@@ -872,5 +945,56 @@ export const demoService = {
   seedDemo: async (): Promise<DemoSeedResponse> => {
     const res = await backendClient.post<DemoSeedResponse>(ENDPOINTS.DEMO.SEED);
     return res.data;
+  },
+};
+
+/**
+ * 9. Authentication & User Profile Services (/api/auth)
+ */
+export const authService = {
+  login: async (credentials: LoginRequestDto): Promise<AuthResponseDto> => {
+    const res = await backendClient.post<AuthResponseDto>(ENDPOINTS.AUTH.LOGIN, credentials);
+    if (res.data.access_token) {
+      localStorage.setItem('auth_token', res.data.access_token);
+      localStorage.setItem('auth_user', JSON.stringify(res.data));
+    }
+    return res.data;
+  },
+
+  register: async (data: RegisterRequestDto): Promise<AuthResponseDto> => {
+    const res = await backendClient.post<AuthResponseDto>(ENDPOINTS.AUTH.REGISTER, data);
+    if (res.data.access_token) {
+      localStorage.setItem('auth_token', res.data.access_token);
+      localStorage.setItem('auth_user', JSON.stringify(res.data));
+    }
+    return res.data;
+  },
+
+  getProfile: async (): Promise<AuthResponseDto | null> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return null;
+      const res = await backendClient.get<AuthResponseDto>(ENDPOINTS.AUTH.ME);
+      if (res.data) {
+        localStorage.setItem('auth_user', JSON.stringify(res.data));
+      }
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+  },
+
+  getCurrentUser: (): AuthResponseDto | null => {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   },
 };

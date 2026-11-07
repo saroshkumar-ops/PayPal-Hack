@@ -8,10 +8,13 @@ import {
   Clock, 
   Users,
   Maximize2, 
-  Minimize2 
+  Minimize2,
+  LogIn,
+  LogOut 
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
+import type { AuthResponseDto } from '../../types';
 
 interface NavbarProps {
   tripName?: string;
@@ -19,6 +22,9 @@ interface NavbarProps {
   isBackendConnected: boolean;
   onOpenReceiptModal: () => void;
   onNewParty?: () => void;
+  currentUser?: AuthResponseDto | null;
+  onOpenAuthModal?: () => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,6 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   isBackendConnected,
   onOpenReceiptModal,
   onNewParty,
+  currentUser,
+  onOpenAuthModal,
+  onLogout,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -135,6 +144,38 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isBackendConnected ? 'Core Live' : 'Offline'}
             </span>
           </div>
+
+          {/* Authentication Status / Sign In */}
+          {currentUser ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono text-[#EDEEF2]">
+              <div className="w-4 h-4 rounded-full bg-[#171A23] border border-[#C6FF3D]/40 flex items-center justify-center text-[10px] text-[#C6FF3D] font-bold">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="truncate max-w-[90px] text-[#C6FF3D] font-medium hidden sm:inline">
+                {currentUser.handle || currentUser.name}
+              </span>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  title="Sign Out"
+                  className="ml-1 p-0.5 text-[#8A8FA3] hover:text-[#FF5C7A] transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            onOpenAuthModal && (
+              <button
+                onClick={onOpenAuthModal}
+                title="Sign In / Register"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                <span>Sign In</span>
+              </button>
+            )
+          )}
 
           {/* Fullscreen Mode Button */}
           <button

@@ -307,3 +307,29 @@ export interface EscalateRoastResponse {
   image_card_base64?: string | null;
   call_to_action_buttons?: { text: string; url: string }[];
 }
+
+// === Authentication Interfaces ===
+
+export interface AuthResponseDto {
+  access_token: string;
+  token_type?: string;
+  user_id: string;
+  email: string;
+  name: string;
+  handle: string;
+  paypal_email?: string;
+  role?: string;
+}
+
+export interface LoginRequestDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequestDto {
+  email: string;
+  password: string;
+  name: string;
+  handle: string;
+  paypal_email: string;
+}

@@ -37,6 +37,13 @@ export const ENDPOINTS = {
     HISTORY: (tripId: string) => `/api/chat/${tripId}/history`,
   },
 
+  // User Authentication & JWT (Port 8080)
+  AUTH: {
+    REGISTER: '/api/auth/register',
+    LOGIN: '/api/auth/login',
+    ME: '/api/auth/me',
+  },
+
   // === 2. Python AI Microservice (Port 8001) ===
   AI: {
     HEALTH: '/health',

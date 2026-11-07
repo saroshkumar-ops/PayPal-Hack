@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
@@ -11,11 +11,12 @@ import {
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
 import { tripService, memberService, ledgerService } from '../../api/services';
-import type { TripLedger, RoastConsent } from '../../types';
+import type { TripLedger, RoastConsent, AuthResponseDto } from '../../types';
 
 interface PartyOnboardingProps {
   onPartyCreated: (ledger: TripLedger, tripId: string) => void;
   onBackToIntro?: () => void;
+  currentUser?: AuthResponseDto | null;
 }
 
 interface FriendMemberInput {
@@ -28,16 +29,27 @@ interface FriendMemberInput {
 
 export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ 
   onPartyCreated,
-  onBackToIntro 
+  onBackToIntro,
+  currentUser,
 }) => {
   const [partyName, setPartyName] = useState('');
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
 
   // Organizer details
-  const [organizerName, setOrganizerName] = useState('');
-  const [organizerHandle, setOrganizerHandle] = useState('');
-  const [organizerEmail, setOrganizerEmail] = useState('');
+  const [organizerName, setOrganizerName] = useState(currentUser?.name || '');
+  const [organizerHandle, setOrganizerHandle] = useState(currentUser?.handle || '');
+  const [organizerEmail, setOrganizerEmail] = useState(currentUser?.paypal_email || currentUser?.email || '');
   const [organizerRoastConsent, setOrganizerRoastConsent] = useState<RoastConsent>('SPICY');
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name && !organizerName) setOrganizerName(currentUser.name);
+      if (currentUser.handle && !organizerHandle) setOrganizerHandle(currentUser.handle);
+      if ((currentUser.paypal_email || currentUser.email) && !organizerEmail) {
+        setOrganizerEmail(currentUser.paypal_email || currentUser.email);
+      }
+    }
+  }, [currentUser]);
 
   // Friends / Party Members
   const [friends, setFriends] = useState<FriendMemberInput[]>([
@@ -118,7 +130,9 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({
 
       // 2. Register Organizer
       const safeOrgSlug = organizerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const organizerUserId = `user_${safeOrgSlug}_${Date.now().toString(36).slice(-4)}`;
+      const organizerUserId = currentUser?.user_id 
+        ? currentUser.user_id 
+        : `user_${safeOrgSlug}_${Date.now().toString(36).slice(-4)}`;
       const cleanOrgHandle = organizerHandle.trim()
         ? (organizerHandle.trim().startsWith('@') ? organizerHandle.trim() : `@${organizerHandle.trim()}`)
         : `@${safeOrgSlug}`;
