@@ -6,9 +6,7 @@ import {
   ArrowRight, 
   ArrowLeft,
   CheckCircle,
-  Flame,
-  Shield,
-  Smile
+  Bell
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
@@ -292,19 +290,17 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({
 
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-[#8A8FA3] font-body">
-                  {organizerRoastConsent === 'SPICY' && <Flame className="w-3.5 h-3.5 text-[#FF5C7A]" />}
-                  {organizerRoastConsent === 'MILD' && <Smile className="w-3.5 h-3.5 text-[#FFC439]" />}
-                  {organizerRoastConsent === 'NO_ROAST' && <Shield className="w-3.5 h-3.5 text-[#8A8FA3]" />}
-                  <span>Roast Consent</span>
+                  <Bell className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                  <span>Notification Preferences</span>
                 </div>
                 <select
                   value={organizerRoastConsent}
                   onChange={(e) => setOrganizerRoastConsent(e.target.value as RoastConsent)}
                   className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-2 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
                 >
-                  <option value="SPICY">Spicy (High Heat)</option>
-                  <option value="MILD">Mild (Courteous)</option>
-                  <option value="NO_ROAST">No Roast (Formal)</option>
+                  <option value="SPICY">Instant Alerts (Real-Time)</option>
+                  <option value="MILD">Daily Digest (Standard)</option>
+                  <option value="NO_ROAST">Muted (Manual Settlement Only)</option>
                 </select>
               </div>
             </div>
@@ -367,15 +363,15 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({
                   </div>
 
                   <div className="sm:col-span-2 space-y-1">
-                    <span className="text-[10px] font-mono text-[#8A8FA3]">Roast Consent</span>
+                    <span className="text-[10px] font-mono text-[#8A8FA3]">Notifications</span>
                     <select
                       value={friend.roastConsent}
                       onChange={(e) => updateFriend(friend.id, 'roastConsent', e.target.value as RoastConsent)}
                       className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-2.5 py-1.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
                     >
-                      <option value="SPICY">Spicy</option>
-                      <option value="MILD">Mild</option>
-                      <option value="NO_ROAST">No Roast</option>
+                      <option value="SPICY">Instant</option>
+                      <option value="MILD">Daily</option>
+                      <option value="NO_ROAST">Muted</option>
                     </select>
                   </div>
 

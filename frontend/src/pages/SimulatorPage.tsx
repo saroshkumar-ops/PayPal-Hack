@@ -10,11 +10,13 @@ import {
   Check, 
   Zap, 
   Receipt, 
-  Layers 
+  Layers,
+  Bell
 } from 'lucide-react';
 import type { ChatMessage, TripLedger, EscalationTier } from '../types';
 import { Button } from '../components/ui/Button';
 import { getCurrencySymbol } from '../lib/currency';
+import { getNotificationLabel } from '../lib/notifications';
 
 interface SimulatorPageProps {
   ledger: TripLedger;
@@ -118,11 +120,11 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
   // Calculate current escalation tier
   const getEscalationTier = (hours: number): { tier: EscalationTier; label: string; heat: number; color: string } => {
-    if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Tier 1: Polite Concierge', heat: 20, color: '#C6FF3D' };
-    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Tier 2: Passive Aggressive', heat: 45, color: '#FFC439' };
-    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Tier 3: Disappointed Parent', heat: 68, color: '#FF9B42' };
-    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Tier 4: Public Group Roast', heat: 88, color: '#FF5C7A' };
-    return { tier: 'ITINERARY_EMBARGO', label: 'Tier 5: Itinerary Embargo', heat: 100, color: '#FF5C7A' };
+    if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Tier 1: Standard Nudge', heat: 20, color: '#C6FF3D' };
+    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Tier 2: Follow-Up Notice', heat: 45, color: '#FFC439' };
+    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Tier 3: Priority Overdue', heat: 68, color: '#FF9B42' };
+    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Tier 4: Urgent Action Required', heat: 88, color: '#FF5C7A' };
+    return { tier: 'ITINERARY_EMBARGO', label: 'Tier 5: Final Settlement Notice', heat: 100, color: '#FF5C7A' };
   };
 
   const currentTier = getEscalationTier(ledger.hours_elapsed);
@@ -497,13 +499,13 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             </div>
           </div>
 
-          {/* Bottom Panel: Dynamic Escalation Heat Radar & AI Roast Card */}
+          {/* Bottom Panel: Dynamic Escalation Heat Radar & Automated Payment Notice */}
           <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
             <div className="flex items-center justify-between border-b border-white/8 pb-3">
               <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-[#FF5C7A]" />
+                <Bell className="w-4 h-4 text-[#FF5C7A]" />
                 <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                  Escalation Heat Radar
+                  Reminder Escalation Tracker
                 </h3>
               </div>
               <span
@@ -518,7 +520,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             <div className="space-y-1.5 font-mono text-xs">
               <div className="flex justify-between text-[#8A8FA3]">
                 <span>Delinquency Clock: +{ledger.hours_elapsed}h elapsed</span>
-                <span className="font-bold text-[#EDEEF2]">{currentTier.heat}% Pressure</span>
+                <span className="font-bold text-[#EDEEF2]">{currentTier.heat}% Urgency</span>
               </div>
               <div className="h-2 w-full rounded-full bg-[#07080D] overflow-hidden p-0.5 border border-white/8">
                 <div
@@ -532,23 +534,23 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               </div>
             </div>
 
-            {/* AI Roast Preview Card / Explanation */}
+            {/* Automated Notice Preview Card */}
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-[#8A8FA3]">
                   TARGET: {topDebtor ? `${topDebtor.name.toUpperCase()} (${topDebtor.handle})` : 'NO DELINQUENT DEBTORS'}
                 </span>
                 {topDebtor && (
-                  <span className="text-[#FF5C7A] font-bold">ROAST CONSENT: {topDebtor.roast_consent}</span>
+                  <span className="text-[#C6FF3D] font-bold">NOTIFICATIONS: {getNotificationLabel(topDebtor.roast_consent)}</span>
                 )}
               </div>
-              <p className="text-xs text-[#EDEEF2] italic font-body leading-relaxed m-0">
+              <p className="text-xs text-[#EDEEF2] font-body leading-relaxed m-0">
                 {topDebtor ? (
                   ledger.hours_elapsed >= 72
-                    ? `"${topDebtor.name.split(' ')[0]}, your outstanding balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} has been delinquent for ${ledger.hours_elapsed} hours. Settle up on PayPal before ${organizerFirstName} triggers sanctions."`
-                    : `"Gentle reminder: ${topDebtor.name.split(' ')[0]} has ${cur}${(topDebtorOwedCents / 100).toFixed(2)} outstanding in the ledger. Quick PayPal checkout link active above."`
+                    ? `"[Urgent Overdue Notice from ${organizerFirstName}] ${topDebtor.name.split(' ')[0]}, your outstanding balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} has been pending for ${ledger.hours_elapsed} hours. Please complete settlement via the secure PayPal portal above."`
+                    : `"[Payment Reminder] ${topDebtor.name.split(' ')[0]} has an outstanding balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} in the treasury. Settle anytime using the 1-click PayPal link above."`
                 ) : (
-                  '"All members currently have balanced positions. As time advances past 24h/48h/72h without settlement, automated comedic reminders trigger based on each member\'s consensual roast tier."'
+                  '"All members currently have balanced positions. As time advances past 24h, 48h, or 72h without settlement, automated payment reminders trigger according to each member\'s notification preferences."'
                 )}
               </p>
             </div>

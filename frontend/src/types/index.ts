@@ -1,4 +1,5 @@
-export type RoastConsent = 'MILD' | 'SPICY' | 'NO_ROAST';
+export type NotificationPreference = 'SPICY' | 'MILD' | 'NO_ROAST';
+export type RoastConsent = NotificationPreference;
 export type UserRole = 'organizer' | 'member';
 export type PaymentStatus = 'SETTLED' | 'PENDING' | 'ESCALATED';
 export type EscalationTier = 

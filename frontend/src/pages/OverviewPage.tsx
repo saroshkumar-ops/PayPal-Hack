@@ -20,6 +20,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
+import { getNotificationLabel } from '../lib/notifications';
 
 interface OverviewPageProps {
   ledger: TripLedger;
@@ -525,8 +526,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 </span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Roast Consent:</span>
-                <span className="text-[#C6FF3D] font-bold">{activeFocusMember.roast_consent}</span>
+                <span>Notifications:</span>
+                <span className="text-[#C6FF3D] font-bold">{getNotificationLabel(activeFocusMember.roast_consent)}</span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
                 <span>PayPal Account:</span>
