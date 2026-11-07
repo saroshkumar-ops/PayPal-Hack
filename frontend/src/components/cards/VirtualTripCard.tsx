@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { Wifi, ShieldCheck, Sparkles, RefreshCw, QrCode, Lock, Layers } from 'lucide-react';
+import { Wifi, Sparkles, RefreshCw, QrCode, Lock } from 'lucide-react';
 
 interface VirtualTripCardProps {
   balanceCents: number;
@@ -34,8 +34,8 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
-  const rotateX = useTransform(smoothY, [-0.5, 0.5], [16, -16]);
-  const rotateY = useTransform(smoothX, [-0.5, 0.5], [-20, 20]);
+  const rotateX = useTransform(smoothY, [-0.5, 0.5], [14, -14]);
+  const rotateY = useTransform(smoothX, [-0.5, 0.5], [-18, 18]);
   const glareX = useTransform(smoothX, [-0.5, 0.5], [15, 85]);
   const glareY = useTransform(smoothY, [-0.5, 0.5], [15, 85]);
 
@@ -67,59 +67,41 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   };
 
   return (
-    <div className="relative w-full flex flex-col items-center justify-center py-2 sm:py-6 select-none">
-      {/* ============================================================== */}
-      {/* TOP INTERACTIVE CARD CONTROLS (TABS & 3D FLIP TRIGGER)         */}
-      {/* ============================================================== */}
+    <div className="relative w-full flex flex-col items-center justify-center py-2 sm:py-4 select-none">
+      {/* Top interactive card toggle controls */}
       <div className="flex items-center gap-2 mb-4 z-20">
-        <div className="flex items-center p-1 rounded-full bg-[#1F2C38] border border-[#33475A] shadow-lg">
+        <div className="flex items-center p-1 rounded-xl bg-[#0F1117] border border-white/8 shadow-md">
           <button
             onClick={() => swapActiveCard('treasury')}
-            className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
               activeCard === 'treasury'
-                ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-                : 'text-[#8199AE] hover:text-[#B7C6D3]'
+                ? 'bg-[#171A23] text-[#C6FF3D] border border-white/8'
+                : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
             }`}
           >
-            Treasury Card
+            Treasury Rail
           </button>
           <button
             onClick={() => swapActiveCard('reserve')}
-            className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
               activeCard === 'reserve'
-                ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-                : 'text-[#8199AE] hover:text-[#B7C6D3]'
+                ? 'bg-[#171A23] text-[#C6FF3D] border border-white/8'
+                : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
             }`}
           >
-            Reserve Pool
+            Reserve Vault
           </button>
         </div>
 
         <button
           onClick={toggleFlip}
-          title="Flip card in 3D to inspect security details"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#8199AE] hover:text-[#E7EDF2] text-xs font-mono font-bold transition-all shadow-md cursor-pointer group"
+          title="Flip card in 3D"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] text-xs font-mono transition-all cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500 text-[#B7C6D3]" />
+          <RefreshCw className="w-3.5 h-3.5" />
           <span>Flip 3D</span>
         </button>
       </div>
-
-      {/* Decorative Whimsical Squiggle Wire underneath */}
-      <svg
-        className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-80 sm:w-96 h-20 pointer-events-none opacity-40"
-        viewBox="0 0 360 70"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M 10 35 Q 70 5 130 40 T 240 30 Q 300 65 350 25"
-          stroke="#8199AE"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray="5 3"
-        />
-      </svg>
 
       {/* 3D Perspective Card Stage */}
       <div
@@ -127,12 +109,10 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[460px] h-[310px] sm:h-[340px] flex items-center justify-center cursor-grab active:cursor-grabbing"
+        className="relative w-full max-w-[440px] h-[300px] sm:h-[320px] flex items-center justify-center cursor-grab active:cursor-grabbing"
         style={{ perspective: 1200 }}
       >
-        {/* ============================================================== */}
-        {/* CARD 1: TREASURY CARD (PRIMARY RU-PAY / PAYPAL CARD)          */}
-        {/* ============================================================== */}
+        {/* CARD 1: TREASURY CARD */}
         <motion.div
           onClick={() => {
             if (activeCard !== 'treasury') swapActiveCard('treasury');
@@ -145,271 +125,164 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
             zIndex: activeCard === 'treasury' ? 20 : 10,
           }}
           animate={{
-            x: activeCard === 'treasury'
-              ? (isHovered ? 10 : 15)
-              : (isHovered ? 50 : 25),
-            y: activeCard === 'treasury'
-              ? (isHovered ? -26 : -18)
-              : (isHovered ? 28 : 20),
-            rotateZ: activeCard === 'treasury'
-              ? (isHovered ? -15 : -19)
-              : (isHovered ? -22 : -18),
-            scale: activeCard === 'treasury'
-              ? (isHovered ? 1.05 : 1.0)
-              : (isHovered ? 0.96 : 0.94),
-            opacity: activeCard === 'treasury' ? 1 : 0.85,
+            x: activeCard === 'treasury' ? (isHovered ? 8 : 12) : (isHovered ? 40 : 20),
+            y: activeCard === 'treasury' ? (isHovered ? -20 : -14) : (isHovered ? 24 : 16),
+            rotateZ: activeCard === 'treasury' ? (isHovered ? -12 : -15) : (isHovered ? -18 : -14),
+            scale: activeCard === 'treasury' ? (isHovered ? 1.04 : 1.0) : 0.94,
+            opacity: activeCard === 'treasury' ? 1 : 0.82,
           }}
           transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-          className="absolute w-[325px] sm:w-[390px] h-[205px] sm:h-[240px] rounded-3xl p-6 sm:p-7 border border-[#8199AE]/50 shadow-2xl flex flex-col justify-between overflow-hidden cursor-pointer"
+          className="absolute w-[320px] sm:w-[380px] h-[200px] sm:h-[235px] rounded-2xl p-6 border border-white/12 shadow-[0_24px_50px_rgba(0,0,0,0.9)] flex flex-col justify-between overflow-hidden cursor-pointer"
         >
-          {/* FRONT FACE OF TREASURY CARD */}
+          {/* FRONT FACE */}
           <div
-            className={`absolute inset-0 p-6 sm:p-7 flex flex-col justify-between transition-opacity duration-300 ${
+            className={`absolute inset-0 p-6 flex flex-col justify-between transition-opacity duration-300 ${
               isFlipped && activeCard === 'treasury' ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}
             style={{
-              background: 'linear-gradient(135deg, #1F2C38 0%, #33475A 35%, #4E6A83 70%, #8199AE 100%)',
-              boxShadow: '0 30px 60px -15px rgba(16, 22, 28, 0.95), inset 0 1px 2px rgba(231, 237, 242, 0.4)',
+              background: 'linear-gradient(135deg, #171A23 0%, #0F1117 50%, #07080D 100%)',
+              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.12)',
             }}
           >
-            {/* Dynamic Holographic Specular Glare (tracks mouse!) */}
+            {/* Dynamic Specular Glare */}
             <motion.div
-              className="pointer-events-none absolute inset-0 opacity-55 mix-blend-color-dodge transition-opacity duration-300"
+              className="pointer-events-none absolute inset-0 opacity-40 mix-blend-color-dodge transition-opacity duration-300"
               style={{
-                background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(231, 237, 242, 0.75) 0%, rgba(183, 198, 211, 0.35) 35%, transparent 70%)`,
+                background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(198, 255, 61, 0.25) 0%, rgba(255, 255, 255, 0.08) 35%, transparent 70%)`,
               }}
             />
-
-            {/* Radiant Sunburst Ray Marks */}
-            <div className="absolute -top-1 -right-1 w-16 h-16 pointer-events-none opacity-50">
-              <svg viewBox="0 0 50 50" fill="none">
-                <path d="M 40 10 L 48 2" stroke="#E7EDF2" strokeWidth="2" strokeLinecap="round" />
-                <path d="M 34 5 L 37 -3" stroke="#E7EDF2" strokeWidth="2" strokeLinecap="round" />
-                <path d="M 45 16 L 53 19" stroke="#E7EDF2" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
 
             {/* Card Header: Branding & Network */}
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#10161C] border border-[#4E6A83] flex items-center justify-center shadow-sm">
-                  <Sparkles className="w-3.5 h-3.5 text-[#B7C6D3]" />
+                <div className="w-6 h-6 rounded-lg bg-[#07080D] border border-white/12 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
                 </div>
-                <span className="text-xs sm:text-sm font-black tracking-tight text-[#E7EDF2] font-mono uppercase">
+                <span className="text-xs font-display font-semibold tracking-tight text-[#EDEEF2]">
                   TripSheriff Treasury
                 </span>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <motion.div
-                  animate={{ scale: isHovered ? [1, 1.15, 1] : 1 }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                >
-                  <Wifi className="w-5 h-5 text-[#E7EDF2] rotate-90" />
-                </motion.div>
-                <span className="text-sm font-black tracking-widest text-[#E7EDF2] font-mono">
+              <div className="flex items-center gap-2">
+                <Wifi className="w-4 h-4 text-[#8A8FA3] rotate-90" />
+                <span className="text-xs font-display font-bold tracking-wider text-[#EDEEF2]">
                   RuPay
                 </span>
               </div>
             </div>
 
-            {/* EMV Brushed Chip & Grouped Card Digits */}
+            {/* Chip & Grouped Card Digits */}
             <div className="relative z-10 my-1">
-              <div className="flex items-center gap-3.5 mb-2.5">
-                <div className="w-11 h-7 rounded-lg bg-gradient-to-br from-[#E7EDF2] via-[#8199AE] to-[#33475A] border border-[#E7EDF2]/60 p-1 flex flex-col justify-between shadow-inner">
-                  <div className="w-full h-[1.5px] bg-[#10161C]/50" />
-                  <div className="w-full h-[1.5px] bg-[#10161C]/50" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-6 rounded-md bg-[#1F2C38] border border-white/16 p-1 flex flex-col justify-between shadow-inner">
+                  <div className="w-full h-[1.5px] bg-[#C6FF3D]/40" />
+                  <div className="w-full h-[1.5px] bg-white/20" />
                 </div>
-                <span className="text-xs text-[#E7EDF2] font-mono font-semibold tracking-widest uppercase">
-                  PAYPAL ESCROW
+                <span className="text-[10px] text-[#8A8FA3] font-mono tracking-widest uppercase">
+                  PAYPAL ESCROW RAIL
                 </span>
               </div>
 
-              <div className="font-mono text-base sm:text-lg lg:text-xl font-black tracking-[0.22em] text-[#E7EDF2] drop-shadow-md">
+              <div className="font-mono text-base sm:text-lg font-semibold tracking-[0.2em] text-[#EDEEF2] tabular-nums">
                 4532 8912 3521 8821
               </div>
             </div>
 
             {/* Card Bottom: Balance & Payout Trigger */}
-            <div className="flex items-end justify-between relative z-10 pt-2.5 border-t border-[#E7EDF2]/25">
+            <div className="flex items-end justify-between relative z-10 pt-2 border-t border-white/8">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-[#B7C6D3] font-bold">
+                <div className="text-[10px] uppercase tracking-wider text-[#8A8FA3] font-mono">
                   Reimbursable Balance
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono text-[#E7EDF2] tracking-tight flex items-baseline gap-1.5 mt-0.5">
-                  <span>₹{formattedBalance}</span>
-                  <span className="text-xs text-[#B7C6D3] font-sans font-normal">INR</span>
+                <div className="text-lg sm:text-xl font-bold font-mono text-[#EDEEF2] tracking-tight flex items-baseline gap-1 mt-0.5">
+                  <span className="text-[#C6FF3D]">₹</span>
+                  <span className="tabular-nums">{formattedBalance}</span>
+                  <span className="text-[10px] text-[#8A8FA3] font-normal">INR</span>
                 </div>
-                <div className="text-xs text-[#E7EDF2] font-mono font-semibold truncate max-w-[170px] mt-0.5">
-                  {organizerName.toUpperCase()}
-                </div>
-                <div className="text-[10px] text-[#8199AE] font-mono truncate max-w-[170px]">
-                  {organizerEmail}
-                </div>
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPayout();
-                }}
-                title="1-Click Batch Payout to Organizer"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#10161C] hover:bg-[#1F2C38] border border-[#8199AE]/50 text-[#E7EDF2] text-xs font-bold shadow-xl transition-all cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-[#B7C6D3]" />
-                <span>Batch Payout</span>
-              </motion.button>
-            </div>
-          </div>
-
-          {/* BACK FACE OF TREASURY CARD (REVEALED ON 3D FLIP) */}
-          <div
-            className={`absolute inset-0 p-6 sm:p-7 flex flex-col justify-between transition-opacity duration-300 [transform:rotateY(180deg)] ${
-              isFlipped && activeCard === 'treasury' ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-            style={{
-              background: 'linear-gradient(135deg, #10161C 0%, #1F2C38 60%, #33475A 100%)',
-              boxShadow: '0 30px 60px -15px rgba(16, 22, 28, 0.95), inset 0 1px 2px rgba(231, 237, 242, 0.2)',
-            }}
-          >
-            {/* Magnetic Stripe */}
-            <div className="-mx-6 sm:-mx-7 -mt-2 h-10 bg-[#10161C] border-y border-[#33475A] relative">
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-transparent via-[#8199AE]/30 to-transparent" />
-            </div>
-
-            {/* Signature & CVV Panel */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-[#8199AE]">AUTHORISED SIGNATURE</span>
-                <span className="text-[#8199AE]">SECURITY CODE</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-8 rounded-lg bg-[#E7EDF2] flex items-center px-3 font-mono text-xs text-[#10161C] italic font-bold">
+                <div
+                  className="text-[11px] text-[#8A8FA3] font-body truncate max-w-[140px] sm:max-w-[170px]"
+                  title={organizerEmail}
+                >
                   {organizerName}
-                </div>
-                <div className="w-16 h-8 rounded-lg bg-[#1F2C38] border border-[#33475A] flex items-center justify-center font-mono text-sm font-bold text-[#E7EDF2]">
-                  341
-                </div>
-              </div>
-            </div>
-
-            {/* QR Code & Conserved Zero-Drift Guarantee */}
-            <div className="flex items-center justify-between pt-2 border-t border-[#33475A]/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-[#1F2C38] border border-[#33475A] flex items-center justify-center">
-                  <QrCode className="w-5 h-5 text-[#E7EDF2]" />
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold text-[#E7EDF2] flex items-center gap-1 font-mono">
-                    <Lock className="w-3 h-3 text-[#8199AE]" />
-                    Zero-Drift Ledger
-                  </div>
-                  <div className="text-[10px] text-[#8199AE] font-mono">
-                    Conserved integer balance
-                  </div>
                 </div>
               </div>
 
               <button
-                onClick={toggleFlip}
-                className="px-3 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-xs font-mono text-[#E7EDF2] font-semibold cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPayout();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-bold font-body transition-all shadow-[0_0_16px_rgba(255,196,57,0.25)] cursor-pointer"
               >
-                Back ↻
+                <span>Batch Payout</span>
               </button>
+            </div>
+          </div>
+
+          {/* BACK FACE (FLIPPED) */}
+          <div
+            className={`absolute inset-0 p-6 flex flex-col justify-between bg-[#0F1117] transition-opacity duration-300 [transform:rotateY(180deg)] ${
+              isFlipped && activeCard === 'treasury' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <div className="h-9 w-full bg-[#07080D] border-y border-white/8 -mx-6 my-1" />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#8A8FA3]">CVV SECURED</span>
+                <span className="bg-[#171A23] border border-white/12 px-2.5 py-0.5 rounded text-[#EDEEF2] font-mono">
+                  341
+                </span>
+              </div>
+              <div className="text-[10px] font-mono text-[#8A8FA3] flex items-center gap-1.5">
+                <Lock className="w-3 h-3 text-[#C6FF3D]" />
+                <span>Double-Entry Zero Drift Guarantee</span>
+              </div>
+            </div>
+
+            <div className="text-[10px] font-mono text-[#8A8FA3] truncate">
+              ID: {tripName}
             </div>
           </div>
         </motion.div>
 
-        {/* ============================================================== */}
-        {/* CARD 2: RESERVE POOL CARD (SECONDARY CYAN/SLATE CARD)           */}
-        {/* ============================================================== */}
+        {/* CARD 2: RESERVE VAULT (UNDERNEATH) */}
         <motion.div
           onClick={() => {
             if (activeCard !== 'reserve') swapActiveCard('reserve');
           }}
           style={{
-            rotateX: activeCard === 'reserve' ? rotateX : 0,
-            rotateY: activeCard === 'reserve' ? (isFlipped ? 180 : rotateY) : 0,
             transformStyle: 'preserve-3d',
             transformOrigin: 'center center',
             zIndex: activeCard === 'reserve' ? 20 : 10,
-            background: 'linear-gradient(135deg, #10161C 0%, #1F2C38 60%, #33475A 100%)',
-            boxShadow: '0 25px 50px -15px rgba(16, 22, 28, 0.95), inset 0 1px 0 rgba(183, 198, 211, 0.15)',
           }}
           animate={{
-            x: activeCard === 'reserve'
-              ? (isHovered ? 10 : 15)
-              : (isHovered ? -55 : -10),
-            y: activeCard === 'reserve'
-              ? (isHovered ? -26 : -18)
-              : (isHovered ? 28 : 20),
-            rotateZ: activeCard === 'reserve'
-              ? (isHovered ? -15 : -19)
-              : (isHovered ? -5 : -10),
-            scale: activeCard === 'reserve'
-              ? (isHovered ? 1.05 : 1.0)
-              : (isHovered ? 0.96 : 0.94),
-            opacity: activeCard === 'reserve' ? 1 : 0.85,
+            x: activeCard === 'reserve' ? 0 : 24,
+            y: activeCard === 'reserve' ? 0 : 22,
+            rotateZ: activeCard === 'reserve' ? -2 : 6,
+            scale: activeCard === 'reserve' ? 1.0 : 0.92,
+            opacity: activeCard === 'reserve' ? 1 : 0.7,
           }}
           transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-          className="absolute w-[310px] sm:w-[370px] h-[190px] sm:h-[225px] rounded-3xl p-6 border border-[#4E6A83]/50 shadow-2xl flex flex-col justify-between overflow-hidden cursor-pointer"
+          className="absolute w-[320px] sm:w-[380px] h-[200px] sm:h-[235px] rounded-2xl p-6 border border-white/10 bg-[#0F1117] shadow-2xl flex flex-col justify-between overflow-hidden cursor-pointer"
         >
-          {/* Subtle blueprint grid texture */}
-          <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#8199AE_1px,transparent_1px)] [background-size:18px_18px]" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-display font-semibold text-[#EDEEF2]">
+              Reserve Liquidity Pool
+            </span>
+            <QrCode className="w-4 h-4 text-[#8A8FA3]" />
+          </div>
 
-          {/* Dynamic Glare on Reserve Card */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 opacity-40 mix-blend-color-dodge transition-opacity duration-300"
-            style={{
-              background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(183, 198, 211, 0.5) 0%, transparent 60%)`,
-            }}
-          />
-
-          {/* Back Card Top: Contactless & Brand */}
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-[#8199AE] rotate-90" />
-              <span className="text-xs font-mono tracking-widest text-[#E7EDF2] uppercase font-bold">
-                RESERVE POOL
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-[#8199AE]" />
-              <span className="text-xs font-mono font-bold tracking-wider text-[#8199AE] uppercase truncate max-w-[150px]">
-                {tripName}
-              </span>
+          <div className="p-3 rounded-xl bg-[#07080D] border border-white/8 space-y-1">
+            <div className="text-[10px] text-[#8A8FA3] font-mono">ESCROW CONTRACT</div>
+            <div className="text-xs font-mono text-[#C6FF3D] truncate">
+              0x71C...BIPARTITE_SETTLED
             </div>
           </div>
 
-          {/* Back Card Mid: Card Number & Escrow Rail */}
-          <div className="relative z-10 my-1">
-            <div className="text-[11px] font-mono text-[#8199AE] mb-1">
-              ESCROW BUFFER • VISA DIRECT
-            </div>
-            <div className="font-mono text-sm sm:text-base tracking-[0.25em] text-[#E7EDF2] font-bold">
-              1253 •••• •••• 3090
-            </div>
-          </div>
-
-          {/* Back Card Bottom: Expiry, CVV & Activation Prompt */}
-          <div className="flex items-center justify-between relative z-10 text-xs font-mono text-[#8199AE] pt-2 border-t border-[#33475A]">
-            <div>
-              <span className="text-[10px] uppercase tracking-wider block text-[#4E6A83] font-semibold">Valid Thru</span>
-              <span className="text-[#B7C6D3] font-bold text-xs sm:text-sm">09/28</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase tracking-wider block text-[#4E6A83] font-semibold">Security</span>
-              <span className="text-[#B7C6D3] font-bold text-xs sm:text-sm">Verified</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] uppercase tracking-wider block text-[#4E6A83] font-semibold">Status</span>
-              <span className="text-[#E7EDF2] font-bold text-xs sm:text-sm flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E7EDF2] animate-pulse" />
-                Active
-              </span>
-            </div>
+          <div className="flex items-center justify-between text-xs font-mono text-[#8A8FA3]">
+            <span>Status: Verified</span>
+            <span className="text-[#EDEEF2]">₹0.00 Drift</span>
           </div>
         </motion.div>
       </div>

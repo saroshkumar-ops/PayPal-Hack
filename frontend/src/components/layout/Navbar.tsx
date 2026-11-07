@@ -6,24 +6,25 @@ import {
   ReceiptText, 
   CreditCard, 
   Clock, 
-  CheckCircle2, 
-  Bot,
-  Plus,
+  Sparkles,
   Maximize2,
   Minimize2
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
+import { Button } from '../ui/Button';
 
 interface NavbarProps {
   hoursElapsed: number;
   isBackendConnected: boolean;
   onOpenReceiptModal: () => void;
+  onSeedDemo?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   hoursElapsed,
   isBackendConnected,
   onOpenReceiptModal,
+  onSeedDemo,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -46,16 +47,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const navLinks = [
-    { to: '/', label: 'Overview', shortLabel: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { to: '/simulator', label: 'Judge Simulator', shortLabel: 'Simulator', icon: <Terminal className="w-4 h-4" /> },
-    { to: '/ledger', label: 'Ledger & AG Grid', shortLabel: 'Ledger', icon: <CreditCard className="w-4 h-4" /> },
-    { to: '/payouts', label: 'Payouts & Events', shortLabel: 'Payouts', icon: <ReceiptText className="w-4 h-4" /> },
+    { to: '/', label: 'Overview', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+    { to: '/simulator', label: 'Judge Simulator', icon: <Terminal className="w-3.5 h-3.5" /> },
+    { to: '/ledger', label: 'Ledger & AG Grid', icon: <CreditCard className="w-3.5 h-3.5" /> },
+    { to: '/payouts', label: 'Payouts & Events', icon: <ReceiptText className="w-3.5 h-3.5" /> },
   ];
 
   return (
     <>
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-[#33475A] bg-[#10161C]/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 xl:px-10 py-3">
+      {/* Top Cyber Ledger Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-white/8 bg-[#07080D]/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
         <div className="w-full flex items-center justify-between gap-3">
           {/* Brand Identity */}
           <div className="flex items-center gap-3">
@@ -64,8 +65,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </NavLink>
           </div>
 
-          {/* Desktop Navigation Tabs (Hidden on mobile) */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#1F2C38] border border-[#33475A]">
+          {/* Desktop Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#0F1117] border border-white/8">
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
@@ -73,8 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all no-underline ${
                     isActive
-                      ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-                      : 'text-[#8199AE] hover:text-[#B7C6D3] hover:bg-[#33475A]/40'
+                      ? 'bg-[#171A23] text-[#C6FF3D] font-semibold border border-white/8 shadow-sm'
+                      : 'text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/4'
                   }`
                 }
               >
@@ -85,52 +86,53 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Actions & Utilities */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Mobile Scan Button */}
-            <button
-              onClick={onOpenReceiptModal}
-              title="Scan Receipt"
-              className="md:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#E7EDF2] text-xs font-medium transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 text-[#8199AE]" />
-              <span className="text-[11px]">Scan</span>
-            </button>
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Quick Demo Seeder Button */}
+            {onSeedDemo && (
+              <button
+                onClick={onSeedDemo}
+                title="Reset showcase trip with 4 members, 2 expenses, and double-entry settlements"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                <span>Seed Demo</span>
+              </button>
+            )}
 
-            {/* Desktop Scan Button */}
-            <button
+            {/* Scan Receipt Action Button */}
+            <Button
+              variant="primary"
+              size="sm"
               onClick={onOpenReceiptModal}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#E7EDF2] text-xs font-medium transition-all cursor-pointer"
+              icon={<ReceiptText className="w-3.5 h-3.5" />}
+              className="text-xs font-display font-semibold"
             >
-              <ReceiptText className="w-3.5 h-3.5 text-[#8199AE]" />
-              <span>Scan Receipt</span>
-            </button>
+              Scan Receipt
+            </Button>
 
-            {/* Time Counter */}
-            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#1F2C38] border border-[#33475A] text-[11px] sm:text-xs text-[#E7EDF2] font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#8199AE]" />
-              <span>+{hoursElapsed}h</span>
+            {/* Virtual Time Advance Pill */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs text-[#EDEEF2] font-mono">
+              <Clock className="w-3.5 h-3.5 text-[#8A8FA3]" />
+              <span className="tabular-nums">+{hoursElapsed}h</span>
             </div>
 
-            {/* Backend Status (Desktop) */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1F2C38] border border-[#33475A] text-[11px] sm:text-xs font-mono">
-              {isBackendConnected ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#8199AE]" />
-                  <span className="text-[#E7EDF2]">Java Live</span>
-                </>
-              ) : (
-                <>
-                  <Bot className="w-3.5 h-3.5 text-[#8199AE]" />
-                  <span className="text-[#8199AE]">Autonomous</span>
-                </>
-              )}
+            {/* Backend Connectivity Status */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isBackendConnected ? 'bg-[#C6FF3D] shadow-[0_0_8px_#C6FF3D]' : 'bg-[#FF5C7A]'
+                }`}
+              />
+              <span className="text-[#8A8FA3]">
+                {isBackendConnected ? 'Core Live' : 'Offline'}
+              </span>
             </div>
 
             {/* PC Fullscreen Mode Button */}
             <button
               onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen (PC)'}
-              className="flex items-center justify-center p-2 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#8199AE] hover:text-[#E7EDF2] transition-colors cursor-pointer"
+              title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
+              className="flex items-center justify-center p-2 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
               aria-label="Toggle Fullscreen"
             >
               {isFullscreen ? (
@@ -142,28 +144,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </header>
-
-      {/* Mobile Bottom Navigation Dock (Fixed at bottom on phones) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#10161C]/95 backdrop-blur-xl border-t border-[#33475A] px-2 py-1.5 flex items-center justify-around shadow-2xl">
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all no-underline ${
-                isActive
-                  ? 'text-[#E7EDF2] bg-[#4E6A83]/30 font-semibold'
-                  : 'text-[#8199AE] hover:text-[#B7C6D3]'
-              }`
-            }
-          >
-            <div className="w-5 h-5 flex items-center justify-center mb-0.5">
-              {link.icon}
-            </div>
-            <span className="text-[10px] tracking-tight">{link.shortLabel}</span>
-          </NavLink>
-        ))}
-      </nav>
     </>
   );
 };

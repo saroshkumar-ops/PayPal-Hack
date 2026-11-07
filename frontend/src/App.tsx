@@ -11,6 +11,8 @@ import { PayoutsPage } from './pages/PayoutsPage';
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
+import { CyberBackground } from './components/common/CyberBackground';
+import { LenisProvider } from './components/common/LenisProvider';
 
 import { 
   ledgerService, 
@@ -18,6 +20,7 @@ import {
   chatService, 
   simulatorService, 
   paymentService, 
+  demoService,
   checkHealth 
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog } from './types';
@@ -44,13 +47,13 @@ export function App() {
     expenseId?: string;
   }>({
     isOpen: false,
-    debtorName: 'Alex Rivera',
+    debtorName: 'Alex Hunter',
     debtorHandle: '@alex_travels',
-    creditorName: 'Sarah Chen',
-    description: 'Sunset Villa Deposit Share',
-    amountCents: 8000,
-    userId: 'user_02',
-    expenseId: 'exp_8821',
+    creditorName: 'Sarah Connor',
+    description: 'Sunset Cliffside Villa Deposit Share',
+    amountCents: 6000,
+    userId: 'user_alex',
+    expenseId: 'exp_villa_demo_01',
   });
 
   // Load data on startup
@@ -67,46 +70,68 @@ export function App() {
   };
 
   const loadData = async () => {
-    // Attempt auto-seeding if backend is active
-    await ledgerService.autoBootstrapTrip('trip_bali_2026');
+    try {
+      await ledgerService.autoBootstrapTrip('trip_bali_2026');
 
-    const [currLedger, currMessages, currLogs] = await Promise.all([
-      ledgerService.getLedger('trip_bali_2026'),
-      chatService.getMessages('trip_bali_2026'),
-      paymentService.getLogs(),
-    ]);
-    setLedger(currLedger);
-    setMessages(currMessages);
-    setPaypalLogs(currLogs);
+      const [currLedger, currMessages, currLogs] = await Promise.all([
+        ledgerService.getLedger('trip_bali_2026'),
+        chatService.getMessages('trip_bali_2026'),
+        paymentService.getLogs(),
+      ]);
+      setLedger(currLedger);
+      setMessages(currMessages);
+      setPaypalLogs(currLogs);
+    } catch (err) {
+      console.warn('Initial data load falling back to local state:', err);
+    }
   };
 
   const triggerCelebrationConfetti = () => {
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 80,
+      spread: 60,
       origin: { y: 0.6 },
-      colors: ['#4E6A83', '#8199AE', '#B7C6D3', '#E7EDF2'],
+      colors: ['#C6FF3D', '#38E1FF', '#FFC439', '#EDEEF2'],
     });
   };
 
-  // Chat message send (uses Python AI Intent Decider & Java backend)
-  const handleSendMessage = async (text: string) => {
+  // Seed showcase demo trip (Sarah, Alex, Dave, Priya)
+  const handleSeedDemo = async () => {
     setIsLoading(true);
     try {
-      await chatService.sendMessage('trip_bali_2026', text, 'user_01');
+      const res = await demoService.seedDemo();
+      if (res && res.ledger) {
+        setLedger(res.ledger);
+      } else {
+        await loadData();
+      }
+      triggerCelebrationConfetti();
+    } catch (err) {
+      console.error('Failed to trigger demo seed:', err);
       await loadData();
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Simulate $150 Jimbaran Seafood Dinner
+  // Chat message send
+  const handleSendMessage = async (text: string) => {
+    setIsLoading(true);
+    try {
+      await chatService.sendMessage('trip_bali_2026', text, 'user_sarah');
+      await loadData();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Simulate expense
   const handleSimulateExpense = async () => {
     setIsLoading(true);
     try {
       await expenseService.createExpense('trip_bali_2026', {
-        paid_by: 'user_01',
-        amount_cents: 15000,
+        paid_by: 'user_sarah',
+        amount_cents: 12000,
         description: 'Jimbaran Seafood Beach Dinner',
         category: 'FOOD',
         split_type: 'EQUAL',
@@ -117,82 +142,84 @@ export function App() {
     }
   };
 
-  // Advance virtual time +24h (Task C Sim-Time & Task F AI Escalation Roast)
+  // Advance virtual time +24h
   const handleAdvanceTime = async (hours: number = 24) => {
     setIsLoading(true);
     try {
-      await simulatorService.advanceTime('trip_bali_2026', hours);
+      const res = await simulatorService.advanceTime('trip_bali_2026', hours);
       await loadData();
+      return res;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Open the interactive PayPal Express Checkout Sheet
+  // Open Checkout Drawer
   const handleOpenCheckout = (userId: string, amountCents: number, expenseId?: string) => {
-    const debtor = ledger.members.find(m => m.user_id === userId) || ledger.members[1];
-    const creditor = ledger.members.find(m => m.user_id === 'user_01') || ledger.members[0];
+    const debtor = ledger.members.find((m) => m.user_id === userId);
+    const creditor = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
 
     setCheckoutDrawer({
       isOpen: true,
-      debtorName: debtor.name,
-      debtorHandle: debtor.handle,
-      creditorName: creditor.name,
-      description: 'Sunset Villa Deposit Share',
-      amountCents,
-      userId,
-      expenseId: expenseId || 'exp_8821',
+      debtorName: debtor ? debtor.name : 'Alex Hunter',
+      debtorHandle: debtor ? debtor.handle : '@alex_travels',
+      creditorName: creditor ? creditor.name : 'Sarah Connor',
+      description: 'Trip Settlement via PayPal Escrow',
+      amountCents: amountCents,
+      userId: userId,
+      expenseId: expenseId || 'exp_villa_demo_01',
     });
   };
 
-  // Confirm payment in PayPal Drawer (Executes Orders API v2 & Capture Flow)
+  // Execute payment settlement
   const handleExecutePayment = async () => {
-    await paymentService.captureDebtorSplit(
-      'trip_bali_2026', 
-      checkoutDrawer.userId, 
-      checkoutDrawer.amountCents, 
-      checkoutDrawer.expenseId || 'exp_8821'
-    );
-    triggerCelebrationConfetti();
-    await loadData();
-  };
-
-  // Batch Payout confirmation (Task D)
-  const handleConfirmPayout = async () => {
     setIsLoading(true);
     try {
-      await paymentService.confirmBatchPayout('trip_bali_2026');
-      setIsPayoutModalOpen(false);
-      triggerCelebrationConfetti();
+      await paymentService.captureDebtorSplit(
+        'trip_bali_2026',
+        checkoutDrawer.userId,
+        checkoutDrawer.amountCents,
+        checkoutDrawer.expenseId
+      );
       await loadData();
+      setCheckoutDrawer((prev) => ({ ...prev, isOpen: false }));
+      triggerCelebrationConfetti();
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Scanned receipt confirmed from modal (Gemini Vision OCR line items)
+  // Confirm Scanned Expense
   const handleConfirmScannedExpense = async (
-    description: string, 
+    description: string,
     amountCents: number,
     items?: { name: string; priceCents: number; claimedBy?: string }[]
   ) => {
     setIsLoading(true);
     try {
-      const itemClaims = items?.map(item => ({
-        name: item.name,
-        price_cents: item.priceCents,
-        claimed_by_user_ids: [item.claimedBy === 'Alex' ? 'user_02' : item.claimedBy === 'Dave' ? 'user_03' : 'user_01'],
-      }));
-
       await expenseService.createExpense('trip_bali_2026', {
-        paid_by: 'user_01',
+        paid_by: 'user_sarah',
         amount_cents: amountCents,
-        description,
+        description: description,
         category: 'FOOD',
-        split_type: itemClaims && itemClaims.length > 0 ? 'ITEMIZED' : 'EQUAL',
-        items: itemClaims,
+        split_type: items && items.length > 0 ? 'ITEMIZED' : 'EQUAL',
       });
       await loadData();
+      setIsReceiptModalOpen(false);
+      triggerCelebrationConfetti();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Confirm Payout
+  const handleConfirmPayout = async () => {
+    setIsLoading(true);
+    try {
+      await paymentService.confirmBatchPayout('trip_bali_2026');
+      await loadData();
+      setIsPayoutModalOpen(false);
+      triggerCelebrationConfetti();
     } finally {
       setIsLoading(false);
     }
@@ -202,102 +229,110 @@ export function App() {
   const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-[#10161C] text-[#B7C6D3] flex flex-col font-sans selection:bg-[#4E6A83]/40 selection:text-[#E7EDF2]">
-        {/* Minimalist Top Navbar */}
-        <Navbar
-          hoursElapsed={ledger.hours_elapsed}
-          isBackendConnected={isBackendConnected}
-          onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
-        />
+    <LenisProvider>
+      <BrowserRouter>
+        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative">
+          {/* Subtle Cyber Grid & Grain Background Layer */}
+          <CyberBackground />
 
-        {/* Multi-Page Routes */}
-        <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 pb-24 md:pb-8 flex flex-col">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <OverviewPage
-                  ledger={ledger}
-                  onSimulateExpense={handleSimulateExpense}
-                  onAdvanceTime={() => handleAdvanceTime(24)}
-                  onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
-                  onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
-                />
-              }
-            />
-            <Route
-              path="/simulator"
-              element={
-                <SimulatorPage
-                  ledger={ledger}
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  onSimulateExpense={handleSimulateExpense}
-                  onAdvanceTime={handleAdvanceTime}
-                  onPayDebt={handleOpenCheckout}
-                  onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
-                  isLoading={isLoading}
-                />
-              }
-            />
-            <Route
-              path="/ledger"
-              element={<LedgerPage ledger={ledger} />}
-            />
-            <Route
-              path="/payouts"
-              element={
-                <PayoutsPage
-                  ledger={ledger}
-                  paypalLogs={paypalLogs}
-                  onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
+          {/* Top Cyber Ledger Navbar */}
+          <Navbar
+            hoursElapsed={ledger.hours_elapsed}
+            isBackendConnected={isBackendConnected}
+            onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
+            onSeedDemo={handleSeedDemo}
+          />
 
-        {/* Minimalist Footer */}
-        <footer className="border-t border-[#33475A] bg-[#10161C] px-4 sm:px-6 lg:px-8 xl:px-10 py-4 text-xs text-[#8199AE]">
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-            <span>TripSheriff AI — Group Travel Treasury & Debt Enforcement Agent</span>
-            <span className="font-mono text-[11px] text-[#8199AE]">
-              PayPal AI Hackathon 2026 • Java Core Port 8080 • Python AI Port 8001
-            </span>
-          </div>
-        </footer>
+          {/* Multi-Page Routes */}
+          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-5 pb-24 md:pb-10 flex flex-col z-10">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <OverviewPage
+                    ledger={ledger}
+                    onSimulateExpense={handleSimulateExpense}
+                    onAdvanceTime={() => handleAdvanceTime(24)}
+                    onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
+                    onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
+                  />
+                }
+              />
+              <Route
+                path="/simulator"
+                element={
+                  <SimulatorPage
+                    ledger={ledger}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onSimulateExpense={handleSimulateExpense}
+                    onAdvanceTime={handleAdvanceTime}
+                    onPayDebt={handleOpenCheckout}
+                    onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
+                    isLoading={isLoading}
+                  />
+                }
+              />
+              <Route
+                path="/ledger"
+                element={<LedgerPage ledger={ledger} />}
+              />
+              <Route
+                path="/payouts"
+                element={
+                  <PayoutsPage
+                    ledger={ledger}
+                    paypalLogs={paypalLogs}
+                    onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
 
-        {/* Drawers & Modals */}
-        <PayPalCheckoutDrawer
-          isOpen={checkoutDrawer.isOpen}
-          onClose={() => setCheckoutDrawer(prev => ({ ...prev, isOpen: false }))}
-          debtorName={checkoutDrawer.debtorName}
-          debtorHandle={checkoutDrawer.debtorHandle}
-          creditorName={checkoutDrawer.creditorName}
-          description={checkoutDrawer.description}
-          amountCents={checkoutDrawer.amountCents}
-          onConfirmPayment={handleExecutePayment}
-        />
+          {/* Minimalist Cyber Ledger Footer */}
+          <footer className="border-t border-white/8 bg-[#07080D]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 text-xs text-[#8A8FA3] z-10">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+              <span className="font-display font-medium text-[#EDEEF2]">
+                TripSheriff <span className="text-[#C6FF3D] font-mono text-[10px]">CYBER LEDGER</span>
+              </span>
+              <span className="font-mono text-[11px] text-[#8A8FA3]">
+                PayPal AI Hackathon 2026 • Deterministic Zero-Drift Treasury • Spring Boot & Gemini
+              </span>
+            </div>
+          </footer>
 
-        <PayoutModal
-          isOpen={isPayoutModalOpen}
-          onClose={() => setIsPayoutModalOpen(false)}
-          onConfirm={handleConfirmPayout}
-          organizer={organizer}
-          amountCents={organizerOwedCents}
-          isLoading={isLoading}
-        />
+          {/* Drawers & Modals */}
+          <PayPalCheckoutDrawer
+            isOpen={checkoutDrawer.isOpen}
+            onClose={() => setCheckoutDrawer((prev) => ({ ...prev, isOpen: false }))}
+            debtorName={checkoutDrawer.debtorName}
+            debtorHandle={checkoutDrawer.debtorHandle}
+            creditorName={checkoutDrawer.creditorName}
+            description={checkoutDrawer.description}
+            amountCents={checkoutDrawer.amountCents}
+            onConfirmPayment={handleExecutePayment}
+          />
 
-        <ReceiptDropModal
-          isOpen={isReceiptModalOpen}
-          onClose={() => setIsReceiptModalOpen(false)}
-          members={ledger.members}
-          onConfirmExpense={handleConfirmScannedExpense}
-        />
-      </div>
-    </BrowserRouter>
+          <PayoutModal
+            isOpen={isPayoutModalOpen}
+            onClose={() => setIsPayoutModalOpen(false)}
+            onConfirm={handleConfirmPayout}
+            organizer={organizer}
+            amountCents={organizerOwedCents}
+            isLoading={isLoading}
+          />
+
+          <ReceiptDropModal
+            isOpen={isReceiptModalOpen}
+            onClose={() => setIsReceiptModalOpen(false)}
+            members={ledger.members}
+            onConfirmExpense={handleConfirmScannedExpense}
+          />
+        </div>
+      </BrowserRouter>
+    </LenisProvider>
   );
 }
 

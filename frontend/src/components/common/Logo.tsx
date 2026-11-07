@@ -12,17 +12,17 @@ export const Logo: React.FC<LogoProps> = ({
   className = '',
 }) => {
   const sizeMap = {
-    sm: { icon: 28, text: 'text-xs' },
-    md: { icon: 36, text: 'text-sm' },
-    lg: { icon: 44, text: 'text-base' },
-    xl: { icon: 56, text: 'text-xl' },
+    sm: { icon: 26, text: 'text-xs' },
+    md: { icon: 34, text: 'text-sm' },
+    lg: { icon: 42, text: 'text-base' },
+    xl: { icon: 52, text: 'text-xl' },
   };
 
   const currentSize = sizeMap[size];
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {/* Bespoke Geometric Sheriff-Compass Fintech Shield Emblem */}
+      {/* Cyber Ledger Shield Emblem */}
       <svg
         width={currentSize.icon}
         height={currentSize.icon}
@@ -32,57 +32,53 @@ export const Logo: React.FC<LogoProps> = ({
         className="shrink-0"
       >
         <defs>
-          <linearGradient id="ts-shield-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#1F2C38" />
-            <stop offset="100%" stopColor="#10161C" />
-          </linearGradient>
-          <linearGradient id="ts-star-grad" x1="14" y1="14" x2="34" y2="34" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#E7EDF2" />
-            <stop offset="100%" stopColor="#8199AE" />
+          <linearGradient id="cyber-shield-bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#171A23" />
+            <stop offset="100%" stopColor="#07080D" />
           </linearGradient>
         </defs>
 
-        {/* Outer Shield Container */}
+        {/* Outer Shield Frame */}
         <rect
           x="3"
           y="3"
           width="42"
           height="42"
           rx="12"
-          fill="url(#ts-shield-grad)"
-          stroke="#33475A"
-          strokeWidth="1.5"
+          fill="url(#cyber-shield-bg)"
+          stroke="rgba(255, 255, 255, 0.12)"
+          strokeWidth="1.2"
         />
 
-        {/* Inner Subtle Ring */}
-        <circle cx="24" cy="24" r="14" stroke="#4E6A83" strokeWidth="1" strokeDasharray="2 2" opacity="0.6" />
+        {/* Inner Subtle Reticle Ring */}
+        <circle cx="24" cy="24" r="13" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" strokeDasharray="3 3" />
 
-        {/* 6-Pointed Geometric Sheriff Star / Compass */}
-        {/* Vertical/Horizontal Diamond Points */}
+        {/* Cyber Compass Diamond */}
         <path
           d="M24 10L27 20L37 24L27 28L24 38L21 28L11 24L21 20L24 10Z"
-          fill="url(#ts-star-grad)"
-          stroke="#33475A"
+          fill="#EDEEF2"
+          stroke="rgba(255, 255, 255, 0.16)"
           strokeWidth="1"
         />
 
-        {/* Diagonal Subtle Cross Facets */}
-        <circle cx="24" cy="24" r="3" fill="#1F2C38" stroke="#E7EDF2" strokeWidth="1.2" />
+        {/* Acid-Lime Core Center Pulse Dot */}
+        <circle cx="24" cy="24" r="3.5" fill="#C6FF3D" />
 
-        {/* 4 Corner Constellation Dots */}
-        <circle cx="15" cy="15" r="1.2" fill="#8199AE" />
-        <circle cx="33" cy="15" r="1.2" fill="#8199AE" />
-        <circle cx="15" cy="33" r="1.2" fill="#8199AE" />
-        <circle cx="33" cy="33" r="1.2" fill="#8199AE" />
+        {/* Precision Micro Corner Dots */}
+        <circle cx="15" cy="15" r="1" fill="#8A8FA3" />
+        <circle cx="33" cy="15" r="1" fill="#8A8FA3" />
+        <circle cx="15" cy="33" r="1" fill="#8A8FA3" />
+        <circle cx="33" cy="33" r="1" fill="#8A8FA3" />
       </svg>
 
       {showText && (
         <div>
-          <div className={`font-bold tracking-tight text-[#E7EDF2] leading-tight ${currentSize.text}`}>
-            TripSheriff <span className="text-[#8199AE] font-semibold">AI</span>
+          <div className={`font-display font-bold tracking-tight text-[#EDEEF2] flex items-center gap-1.5 leading-tight ${currentSize.text}`}>
+            <span>TripSheriff</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
           </div>
-          <div className="text-[10px] text-[#8199AE] tracking-wide uppercase font-mono">
-            Travel Treasury
+          <div className="text-[10px] text-[#8A8FA3] font-mono tracking-widest uppercase">
+            Cyber Ledger
           </div>
         </div>
       )}
