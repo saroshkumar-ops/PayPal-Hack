@@ -24,11 +24,20 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final com.shrihari.backend.idempotency.service.IdempotencyService idempotencyService;
 
-    @Operation(summary = "Create PayPal checkout order", description = "Creates a PayPal Orders v2 transaction for an individual split debt and returns the sandbox approval URL")
+    @Operation(summary = "Create PayPal checkout order", description = "Creates a PayPal Orders v2 transaction for an individual split debt and returns the sandbox approval URL (supports Idempotency-Key header)")
     @PostMapping("/create-order")
-    public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
-        CreateOrderResponse response = paymentService.createOrderForSplit(request);
+    public ResponseEntity<CreateOrderResponse> createOrder(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody CreateOrderRequest request) {
+
+        CreateOrderResponse response = idempotencyService.executeIdempotent(
+                idempotencyKey,
+                "PAYPAL_ORDER",
+                CreateOrderResponse.class,
+                () -> paymentService.createOrderForSplit(request)
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

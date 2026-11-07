@@ -9,9 +9,42 @@ This handbook provides ready-to-use `curl` commands, JSON payloads, and expected
 * **Base URL**: `http://localhost:8080`
 * **Swagger UI (Interactive API Tester)**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 * **OpenAPI v3 JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
-* **H2 Console**: `http://localhost:8080/h2-console`
-  * JDBC URL: `jdbc:h2:mem:tripsheriff`
-  * User: `sa` | Password: *(empty)*
+* **Actuator Health & Metrics**:
+  * Health Probe: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+  * Metrics: [http://localhost:8080/actuator/metrics](http://localhost:8080/actuator/metrics)
+
+---
+
+## 1.0 Production Authentication (JWT)
+
+### Register User
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "sarah@example.com",
+    "password": "Password123!",
+    "name": "Sarah Connor",
+    "handle": "@sarah_c",
+    "paypal_email": "sarah.organizer@personal.example.com"
+  }'
+```
+
+### Login & Obtain JWT Token
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "sarah@example.com",
+    "password": "Password123!"
+  }'
+```
+
+### Authenticated Profile Check (`/api/auth/me`)
+```bash
+curl -X GET http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer <TOKEN>"
+```
 
 ---
 
