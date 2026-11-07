@@ -21,9 +21,13 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   members,
   onConfirmExpense,
 }) => {
-  const memberNames = members && members.length > 0 ? members.map(m => m.name) : ['Sarah Connor', 'Alex Hunter', 'Dave Miller', 'Priya Sharma'];
+  const memberNames = members && members.length > 0 
+    ? members.map(m => m.name) 
+    : ['Sarah Connor', 'Alex Hunter', 'Dave Miller', 'Priya Sharma'];
+
   const [isScanning, setIsScanning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
     currency: string;
@@ -36,50 +40,33 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      setExtractedReceipt({
-        merchant: 'Jimbaran Sunset Seafood & Grill',
-        currency: 'INR',
-        currencySymbol: '₹',
-        totalCents: 12000,
-        taxCents: 1000,
-        tipCents: 500,
-        items: [
-          { name: 'Grilled Red Snapper & Garlic Rice', priceCents: 4500, claimedBy: 'Sarah Connor' },
-          { name: 'Jumbo Tiger Prawns (Platter)', priceCents: 4000, claimedBy: 'Alex Hunter' },
-          { name: 'Young Coconuts & Cold Brew', priceCents: 2000, claimedBy: 'Dave Miller' },
-        ],
-      });
-    }, 2400);
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsScanning(true);
+    setErrorMsg(null);
     try {
       const res = await aiService.uploadReceipt(file);
-      const symbol = res.currency_symbol || (res.currency === 'INR' ? '₹' : '₹');
+      const symbol = res.currency_symbol || '₹';
       setExtractedReceipt({
-        merchant: res.merchant || 'Jimbaran Sunset Seafood',
+        merchant: res.merchant || 'Scanned Receipt',
         currency: res.currency || 'INR',
         currencySymbol: symbol,
-        totalCents: res.total_cents || 12000,
-        taxCents: res.tax_cents || 1000,
-        tipCents: res.tip_cents || 500,
+        totalCents: res.total_cents || 10000,
+        taxCents: res.tax_cents || 0,
+        tipCents: res.tip_cents || 0,
         items: (res.items || []).map((item, idx) => ({
           name: item.name,
           priceCents: item.price_cents,
           claimedBy: memberNames[idx % memberNames.length],
         })),
       });
+    } catch (err) {
+      console.error('Receipt parse failed:', err);
+      setErrorMsg('Could not parse receipt image. Please ensure the image is clear or try again.');
+    } finally {
       setIsScanning(false);
-    } catch {
-      simulateScan();
     }
   };
 
@@ -129,10 +116,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
-                  Multimodal Receipt Scanner
+                  Receipt Dissection Scanner
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Gemini 2.5 Flash OCR with sequential line-item parsing
+                  Vision OCR parsing with line-by-line item claiming
                 </p>
               </div>
             </div>
@@ -147,14 +134,20 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
           <div className="p-5 sm:p-6 space-y-6">
             {!extractedReceipt ? (
-              /* Dropzone with Glowing Acid Lime Scanning Line */
+              /* Dropzone with Scanning Line */
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOver(false);
-                  simulateScan();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && fileInputRef.current) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInputRef.current.files = dataTransfer.files;
+                    handleFileUpload({ target: fileInputRef.current } as any);
+                  }
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center cursor-pointer overflow-hidden transition-all select-none ${
@@ -171,7 +164,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   className="hidden"
                 />
 
-                {/* Glowing Laser Scanline Animation */}
+                {/* Laser Scanline Animation */}
                 {isScanning && (
                   <motion.div
                     initial={{ top: '0%' }}
@@ -188,23 +181,18 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                   <div>
                     <div className="text-sm font-display font-semibold text-[#EDEEF2]">
-                      {isScanning ? 'Extracting Line Items with Gemini OCR...' : 'Drop paper receipt or click to upload'}
+                      {isScanning ? 'Extracting Line Items...' : 'Drop receipt or click to browse'}
                     </div>
                     <p className="text-xs text-[#8A8FA3] font-body mt-1 max-w-sm">
-                      Supports JPG, PNG, HEIC. Line items, taxes, and service charges apportioned automatically.
+                      Supports JPG, PNG, WEBP. Line items, taxes, and service charges apportioned automatically.
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      simulateScan();
-                    }}
-                    className="mt-2 text-xs font-mono text-[#C6FF3D] hover:underline"
-                  >
-                    Or simulate instant Jimbaran Feast scan
-                  </button>
+                  {errorMsg && (
+                    <div className="text-xs font-mono text-[#FF5C7A] mt-2">
+                      {errorMsg}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

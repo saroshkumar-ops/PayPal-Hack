@@ -125,23 +125,6 @@ export function App() {
     }
   };
 
-  // Simulate expense
-  const handleSimulateExpense = async () => {
-    setIsLoading(true);
-    try {
-      await expenseService.createExpense('trip_bali_2026', {
-        paid_by: 'user_sarah',
-        amount_cents: 12000,
-        description: 'Jimbaran Seafood Beach Dinner',
-        category: 'FOOD',
-        split_type: 'EQUAL',
-      });
-      await loadData();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Advance virtual time +24h
   const handleAdvanceTime = async (hours: number = 24) => {
     setIsLoading(true);
@@ -251,7 +234,6 @@ export function App() {
                 element={
                   <OverviewPage
                     ledger={ledger}
-                    onSimulateExpense={handleSimulateExpense}
                     onAdvanceTime={() => handleAdvanceTime(24)}
                     onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
                     onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
@@ -265,7 +247,6 @@ export function App() {
                     ledger={ledger}
                     messages={messages}
                     onSendMessage={handleSendMessage}
-                    onSimulateExpense={handleSimulateExpense}
                     onAdvanceTime={handleAdvanceTime}
                     onPayDebt={handleOpenCheckout}
                     onOpenReceiptModal={() => setIsReceiptModalOpen(true)}

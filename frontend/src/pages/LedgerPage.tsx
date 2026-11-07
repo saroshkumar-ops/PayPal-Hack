@@ -26,6 +26,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   });
 
   const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
+  const driftCents = Math.abs(Object.values(ledger.net_balances_cents || {}).reduce((acc, val) => acc + val, 0));
 
   // Row Data for AG Grid
   const rowData = useMemo(() => {
@@ -137,10 +138,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
     ];
   }, []);
 
-  const settlements = ledger.simplified_settlements || [
-    { from_user_id: 'user_alex', to_user_id: 'user_sarah', amount_cents: 6000, formatted_amount: '60.00' },
-    { from_user_id: 'user_priya', to_user_id: 'user_sarah', amount_cents: 6000, formatted_amount: '60.00' },
-  ];
+  const settlements = ledger.simplified_settlements || [];
 
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
@@ -174,11 +172,15 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
 
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
-          <div className="text-xl sm:text-2xl font-mono font-bold text-[#C6FF3D] tabular-nums flex items-center gap-1.5">
-            <span>₹0.00</span>
-            <Lock className="w-4 h-4 text-[#C6FF3D]" />
+          <div className="text-xl sm:text-2xl font-mono font-bold tabular-nums flex items-center gap-1.5">
+            <span className={driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}>
+              ₹{(driftCents / 100).toFixed(2)}
+            </span>
+            <Lock className={`w-4 h-4 ${driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}`} />
           </div>
-          <div className="text-[11px] text-[#C6FF3D] font-mono">Contract 1 Verified</div>
+          <div className="text-[11px] font-mono text-[#8A8FA3]">
+            {driftCents === 0 ? 'Equilibrium Verified' : 'Imbalance Detected'}
+          </div>
         </div>
       </div>
 
@@ -192,49 +194,55 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
               Optimal Settlement Transit Ledger
             </h3>
             <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
-              Multi-way group debts reduced into direct single-step PayPal transactions
+              Direct single-step transactions calculated via minimum cash flow
             </p>
           </div>
           <span className="text-[11px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 px-2.5 py-1 rounded-full border border-[#C6FF3D]/30 w-fit">
-            Bipartite Cash Flow
+            {settlements.length} Transits
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {settlements.map((s, idx) => {
-            const fromMember = ledger.members.find(m => m.user_id === s.from_user_id);
-            const toMember = ledger.members.find(m => m.user_id === s.to_user_id);
+        {settlements.length === 0 ? (
+          <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3]">
+            All debts settled. No active transit transactions.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {settlements.map((s, idx) => {
+              const fromMember = ledger.members.find((m) => m.user_id === s.from_user_id);
+              const toMember = ledger.members.find((m) => m.user_id === s.to_user_id);
 
-            return (
-              <div
-                key={idx}
-                className="p-4 rounded-2xl bg-[#07080D] border border-white/8 flex items-center justify-between gap-3"
-              >
-                <div>
-                  <div className="text-xs font-mono font-semibold text-[#FF5C7A]">
-                    {fromMember?.name || s.from_user_id}
+              return (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-[#07080D] border border-white/8 flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <div className="text-xs font-mono font-semibold text-[#FF5C7A]">
+                      {fromMember?.name || s.from_user_id}
+                    </div>
+                    <div className="text-[10px] text-[#8A8FA3] font-mono">
+                      owes {toMember?.name || s.to_user_id}
+                    </div>
                   </div>
-                  <div className="text-[10px] text-[#8A8FA3] font-mono">
-                    owes {toMember?.name || s.to_user_id}
+
+                  <div className="text-right">
+                    <div className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums">
+                      ₹{(s.amount_cents / 100).toFixed(2)}
+                    </div>
+                    <div className="text-[10px] text-[#FFC439] font-mono font-semibold">
+                      PayPal Ready
+                    </div>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <div className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums">
-                    ₹{(s.amount_cents / 100).toFixed(2)}
-                  </div>
-                  <div className="text-[10px] text-[#FFC439] font-mono font-semibold">
-                    PayPal Ready
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ================================================================ */}
-      {/* 3. HIGH-DENSITY CYBER AG GRID AUDIT LEDGER                        */}
+      {/* 3. HIGH-DENSITY AG GRID AUDIT LEDGER                              */}
       {/* ================================================================ */}
       <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-5 sm:p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
         {/* Search & Stats Bar */}
