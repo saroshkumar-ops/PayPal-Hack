@@ -69,7 +69,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#FFC439]" />
               <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                PayPal Orders v2 Settlement
+                Pay with PayPal
               </h3>
             </div>
             <button
@@ -84,7 +84,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
             {/* Amount Callout */}
             <div className="text-center p-5 rounded-2xl bg-[#07080D] border border-white/8">
               <div className="text-xs font-mono text-[#8A8FA3] uppercase tracking-wider">
-                DEBT REIMBURSEMENT AMOUNT
+                AMOUNT DUE
               </div>
               <div className="text-3xl sm:text-4xl font-mono font-bold text-[#EDEEF2] tabular-nums mt-1">
                 <span className="text-[#FFC439]">{cur}</span>
@@ -98,8 +98,8 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
             {/* Generated PayPal Link with Satisfying Copy Interaction */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono text-[#8A8FA3]">
-                <span>PAYPAL CHECKOUT LINK</span>
-                <span className="text-[#C6FF3D]">v2 TOKEN READY</span>
+                <span>CHECKOUT LINK</span>
+                <span className="text-[#C6FF3D]">READY</span>
               </div>
               <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#07080D] border border-white/8">
                 <span className="flex-1 font-mono text-xs text-[#8A8FA3] truncate">
@@ -119,9 +119,9 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
             <div className="p-3 rounded-xl bg-[#171A23]/50 border border-white/6 flex items-center justify-between text-xs font-mono text-[#8A8FA3]">
               <div className="flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Sandbox Escrow Rail</span>
+                <span>PayPal Sandbox</span>
               </div>
-              <span className="text-[#EDEEF2]">Status: UNPAID</span>
+              <span className="text-[#EDEEF2]">Status: Unpaid</span>
             </div>
 
             {/* Action Buttons */}
@@ -134,7 +134,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
                 icon={isSuccess ? <CheckCircle2 className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                 className="w-full text-sm font-display font-bold"
               >
-                {isSuccess ? 'Settlement Captured!' : isProcessing ? 'Processing Capture...' : 'Simulate Instant PayPal Capture'}
+                {isSuccess ? 'Payment Complete!' : isProcessing ? 'Processing...' : 'Pay Now with PayPal'}
               </Button>
             </div>
           </div>

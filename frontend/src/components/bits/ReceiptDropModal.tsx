@@ -123,10 +123,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
-                  Receipt Dissection Scanner
+                  Scan Bill
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Vision OCR parsing with line-by-line item claiming
+                  Upload a bill or receipt to split items with friends
                 </p>
               </div>
             </div>
@@ -188,10 +188,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                   <div>
                     <div className="text-sm font-display font-semibold text-[#EDEEF2]">
-                      {isScanning ? 'Extracting Line Items...' : 'Drop receipt or click to browse'}
+                      {isScanning ? 'Scanning Bill...' : 'Drop receipt or click to upload'}
                     </div>
                     <p className="text-xs text-[#8A8FA3] font-body mt-1 max-w-sm">
-                      Supports JPG, PNG, WEBP. Line items, taxes, and service charges apportioned automatically.
+                      Supports JPG, PNG, WEBP.
                     </p>
                   </div>
 
@@ -219,14 +219,14 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     <div className="text-base font-mono font-bold text-[#C6FF3D] tabular-nums">
                       {extractedReceipt.currencySymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}
                     </div>
-                    <span className="text-[10px] text-[#8A8FA3] font-mono">Total Verified</span>
+                    <span className="text-[10px] text-[#8A8FA3] font-mono">Total</span>
                   </div>
                 </div>
 
                 {/* Line Items Sequence */}
                 <div className="space-y-2.5">
                   <div className="text-xs font-mono text-[#8A8FA3] uppercase">
-                    ITEM-BY-ITEM CLAIMANT ALLOCATION:
+                    ASSIGN ITEMS TO FRIENDS:
                   </div>
 
                   {extractedReceipt.items.map((item, idx) => (
@@ -269,10 +269,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/8">
                   <Button variant="ghost" size="md" onClick={() => setExtractedReceipt(null)}>
-                    Re-scan
+                    Scan Another
                   </Button>
                   <Button variant="primary" size="md" onClick={handleConfirm} icon={<ArrowRight className="w-4 h-4" />}>
-                    Approve & Commit to Ledger
+                    Save Expense
                   </Button>
                 </div>
               </div>

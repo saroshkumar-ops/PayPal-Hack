@@ -45,10 +45,10 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-[#FFC439]" />
               <div>
                 <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                  Confirm Batch Payout
+                  Send Payout
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Human-in-the-Loop Organizer Authorization
+                  Transfer collected funds to organizer
                 </p>
               </div>
             </div>
@@ -64,7 +64,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
             {/* Beneficiary Breakdown */}
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2.5 text-xs font-mono">
               <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>Beneficiary:</span>
+                <span>To:</span>
                 <span className="text-[#EDEEF2] font-body font-semibold">{organizer.name} ({organizer.handle})</span>
               </div>
               <div className="flex justify-between items-center text-[#8A8FA3]">
@@ -72,19 +72,19 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
                 <span className="text-[#C6FF3D] truncate max-w-[180px]">{organizer.paypal_email}</span>
               </div>
               <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>Disbursement Amount:</span>
+                <span>Amount:</span>
                 <span className="text-base font-bold text-[#EDEEF2] tabular-nums">
                   {cur}{formattedAmount}
                 </span>
               </div>
               <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>PayPal Fee:</span>
-                <span className="text-[#C6FF3D]">{cur}0.00 (Zero Fee)</span>
+                <span>Fee:</span>
+                <span className="text-[#C6FF3D]">{cur}0.00</span>
               </div>
             </div>
 
             <p className="text-xs text-[#8A8FA3] font-body leading-relaxed m-0">
-              Disburses pooled escrow balances collected from debtor checkouts directly to {organizer.name}'s PayPal account via PayPal Batch Payouts API v1.
+              Transfers collected trip funds directly to {organizer.name}'s PayPal account.
             </p>
 
             <div className="flex items-center gap-3 pt-2">
@@ -99,7 +99,7 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
                 icon={<ShieldCheck className="w-4 h-4" />}
                 className="flex-1 text-xs sm:text-sm font-display font-bold"
               >
-                {isLoading ? 'Disbursing...' : 'Authorize Payout'}
+                {isLoading ? 'Sending...' : 'Send Payout'}
               </Button>
             </div>
           </div>

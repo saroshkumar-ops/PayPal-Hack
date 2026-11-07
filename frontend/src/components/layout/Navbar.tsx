@@ -56,9 +56,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navLinks = [
     { to: '/', label: 'Overview', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-    { to: '/simulator', label: 'Judge Simulator', icon: <Terminal className="w-3.5 h-3.5" /> },
-    { to: '/ledger', label: 'Ledger & AG Grid', icon: <CreditCard className="w-3.5 h-3.5" /> },
-    { to: '/payouts', label: 'Payouts & Events', icon: <ReceiptText className="w-3.5 h-3.5" /> },
+    { to: '/simulator', label: 'Simulator', icon: <Terminal className="w-3.5 h-3.5" /> },
+    { to: '/ledger', label: 'Expenses', icon: <CreditCard className="w-3.5 h-3.5" /> },
+    { to: '/payouts', label: 'Payouts', icon: <ReceiptText className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -73,8 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {tripName && (
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1117] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
-              <span className="text-[#8A8FA3]">Party:</span>
-              <span className="font-semibold truncate max-w-[140px]">{tripName}</span>
+              <span className="font-semibold truncate max-w-[160px]">{tripName}</span>
             </div>
           )}
         </div>
@@ -101,19 +100,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Actions & Utilities */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* New Party Action Button */}
+          {/* New Trip Action Button */}
           {onNewParty && (
             <button
               onClick={onNewParty}
-              title="Create a new party and group ledger"
+              title="Create a new trip"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 text-[#C6FF3D]" />
-              <span>New Party</span>
+              <span>New Trip</span>
             </button>
           )}
 
-          {/* Scan Receipt Action Button */}
+          {/* Upload Bill Action Button */}
           <Button
             variant="primary"
             size="sm"
@@ -121,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             icon={<ReceiptText className="w-3.5 h-3.5" />}
             className="text-xs font-display font-semibold"
           >
-            Scan Receipt
+            Upload Bill
           </Button>
 
           {/* Virtual Time Advance Pill */}
@@ -138,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             />
             <span className="text-[#8A8FA3]">
-              {isBackendConnected ? 'Core Live' : 'Offline'}
+              {isBackendConnected ? 'Online' : 'Offline'}
             </span>
           </div>
 

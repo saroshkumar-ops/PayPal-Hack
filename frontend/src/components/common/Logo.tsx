@@ -78,7 +78,7 @@ export const Logo: React.FC<LogoProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
           </div>
           <div className="text-[10px] text-[#8A8FA3] font-mono tracking-widest uppercase">
-            Cyber Ledger
+            Group Expenses
           </div>
         </div>
       )}

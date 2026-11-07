@@ -115,7 +115,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       },
       {
         field: 'paid_by',
-        headerName: 'Fronted By',
+        headerName: 'Paid By',
         width: 130,
         sortable: true,
         filter: true,
@@ -138,7 +138,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       },
       {
         field: 'split_summary',
-        headerName: 'Split Allocation',
+        headerName: 'Split',
         flex: 1.5,
         minWidth: 240,
         cellRenderer: (params: ICellRendererParams) => (
@@ -157,32 +157,32 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       {/* ================================================================ */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
-          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">TOTAL EXPENDITURE</div>
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">TOTAL SPENT</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#EDEEF2] tabular-nums">
             {cur}{(totalSpendCents / 100).toFixed(2)}
           </div>
-          <div className="text-[11px] text-[#8A8FA3] font-body">{ledger.expenses.length} Total Receipts Logged</div>
+          <div className="text-[11px] text-[#8A8FA3] font-body">{ledger.expenses.length} Receipts Logged</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
-          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">SETTLED IN ESCROW</div>
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">SETTLED</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#C6FF3D] tabular-nums">
             {cur}{(settledCents / 100).toFixed(2)}
           </div>
-          <div className="text-[11px] text-[#C6FF3D] font-mono">{settledPercentage}% Settled on PayPal</div>
+          <div className="text-[11px] text-[#C6FF3D] font-mono">{settledPercentage}% Settled</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
-          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">OUTSTANDING DEBTS</div>
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">PENDING</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#FF5C7A] tabular-nums">
             {cur}{((totalSpendCents - settledCents) / 100).toFixed(2)}
           </div>
-          <div className="text-[11px] text-[#FF5C7A] font-mono">Bipartite Transits Pending</div>
+          <div className="text-[11px] text-[#FF5C7A] font-mono">Pending Payments</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
+            <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">BALANCE STATUS</div>
             <button
               onClick={() => setShowExplanation(!showExplanation)}
               className="text-[#C6FF3D] hover:underline text-[10px] font-mono flex items-center gap-1 cursor-pointer"
@@ -198,7 +198,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
             <Lock className={`w-4 h-4 ${driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}`} />
           </div>
           <div className="text-[11px] font-mono text-[#8A8FA3]">
-            {driftCents === 0 ? 'Equilibrium Verified' : 'Imbalance Detected'}
+            {driftCents === 0 ? 'Balanced' : 'Unbalanced'}
           </div>
         </div>
       </div>
@@ -210,28 +210,28 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         <div className="p-5 rounded-3xl bg-[#0F1117] border border-[#C6FF3D]/30 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#C6FF3D]">
             <ShieldCheck className="w-4 h-4" />
-            <span>HOW THE DOUBLE-ENTRY AUDIT ENGINE WORKS</span>
+            <span>HOW EXPENSE BALANCING WORKS</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#EDEEF2] font-semibold font-body">1. Strict Double-Entry Balance</div>
+              <div className="text-[#EDEEF2] font-semibold font-body">1. Balanced Ledger</div>
               <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Every bill paid by one member is matched with corresponding debts assigned to participating travelers. The sum of all net positions across the group is always strictly zero.
+                Every bill paid is matched with member splits so total credits match total debits.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#C6FF3D] font-semibold font-body">2. 64-Bit Integer Cents</div>
+              <div className="text-[#C6FF3D] font-semibold font-body">2. Exact Cent Math</div>
               <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Floating-point math causes rounding errors (e.g. 10 / 3 = 3.3333333333). Our backend stores every currency unit in integer cents, guaranteeing 0.00 drift across unlimited splits.
+                Amounts are stored in integer cents to eliminate decimal rounding errors.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#FFC439] font-semibold font-body">3. Minimum Cash Flow (Bipartite)</div>
+              <div className="text-[#FFC439] font-semibold font-body">3. Smart Settlement</div>
               <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Instead of everyone paying everyone back, the graph matching engine finds the optimal shortest path: debtor balances settle directly to creditors with the minimal number of payments.
+                Minimizes total transfers so friends only make direct payments.
               </p>
             </div>
           </div>
@@ -245,22 +245,22 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/8 pb-3">
           <div>
             <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-              Optimal Settlement Transit Ledger
+              Settlements
             </h3>
             <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
-              Direct single-step transactions calculated via minimum cash flow
+              Direct payments needed to settle all debts
             </p>
           </div>
           <span className="text-[11px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 px-2.5 py-1 rounded-full border border-[#C6FF3D]/30 w-fit">
-            {settlements.length} Transits
+            {settlements.length} Payments
           </span>
         </div>
 
         {settlements.length === 0 ? (
           <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 text-center text-xs font-mono text-[#8A8FA3] space-y-2">
-            <div>All debts settled. No active transit transactions.</div>
+            <div>All debts settled. No pending payments.</div>
             <div className="text-[11px] text-[#8A8FA3]/70 font-body">
-              When expenses are added, the minimum cash flow solver computes direct settlement cards here.
+              When expenses are added, suggested payments appear here.
             </div>
           </div>
         ) : (
@@ -316,7 +316,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           </div>
 
           <div className="flex items-center gap-2 text-xs font-mono text-[#8A8FA3]">
-            <span>Audit Trail Entries:</span>
+            <span>Expenses:</span>
             <span className="font-bold text-[#EDEEF2] tabular-nums">{rowData.length}</span>
           </div>
         </div>
@@ -325,14 +325,14 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         {rowData.length === 0 ? (
           <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center space-y-3">
             <Receipt className="w-8 h-8 text-[#8A8FA3]/50 mx-auto" />
-            <div className="text-sm font-display font-bold text-[#EDEEF2]">Audit Trail Ready</div>
+            <div className="text-sm font-display font-bold text-[#EDEEF2]">No Expenses Yet</div>
             <p className="text-xs text-[#8A8FA3] font-body max-w-md mx-auto m-0">
-              Every expense, OCR receipt scan, and PayPal capture is verified and immutably recorded here with full split breakdowns.
+              All expenses, bill scans, and payments will appear in this table.
             </p>
             <div className="pt-2">
               <Link to="/simulator" className="no-underline">
                 <button className="px-4 py-2 rounded-xl bg-[#171A23] hover:bg-[#C6FF3D]/10 border border-white/10 hover:border-[#C6FF3D]/30 text-xs font-mono text-[#EDEEF2] hover:text-[#C6FF3D] transition-all cursor-pointer">
-                  Go to Simulator to Log First Expense
+                  Add Expense in Simulator
                 </button>
               </Link>
             </div>

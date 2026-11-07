@@ -429,7 +429,7 @@ export function App() {
             <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center">
               <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             </div>
-            <div className="text-xs font-mono text-[#8A8FA3]">Connecting to Master Ledger...</div>
+            <div className="text-xs font-mono text-[#8A8FA3]">Loading trip...</div>
           </div>
         </div>
       </LenisProvider>
@@ -507,13 +507,13 @@ export function App() {
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
-                <span>Double-Entry Escrow</span>
+                <span>TripSheriff</span>
               </span>
               <span className="hidden sm:inline text-white/20">•</span>
-              <span className="hidden sm:inline">PayPal Sandbox v2</span>
+              <span className="hidden sm:inline">PayPal Connected</span>
             </div>
             <div className="text-[10px] sm:text-[11px] text-[#8A8FA3]">
-              Active User: <span className="text-[#C6FF3D]">{currentUser.handle || currentUser.name}</span>
+              User: <span className="text-[#C6FF3D]">{currentUser.handle || currentUser.name}</span>
             </div>
           </footer>
 

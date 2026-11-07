@@ -58,10 +58,10 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
-                  New Group Party
+                  New Trip
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Start a new shared trip ledger & treasury
+                  Create a trip to track and split expenses
                 </p>
               </div>
             </div>
@@ -83,7 +83,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             {/* Party Name */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body">Party / Trip Name</label>
+              <label className="text-xs text-[#8A8FA3] font-body">Trip Name</label>
               <input
                 type="text"
                 value={name}
@@ -96,7 +96,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             {/* Currency Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body">Ledger Currency</label>
+              <label className="text-xs text-[#8A8FA3] font-body">Currency</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -108,7 +108,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                   }`}
                 >
                   <IndianRupee className="w-3.5 h-3.5" />
-                  <span>Indian Rupee (INR)</span>
+                  <span>Rupees (INR)</span>
                 </button>
                 <button
                   type="button"
@@ -120,7 +120,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                   }`}
                 >
                   <DollarSign className="w-3.5 h-3.5" />
-                  <span>US Dollar (USD)</span>
+                  <span>Dollars (USD)</span>
                 </button>
               </div>
             </div>
@@ -136,7 +136,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                 disabled={isLoading}
                 icon={<ArrowRight className="w-4 h-4" />}
               >
-                {isLoading ? 'Creating...' : 'Create Party'}
+                {isLoading ? 'Creating...' : 'Create Trip'}
               </Button>
             </div>
           </form>

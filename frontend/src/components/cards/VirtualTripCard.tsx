@@ -68,7 +68,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
       {/* Top controls: Flip toggle */}
       <div className="w-full flex items-center justify-between mb-3 px-1">
         <span className="text-[11px] font-mono text-[#8A8FA3] uppercase tracking-wider">
-          ESCROW LIQUIDITY CARD
+          TRIP CARD
         </span>
         <button
           onClick={toggleFlip}
@@ -132,14 +132,14 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
               </div>
 
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#C6FF3D]/10 text-[#C6FF3D] border border-[#C6FF3D]/30">
-                PayPal Escrow
+                PayPal
               </span>
             </div>
 
             {/* Card Core: Balance Display */}
             <div className="relative z-10 my-1">
               <div className="text-[10px] uppercase tracking-wider text-[#8A8FA3] font-mono">
-                Reimbursable Balance
+                Available Payout
               </div>
               <div className="text-2xl sm:text-3xl font-bold font-mono text-[#EDEEF2] tracking-tight flex items-baseline gap-1 mt-0.5">
                 <span className="text-[#C6FF3D]">{curSymbol}</span>
@@ -172,7 +172,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                 disabled={balanceCents <= 0}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] disabled:opacity-40 disabled:cursor-not-allowed text-[#07080D] text-xs font-bold font-body transition-all cursor-pointer"
               >
-                <span>Batch Payout</span>
+                <span>Payout</span>
               </button>
             </div>
           </div>
@@ -185,9 +185,9 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
           >
             <div className="flex items-center justify-between border-b border-white/8 pb-2">
               <span className="text-xs font-display font-semibold text-[#EDEEF2]">
-                Trip Ledger Details
+                Details
               </span>
-              <span className="text-[10px] font-mono text-[#C6FF3D]">Double-Entry</span>
+              <span className="text-[10px] font-mono text-[#C6FF3D]">Verified</span>
             </div>
 
             <div className="space-y-2 text-xs font-mono">
@@ -196,8 +196,8 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                 <span className="text-[#EDEEF2] truncate max-w-[180px]">{tripName}</span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Settlement Protocol:</span>
-                <span className="text-[#EDEEF2]">Bipartite Flow</span>
+                <span>Settlement:</span>
+                <span className="text-[#EDEEF2]">Optimized</span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
                 <span>Balance Status:</span>
@@ -209,7 +209,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
 
             <div className="text-[10px] font-mono text-[#C6FF3D] flex items-center gap-1.5 pt-2 border-t border-white/8">
               <CheckCircle className="w-3 h-3" />
-              <span>Zero-Drift Mathematical Balance</span>
+              <span>Exact balance verified</span>
             </div>
           </div>
         </motion.div>

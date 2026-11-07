@@ -9,8 +9,7 @@ import {
   AtSign, 
   CreditCard, 
   AlertCircle,
-  ShieldCheck,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
 import { authService } from '../api/services';
 import { Logo } from '../components/common/Logo';
@@ -41,7 +40,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     try {
       if (mode === 'login') {
         if (!email.trim() || !password) {
-          setErrorMsg('Please enter both your email address and password.');
+          setErrorMsg('Enter your email and password.');
           setIsLoading(false);
           return;
         }
@@ -49,12 +48,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         onLoginSuccess(user);
       } else {
         if (!name.trim()) {
-          setErrorMsg('Please enter your full name.');
+          setErrorMsg('Enter your name.');
           setIsLoading(false);
           return;
         }
         if (!email.trim() || !password) {
-          setErrorMsg('Email and password are required.');
+          setErrorMsg('Enter email and password.');
           setIsLoading(false);
           return;
         }
@@ -86,9 +85,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       if (serverMsg) {
         setErrorMsg(serverMsg);
       } else if (mode === 'login') {
-        setErrorMsg('Invalid email or password. Please verify credentials or register.');
+        setErrorMsg('Invalid email or password.');
       } else {
-        setErrorMsg('Registration failed. The email address may already be registered.');
+        setErrorMsg('Registration failed. Try another email.');
       }
     } finally {
       setIsLoading(false);
@@ -106,10 +105,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2 mb-8">
           <Logo size="lg" />
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#171A23] border border-white/8 text-[11px] font-mono text-[#C6FF3D] mt-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
-            <span>CRYPTOGRAPHIC LEDGER ACCESS</span>
-          </div>
         </div>
 
         {/* Auth Card */}
@@ -151,11 +146,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {mode === 'register' && (
               <>
-                {/* Full Name */}
+                {/* Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                    <span>Full Name</span>
+                    <span>Name</span>
                   </label>
                   <input
                     type="text"
@@ -170,7 +165,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="space-y-1.5">
                   <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
                     <AtSign className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                    <span>Handle</span>
+                    <span>Username (optional)</span>
                   </label>
                   <input
                     type="text"
@@ -186,7 +181,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div className="space-y-1.5">
               <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Email Address</span>
+                <span>Email</span>
               </label>
               <input
                 type="email"
@@ -213,11 +208,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {mode === 'register' && (
-              /* PayPal Settlement Email */
+              /* PayPal Email */
               <div className="space-y-1.5">
                 <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
                   <CreditCard className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                  <span>PayPal Settlement Email</span>
+                  <span>PayPal Email (optional)</span>
                 </label>
                 <input
                   type="email"
@@ -238,14 +233,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className="w-full text-xs font-display font-semibold justify-center py-3"
               >
                 {isLoading 
-                  ? 'Authenticating...' 
+                  ? 'Loading...' 
                   : (mode === 'login' ? 'Sign In' : 'Create Account')}
               </Button>
             </div>
 
             <div className="flex items-center justify-center gap-1.5 pt-2 text-[11px] font-mono text-[#8A8FA3]">
               <ShieldCheck className="w-3.5 h-3.5 text-[#C6FF3D]" />
-              <span>BCrypt Password Hashing & Signed JWT Access</span>
+              <span>Encrypted & secure</span>
             </div>
           </form>
         </div>
@@ -254,24 +249,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="mt-6 text-xs text-[#8A8FA3] font-mono text-center">
           {mode === 'login' ? (
             <span>
-              New traveler?{' '}
+              Need an account?{' '}
               <button
                 type="button"
                 onClick={() => { setMode('register'); setErrorMsg(null); }}
                 className="text-[#C6FF3D] hover:underline font-semibold cursor-pointer"
               >
-                Create an account
+                Register
               </button>
             </span>
           ) : (
             <span>
-              Already registered?{' '}
+              Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => { setMode('login'); setErrorMsg(null); }}
                 className="text-[#C6FF3D] hover:underline font-semibold cursor-pointer"
               >
-                Sign in to your account
+                Sign In
               </button>
             </span>
           )}

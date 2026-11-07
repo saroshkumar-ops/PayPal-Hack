@@ -83,19 +83,19 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
         <div className="flex items-center gap-4 overflow-x-auto scrollbar-none py-0.5">
           <div className="flex items-center gap-2 shrink-0">
             <span className={`w-2 h-2 rounded-full ${driftCents === 0 ? 'bg-[#C6FF3D]' : 'bg-[#FF5C7A]'}`} />
-            <span className="text-[#8A8FA3]">LEDGER EQUILIBRIUM:</span>
+            <span className="text-[#8A8FA3]">STATUS:</span>
             <span className={driftCents === 0 ? 'text-[#C6FF3D] font-bold' : 'text-[#FF5C7A] font-bold'}>
-              {driftCents === 0 ? `0.00 ${cur} DRIFT` : `${cur}${(driftCents / 100).toFixed(2)} UNBALANCED`}
+              {driftCents === 0 ? 'BALANCED' : `${cur}${(driftCents / 100).toFixed(2)} UNBALANCED`}
             </span>
           </div>
           <span className="text-white/10 shrink-0">|</span>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[#8A8FA3]">ESCROW RESERVES:</span>
+            <span className="text-[#8A8FA3]">COLLECTED:</span>
             <span className="text-[#EDEEF2] tabular-nums font-semibold">{cur}{(settledCents / 100).toFixed(2)}</span>
           </div>
           <span className="text-white/10 shrink-0">|</span>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[#8A8FA3]">SIMULATED CLOCK:</span>
+            <span className="text-[#8A8FA3]">TIME:</span>
             <span className="text-[#EDEEF2] tabular-nums">+{ledger.hours_elapsed}h</span>
           </div>
         </div>
@@ -106,7 +106,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
           >
             <HelpCircle className="w-3 h-3 text-[#C6FF3D]" />
-            <span>{showGuide ? 'Hide Guide' : 'How This Works'}</span>
+            <span>{showGuide ? 'Hide Guide' : 'How It Works'}</span>
           </button>
 
           <button
@@ -114,7 +114,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
           >
             <Clock className="w-3 h-3 text-[#C6FF3D]" />
-            <span>Fast-Forward +24h</span>
+            <span>+24h</span>
           </button>
         </div>
       </div>
@@ -139,10 +139,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   </div>
                   <div>
                     <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                      How Group Treasury Works
+                      How It Works
                     </h3>
                     <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
-                      Visual operational guide for splitting, optimizing, and settling expenses with friends
+                      Three simple steps to split and settle bills with friends
                     </p>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
                     }`}
                   >
-                    1. Topology Graph
+                    1. Smart Split
                   </button>
                   <button
                     onClick={() => setActiveGuideTab('ocr')}
@@ -166,7 +166,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
                     }`}
                   >
-                    2. Receipt Dissection
+                    2. Scan Bills
                   </button>
                   <button
                     onClick={() => setActiveGuideTab('escrow')}
@@ -176,7 +176,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
                     }`}
                   >
-                    3. PayPal Escrow
+                    3. Instant Payout
                   </button>
                 </div>
               </div>
@@ -187,30 +187,30 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5" />
-                      <span>Minimum Cash Flow</span>
+                      <span>Fewer Payments</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Instead of 10 people sending micro-payments to each other, the algorithm computes the net position of each traveler and calculates the exact minimum number of direct payments needed.
+                      Calculates the minimum number of payments so friends don't pass money back and forth.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#C6FF3D]" />
-                      <span>Interactive Traveler Nodes</span>
+                      <span>Live Balances</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Click any traveler card in the topology grid below to highlight their active position: green (+ balance) means creditor, coral (- balance) means debtor.
+                      Click any member below to see their balance. Green means they are owed money; red means they owe.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>0.00 Drift Guarantee</span>
+                      <span>Exact Math</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      All balances are stored as 64-bit integer cents. Total debits match total credits with zero mathematical rounding drift across all splits.
+                      All amounts are calculated down to the exact cent with zero rounding error.
                     </p>
                   </div>
                 </div>
@@ -221,30 +221,30 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
                       <Receipt className="w-3.5 h-3.5" />
-                      <span>Snap or Upload Bill</span>
+                      <span>Upload Bill</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Click "Dissect Bill" in the top right. Drop any paper restaurant bill, villa invoice, or grocery receipt.
+                      Drop any restaurant bill or receipt photo to read items automatically.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                      <span>Line-by-Line AI Parsing</span>
+                      <span>Item Breakdown</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Multimodal Vision AI extracts each dish or item, price, tax, and tip into separate line items automatically.
+                      Extracts each dish, price, tax, and tip into separate line items automatically.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5" />
-                      <span>Claimant Apportioning</span>
+                      <span>Assign to Friends</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Tap friend names to assign each dish to who ate it. The system computes their exact share with proportional tax and tip.
+                      Tap friend names to assign who ate what. The app calculates their exact share.
                     </p>
                   </div>
                 </div>
@@ -255,30 +255,30 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#FFC439] font-bold flex items-center gap-1.5">
                       <CreditCard className="w-3.5 h-3.5" />
-                      <span>1-Tap Member Payment</span>
+                      <span>1-Click Payment</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Each debtor receives a direct PayPal checkout drawer or link. 1 click opens PayPal Orders v2 for instant settlement.
+                      Each person pays their exact share directly with PayPal in 1 click.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#C6FF3D] font-bold flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Platform Escrow Vault</span>
+                      <span>Safe & Protected</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      Collected funds gather safely in platform escrow. Real-time webhooks stream SSE event updates to the telemetry radar.
+                      Payments pool safely until the organizer is ready to withdraw.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
                     <div className="text-[#EDEEF2] font-bold flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                      <span>Batch Organizer Payout</span>
+                      <span>Instant Payout</span>
                     </div>
                     <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                      When the trip wraps, the organizer clicks "Authorize Batch Payout" to disburse all collected funds to their PayPal in a single API call.
+                      The organizer clicks Payout to receive all collected funds in one go.
                     </p>
                   </div>
                 </div>
@@ -299,15 +299,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#171A23] border border-white/10 text-[11px] font-mono text-[#C6FF3D] mb-3">
-                  <span>TRIP TREASURY</span>
-                  <span className="text-[#8A8FA3]">•</span>
-                  <span className="text-[#8A8FA3]">{ledger.trip_name || ledger.name || ledger.trip_id}</span>
+                  <span>{ledger.trip_name || ledger.name || 'Trip'}</span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-[#EDEEF2] tracking-tight leading-[1.08] m-0">
-                  Group Treasury Matrix
+                  Trip Expenses
                 </h1>
                 <p className="text-xs sm:text-sm text-[#8A8FA3] mt-2 max-w-xl font-body leading-relaxed m-0">
-                  Double-entry ledger calculating optimal settlements across {ledger.members.length} travelers with zero remainder drift.
+                  Track expenses, see who owes what, and settle up.
                 </p>
               </div>
 
@@ -320,7 +318,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   icon={<Receipt className="w-4 h-4" />}
                   className="w-full sm:w-auto"
                 >
-                  Dissect Bill (OCR)
+                  Upload Bill
                 </Button>
                 <Link to="/simulator" className="no-underline w-full sm:w-auto">
                   <Button
@@ -329,7 +327,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     icon={<ArrowRight className="w-4 h-4" />}
                     className="w-full"
                   >
-                    Simulator War Room
+                    Simulator
                   </Button>
                 </Link>
               </div>
@@ -343,9 +341,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     <Info className="w-4 h-4 text-[#C6FF3D]" />
                   </div>
                   <div>
-                    <div className="font-semibold text-[#EDEEF2] font-body">Ready to track your first group expense</div>
+                    <div className="font-semibold text-[#EDEEF2] font-body">No expenses yet</div>
                     <div className="text-[11px] text-[#8A8FA3] font-body mt-0.5">
-                      Upload a receipt or type an expense in the Simulator to activate debt reduction vectors.
+                      Upload a bill or add an expense in the Simulator to get started.
                     </div>
                   </div>
                 </div>
@@ -353,7 +351,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   onClick={onOpenReceiptModal}
                   className="px-3 py-1.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] font-mono font-bold text-xs transition-colors shrink-0 cursor-pointer"
                 >
-                  Upload First Bill
+                  Upload Bill
                 </button>
               </div>
             )}
@@ -363,14 +361,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               <div className="flex items-center justify-between border-b border-white/6 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono font-semibold text-[#EDEEF2]">
-                    BIPARTITE CASH FLOW TOPOLOGY
+                    WHO OWES WHO
                   </span>
                   <span className="text-[10px] font-mono text-[#8A8FA3] bg-[#171A23] px-2 py-0.5 rounded">
-                    Minimum Cash Flow
+                    Optimized
                   </span>
                 </div>
                 <span className="text-[11px] font-mono text-[#8A8FA3]">
-                  Select traveler to inspect
+                  Click a member to inspect
                 </span>
               </div>
 
@@ -436,11 +434,11 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               <div className="p-3.5 rounded-xl bg-[#0F1117] border border-white/6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
                 <div className="flex items-center gap-2 text-[#8A8FA3]">
                   <Layers className="w-4 h-4 text-[#C6FF3D]" />
-                  <span>OPTIMIZED SETTLEMENT CHANNELS:</span>
+                  <span>SUGGESTED PAYMENTS:</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {settlements.length === 0 ? (
-                    <span className="text-[#8A8FA3] text-xs">All debts settled. Zero pending transfers.</span>
+                    <span className="text-[#8A8FA3] text-xs">All debts settled. Zero pending payments.</span>
                   ) : (
                     settlements.map((s, idx) => {
                       const fromMember = ledger.members.find(m => m.user_id === s.from_user_id)?.name.split(' ')[0] || s.from_user_id;
@@ -466,21 +464,21 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           {/* Bottom Telemetry Ticker (Volume, Settled, Outstanding) */}
           <div className="relative z-10 pt-6 mt-6 border-t border-white/8 grid grid-cols-3 gap-3 sm:gap-4 font-mono">
             <div className="p-3 rounded-xl bg-[#07080D] border border-white/6">
-              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">TOTAL VOLUME</div>
+              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">TOTAL SPENT</div>
               <div className="text-lg sm:text-2xl font-bold text-[#EDEEF2] tabular-nums mt-0.5">
                 {cur}{(totalSpendCents / 100).toFixed(2)}
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-[#07080D] border border-white/6">
-              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">SETTLED RATE</div>
+              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">SETTLED</div>
               <div className="text-lg sm:text-2xl font-bold text-[#C6FF3D] tabular-nums mt-0.5">
                 {settledPercentage}%
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-[#07080D] border border-white/6">
-              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">OUTSTANDING</div>
+              <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">PENDING</div>
               <div className="text-lg sm:text-2xl font-bold text-[#FF5C7A] tabular-nums mt-0.5">
                 {cur}{(pendingCents / 100).toFixed(2)}
               </div>
@@ -520,7 +518,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
             <div className="space-y-2 text-xs font-mono">
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Net Position:</span>
+                <span>Balance:</span>
                 <span className="font-bold text-[#EDEEF2] tabular-nums">
                   {cur}{((ledger.net_balances_cents[activeFocusMember.user_id] || 0) / 100).toFixed(2)}
                 </span>
@@ -530,7 +528,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 <span className="text-[#C6FF3D] font-bold">{getNotificationLabel(activeFocusMember.roast_consent)}</span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>PayPal Account:</span>
+                <span>PayPal:</span>
                 <span className="text-[#EDEEF2] truncate max-w-[170px]">
                   {activeFocusMember.paypal_email || 'Not configured'}
                 </span>
@@ -540,7 +538,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="pt-2">
               <Link to="/simulator" className="no-underline block">
                 <Button variant="secondary" size="sm" className="w-full justify-between">
-                  <span>Enter Operations Room</span>
+                  <span>Open Simulator</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
