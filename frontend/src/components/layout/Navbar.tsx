@@ -9,7 +9,6 @@ import {
   Users,
   Maximize2, 
   Minimize2,
-  LogIn,
   LogOut 
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
@@ -23,7 +22,6 @@ interface NavbarProps {
   onOpenReceiptModal: () => void;
   onNewParty?: () => void;
   currentUser?: AuthResponseDto | null;
-  onOpenAuthModal?: () => void;
   onLogout?: () => void;
 }
 
@@ -34,7 +32,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenReceiptModal,
   onNewParty,
   currentUser,
-  onOpenAuthModal,
   onLogout,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -164,18 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
             </div>
-          ) : (
-            onOpenAuthModal && (
-              <button
-                onClick={onOpenAuthModal}
-                title="Sign In / Register"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Sign In</span>
-              </button>
-            )
-          )}
+          ) : null}
 
           {/* Fullscreen Mode Button */}
           <button

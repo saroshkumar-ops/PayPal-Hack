@@ -7,12 +7,11 @@ import { OverviewPage } from './pages/OverviewPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LedgerPage } from './pages/LedgerPage';
 import { PayoutsPage } from './pages/PayoutsPage';
-import { PartyOnboarding } from './components/party/PartyOnboarding';
-import { LandingIntro } from './components/landing/LandingIntro';
+import { LoginPage } from './pages/LoginPage';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
-import { AuthModal } from './components/bits/AuthModal';
+import { CreatePartyModal } from './components/bits/CreatePartyModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
 import { CyberBackground } from './components/common/CyberBackground';
 import { LenisProvider } from './components/common/LenisProvider';
@@ -24,16 +23,23 @@ import {
   simulatorService, 
   paymentService, 
   authService,
+  tripService,
+  memberService,
   checkHealth 
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
 
 export function App() {
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(() => {
+    return authService.getCurrentUser();
+  });
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+
   const [activeTripId, setActiveTripId] = useState<string | null>(() => {
     return localStorage.getItem('active_trip_id');
   });
-  const [landingMode, setLandingMode] = useState<'intro' | 'create'>('intro');
 
   const [ledger, setLedger] = useState<TripLedger>(EMPTY_LEDGER);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -41,32 +47,10 @@ export function App() {
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Authentication state
-  const [currentUser, setCurrentUser] = useState<AuthResponseDto | null>(() => {
-    return authService.getCurrentUser();
-  });
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  // Verify auth on mount
-  useEffect(() => {
-    authService.getProfile().then((profile) => {
-      if (profile) setCurrentUser(profile);
-    });
-  }, []);
-
-  const handleAuthSuccess = (user: AuthResponseDto) => {
-    setCurrentUser(user);
-    triggerCelebrationConfetti();
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    setCurrentUser(null);
-  };
-
   // Modals state
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isCreatePartyModalOpen, setIsCreatePartyModalOpen] = useState(false);
   const [checkoutDrawer, setCheckoutDrawer] = useState<{
     isOpen: boolean;
     debtorName: string;
@@ -117,7 +101,6 @@ export function App() {
         setMessages(currMessages);
         setPaypalLogs(currLogs);
       } else {
-        // Trip does not exist or has no members
         setLedger(EMPTY_LEDGER);
       }
     } catch (err) {
@@ -125,12 +108,97 @@ export function App() {
     }
   }, [activeTripId]);
 
-  // Check health and load initial trip if exists
+  // Ensure an active party exists for the logged in user
+  const ensureUserParty = useCallback(async (user: AuthResponseDto) => {
+    try {
+      const savedTripId = localStorage.getItem('active_trip_id');
+      if (savedTripId) {
+        try {
+          const l = await ledgerService.getLedger(savedTripId);
+          if (l && l.trip_id && l.members && l.members.length > 0) {
+            setActiveTripId(savedTripId);
+            setLedger(l);
+            return;
+          }
+        } catch {}
+      }
+
+      // Check existing trips from backend
+      const trips = await tripService.getAllTrips();
+      if (trips && trips.length > 0) {
+        const lastTrip = trips[trips.length - 1];
+        localStorage.setItem('active_trip_id', lastTrip.trip_id);
+        setActiveTripId(lastTrip.trip_id);
+        const l = await ledgerService.getLedger(lastTrip.trip_id);
+        setLedger(l);
+        return;
+      }
+
+      // If no trips exist in backend, create initial party for the user
+      const safeSlug = (user.name || 'User').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const newTripId = `party_${safeSlug}_${Date.now().toString(36).slice(-4)}`;
+      const tripName = `${user.name || 'User'}'s Party`;
+      await tripService.createTrip({
+        trip_id: newTripId,
+        name: tripName,
+        currency: 'INR',
+      });
+      await memberService.addMember(newTripId, {
+        user_id: user.user_id,
+        name: user.name,
+        handle: user.handle || `@${safeSlug}`,
+        paypal_email: user.paypal_email || user.email,
+        role: 'ORGANIZER',
+        roast_consent: 'SPICY',
+      });
+      localStorage.setItem('active_trip_id', newTripId);
+      setActiveTripId(newTripId);
+      const l = await ledgerService.getLedger(newTripId);
+      setLedger(l);
+    } catch (err) {
+      console.warn('ensureUserParty error:', err);
+    }
+  }, []);
+
+  // Check health on mount
   useEffect(() => {
     checkBackend();
     const interval = setInterval(checkBackend, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Verify auth on mount
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setCurrentUser(null);
+      setIsAuthChecking(false);
+      return;
+    }
+    authService.getProfile()
+      .then((profile) => {
+        if (profile) {
+          setCurrentUser(profile);
+          ensureUserParty(profile);
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+        }
+      })
+      .catch(() => {
+        const cached = authService.getCurrentUser();
+        if (cached) {
+          setCurrentUser(cached);
+          ensureUserParty(cached);
+        } else {
+          setCurrentUser(null);
+        }
+      })
+      .finally(() => {
+        setIsAuthChecking(false);
+      });
+  }, [ensureUserParty]);
 
   useEffect(() => {
     if (activeTripId) {
@@ -138,21 +206,45 @@ export function App() {
     }
   }, [activeTripId, loadData]);
 
-  // Handle new party creation from onboarding
-  const handlePartyCreated = (newLedger: TripLedger, newTripId: string) => {
-    localStorage.setItem('active_trip_id', newTripId);
-    setActiveTripId(newTripId);
-    setLedger(newLedger);
+  const handleLoginSuccess = async (user: AuthResponseDto) => {
+    setCurrentUser(user);
     triggerCelebrationConfetti();
+    await ensureUserParty(user);
   };
 
-  // Reset/switch to new party
-  const handleCreateNewParty = () => {
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
     localStorage.removeItem('active_trip_id');
     setActiveTripId(null);
     setLedger(EMPTY_LEDGER);
     setMessages([]);
-    setLandingMode('create');
+  };
+
+  const handleCreateNewParty = async (name: string, currency: 'USD' | 'INR') => {
+    if (!currentUser) return;
+    const safeSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const newTripId = `party_${safeSlug}_${Date.now().toString(36).slice(-4)}`;
+
+    await tripService.createTrip({
+      trip_id: newTripId,
+      name: name,
+      currency: currency,
+    });
+
+    await memberService.addMember(newTripId, {
+      user_id: currentUser.user_id,
+      name: currentUser.name,
+      handle: currentUser.handle || `@${safeSlug}`,
+      paypal_email: currentUser.paypal_email || currentUser.email,
+      role: 'ORGANIZER',
+      roast_consent: 'SPICY',
+    });
+
+    localStorage.setItem('active_trip_id', newTripId);
+    setActiveTripId(newTripId);
+    await loadData(newTripId);
+    triggerCelebrationConfetti();
   };
 
   const currentTripId = ledger.trip_id || activeTripId || '';
@@ -311,38 +403,42 @@ export function App() {
     }
   };
 
-  // If no party has been created yet, show Landing Intro or Party Onboarding
-  if (!activeTripId || !ledger.trip_id || ledger.members.length === 0) {
+  // 1. Loading screen while validating initial JWT session
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-[#07080D] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#C6FF3D] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated: Show ONLY the Login / Register screen
+  if (!currentUser) {
     return (
       <LenisProvider>
-        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative justify-center">
-          <CyberBackground />
-          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center items-center z-10">
-            {landingMode === 'intro' ? (
-              <LandingIntro
-                onCreateParty={() => setLandingMode('create')}
-                currentUser={currentUser}
-                onOpenAuthModal={() => setIsAuthModalOpen(true)}
-              />
-            ) : (
-              <PartyOnboarding
-                onPartyCreated={handlePartyCreated}
-                onBackToIntro={() => setLandingMode('intro')}
-                currentUser={currentUser}
-              />
-            )}
-          </main>
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      </LenisProvider>
+    );
+  }
 
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={() => setIsAuthModalOpen(false)}
-            onAuthSuccess={handleAuthSuccess}
-          />
+  // 3. Authenticated: If connecting to party ledger
+  if (!ledger.trip_id || ledger.members.length === 0) {
+    return (
+      <LenisProvider>
+        <div className="min-h-screen bg-[#07080D] flex flex-col items-center justify-center relative font-body text-[#EDEEF2]">
+          <CyberBackground />
+          <div className="z-10 flex flex-col items-center space-y-4">
+            <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-[#C6FF3D]/40 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full border-2 border-[#C6FF3D] border-t-transparent animate-spin" />
+            </div>
+            <div className="text-xs font-mono text-[#8A8FA3]">Connecting to Master Ledger...</div>
+          </div>
         </div>
       </LenisProvider>
     );
   }
 
+  // 4. Authenticated & Connected: Render Master Treasury Cockpit
   return (
     <LenisProvider>
       <BrowserRouter>
@@ -356,9 +452,8 @@ export function App() {
             hoursElapsed={ledger.hours_elapsed}
             isBackendConnected={isBackendConnected}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
-            onNewParty={handleCreateNewParty}
+            onNewParty={() => setIsCreatePartyModalOpen(true)}
             currentUser={currentUser}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onLogout={handleLogout}
           />
 
@@ -392,7 +487,11 @@ export function App() {
               />
               <Route
                 path="/ledger"
-                element={<LedgerPage ledger={ledger} />}
+                element={
+                  <LedgerPage
+                    ledger={ledger}
+                  />
+                }
               />
               <Route
                 path="/payouts"
@@ -408,22 +507,18 @@ export function App() {
             </Routes>
           </main>
 
-          {/* Minimalist Cyber Ledger Footer */}
-          <footer className="border-t border-white/8 bg-[#07080D]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 text-xs text-[#8A8FA3] z-10">
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-              <span className="font-display font-medium text-[#EDEEF2]">
-                TripSheriff <span className="text-[#C6FF3D] font-mono text-[10px]">CYBER LEDGER</span>
+          {/* Bottom Cyber Status Ticker */}
+          <footer className="w-full border-t border-white/8 bg-[#07080D]/90 backdrop-blur-md px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-[#8A8FA3] z-20">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
+                <span>Double-Entry Escrow</span>
               </span>
-              <div className="flex items-center gap-3 font-mono text-[11px]">
-                <button
-                  onClick={handleCreateNewParty}
-                  className="text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
-                >
-                  Create New Party
-                </button>
-                <span>•</span>
-                <span>Active Party: {ledger.trip_name || ledger.name}</span>
-              </div>
+              <span className="hidden sm:inline text-white/20">•</span>
+              <span className="hidden sm:inline">PayPal Sandbox v2</span>
+            </div>
+            <div className="text-[10px] sm:text-[11px] text-[#8A8FA3]">
+              Active User: <span className="text-[#C6FF3D]">{currentUser.handle || currentUser.name}</span>
             </div>
           </footer>
 
@@ -460,10 +555,10 @@ export function App() {
             onConfirmExpense={handleConfirmScannedExpense}
           />
 
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={() => setIsAuthModalOpen(false)}
-            onAuthSuccess={handleAuthSuccess}
+          <CreatePartyModal
+            isOpen={isCreatePartyModalOpen}
+            onClose={() => setIsCreatePartyModalOpen(false)}
+            onCreateParty={handleCreateNewParty}
           />
         </div>
       </BrowserRouter>
