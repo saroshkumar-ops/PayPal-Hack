@@ -3,17 +3,21 @@ import { motion } from 'framer-motion';
 import { 
   Plus, 
   Trash2, 
-  Sparkles, 
   ArrowRight, 
-  CheckCircle
+  ArrowLeft,
+  CheckCircle,
+  Flame,
+  Shield,
+  Smile
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
-import { tripService, memberService, ledgerService, demoService } from '../../api/services';
+import { tripService, memberService, ledgerService } from '../../api/services';
 import type { TripLedger, RoastConsent } from '../../types';
 
 interface PartyOnboardingProps {
   onPartyCreated: (ledger: TripLedger, tripId: string) => void;
+  onBackToIntro?: () => void;
 }
 
 interface FriendMemberInput {
@@ -24,9 +28,12 @@ interface FriendMemberInput {
   roastConsent: RoastConsent;
 }
 
-export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated }) => {
+export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ 
+  onPartyCreated,
+  onBackToIntro 
+}) => {
   const [partyName, setPartyName] = useState('');
-  const [currency, setCurrency] = useState('INR');
+  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
 
   // Organizer details
   const [organizerName, setOrganizerName] = useState('');
@@ -92,7 +99,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
       return;
     }
 
-    // Filter valid friends (must have a name)
     const validFriends = friends.filter(f => f.name.trim().length > 0);
     if (validFriends.length === 0) {
       setErrorMsg('Please add at least 1 friend to your party.');
@@ -102,18 +108,17 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
     setIsLoading(true);
 
     try {
-      // 1. Generate unique trip ID
       const safeSlug = partyName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
       const tripId = `party_${safeSlug}_${Date.now().toString(36)}`;
 
-      // 2. Create Trip on Backend
+      // 1. Create Trip
       await tripService.createTrip({
         trip_id: tripId,
         name: partyName.trim(),
         currency: currency,
       });
 
-      // 3. Register Organizer
+      // 2. Register Organizer
       const safeOrgSlug = organizerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
       const organizerUserId = `user_${safeOrgSlug}_${Date.now().toString(36).slice(-4)}`;
       const cleanOrgHandle = organizerHandle.trim()
@@ -129,7 +134,7 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
         roast_consent: organizerRoastConsent,
       });
 
-      // 4. Register Friends
+      // 3. Register Friends
       for (let i = 0; i < validFriends.length; i++) {
         const friend = validFriends[i];
         const safeFriendSlug = friend.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -148,30 +153,12 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
         });
       }
 
-      // 5. Retrieve fresh double-entry ledger
+      // 4. Retrieve fresh ledger
       const newLedger = await ledgerService.getLedger(tripId);
       onPartyCreated(newLedger, tripId);
     } catch (err: any) {
       console.error('Failed to initialize party:', err);
       setErrorMsg('Failed to initialize party in the database. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Quick Demo Seeder fallback if user wants instant preview
-  const handleSeedDemo = async () => {
-    setIsLoading(true);
-    try {
-      const res = await demoService.seedDemo();
-      if (res && res.ledger) {
-        onPartyCreated(res.ledger, 'trip_bali_2026');
-      } else {
-        const l = await ledgerService.getLedger('trip_bali_2026');
-        onPartyCreated(l, 'trip_bali_2026');
-      }
-    } catch (err) {
-      console.error('Demo seed error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -185,32 +172,33 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="rounded-3xl bg-[#0F1117] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.85)] p-6 sm:p-10 space-y-8"
       >
-        {/* Brand & Heading */}
+        {/* Navigation & Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/8 pb-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <Logo size="md" />
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 border border-[#C6FF3D]/30 font-bold uppercase">
-                New Session
+                Party Setup
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-[#EDEEF2] tracking-tight m-0">
               Create Your Travel Party
             </h1>
             <p className="text-xs sm:text-sm text-[#8A8FA3] font-body m-0">
-              Set up your group trip. Front expenses, assign items, and let the autonomous double-entry ledger settle debts via PayPal.
+              Configure members, frontpayer, and currency for automated double-entry ledger calculation.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSeedDemo}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
-            <span>Load Showcase Demo</span>
-          </button>
+          {onBackToIntro && (
+            <button
+              type="button"
+              onClick={onBackToIntro}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back</span>
+            </button>
+          )}
         </div>
 
         {errorMsg && (
@@ -232,14 +220,13 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-xs font-semibold text-[#EDEEF2] font-body">
-                  Party or Trip Name *
+                  Party Name *
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Goa Weekend 2026, Manali Road Trip, Tokyo Dinner"
                   value={partyName}
                   onChange={(e) => setPartyName(e.target.value)}
-                  className="w-full bg-[#07080D] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"
+                  className="w-full bg-[#07080D] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D]"
                   required
                 />
               </div>
@@ -250,13 +237,11 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                 </label>
                 <select
                   value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
+                  onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD')}
                   className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
                 >
                   <option value="INR">INR (₹) - Indian Rupee</option>
                   <option value="USD">USD ($) - US Dollar</option>
-                  <option value="EUR">EUR (€) - Euro</option>
-                  <option value="GBP">GBP (£) - British Pound</option>
                 </select>
               </div>
             </div>
@@ -268,7 +253,7 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
               <div className="flex items-center gap-2 text-xs font-mono text-[#C6FF3D] uppercase tracking-wider">
                 <span>02</span>
                 <span className="text-[#8A8FA3]">•</span>
-                <span>YOU (ORGANIZER & PAYOUT BENEFICIARY)</span>
+                <span>YOU (ORGANIZER & BENEFICIARY)</span>
               </div>
               <span className="text-[10px] font-mono text-[#8A8FA3]">Receives Pooled Funds</span>
             </div>
@@ -278,7 +263,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                 <label className="text-xs text-[#8A8FA3] font-body">Your Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Sarah Connor"
                   value={organizerName}
                   onChange={(e) => setOrganizerName(e.target.value)}
                   className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-2 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D]"
@@ -290,7 +274,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                 <label className="text-xs text-[#8A8FA3] font-body">Handle</label>
                 <input
                   type="text"
-                  placeholder="@sarah"
                   value={organizerHandle}
                   onChange={(e) => setOrganizerHandle(e.target.value)}
                   className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-2 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
@@ -298,10 +281,9 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8A8FA3] font-body">PayPal Email (Disbursement)</label>
+                <label className="text-xs text-[#8A8FA3] font-body">PayPal Email</label>
                 <input
                   type="email"
-                  placeholder="sarah.organizer@paypal.com"
                   value={organizerEmail}
                   onChange={(e) => setOrganizerEmail(e.target.value)}
                   className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-2 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
@@ -309,15 +291,20 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8A8FA3] font-body">Roast Consent</label>
+                <div className="flex items-center gap-1.5 text-xs text-[#8A8FA3] font-body">
+                  {organizerRoastConsent === 'SPICY' && <Flame className="w-3.5 h-3.5 text-[#FF5C7A]" />}
+                  {organizerRoastConsent === 'MILD' && <Smile className="w-3.5 h-3.5 text-[#FFC439]" />}
+                  {organizerRoastConsent === 'NO_ROAST' && <Shield className="w-3.5 h-3.5 text-[#8A8FA3]" />}
+                  <span>Roast Consent</span>
+                </div>
                 <select
                   value={organizerRoastConsent}
                   onChange={(e) => setOrganizerRoastConsent(e.target.value as RoastConsent)}
                   className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-2 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
                 >
-                  <option value="SPICY">🌶️ Spicy (Max Heat)</option>
-                  <option value="MILD">🍲 Mild (Courteous)</option>
-                  <option value="NO_ROAST">🛡️ No Roast (Formal)</option>
+                  <option value="SPICY">Spicy (High Heat)</option>
+                  <option value="MILD">Mild (Courteous)</option>
+                  <option value="NO_ROAST">No Roast (Formal)</option>
                 </select>
               </div>
             </div>
@@ -352,7 +339,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                     <span className="text-[10px] font-mono text-[#8A8FA3]">Friend #{idx + 1} Name *</span>
                     <input
                       type="text"
-                      placeholder="e.g. Alex Hunter"
                       value={friend.name}
                       onChange={(e) => updateFriend(friend.id, 'name', e.target.value)}
                       className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-1.5 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D]"
@@ -364,7 +350,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                     <span className="text-[10px] font-mono text-[#8A8FA3]">Handle</span>
                     <input
                       type="text"
-                      placeholder="@alex"
                       value={friend.handle}
                       onChange={(e) => updateFriend(friend.id, 'handle', e.target.value)}
                       className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-1.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
@@ -375,7 +360,6 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                     <span className="text-[10px] font-mono text-[#8A8FA3]">PayPal Email</span>
                     <input
                       type="email"
-                      placeholder="alex.debtor@paypal.com"
                       value={friend.paypalEmail}
                       onChange={(e) => updateFriend(friend.id, 'paypalEmail', e.target.value)}
                       className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-3 py-1.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
@@ -389,9 +373,9 @@ export const PartyOnboarding: React.FC<PartyOnboardingProps> = ({ onPartyCreated
                       onChange={(e) => updateFriend(friend.id, 'roastConsent', e.target.value as RoastConsent)}
                       className="w-full bg-[#0F1117] border border-white/8 rounded-lg px-2.5 py-1.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
                     >
-                      <option value="SPICY">🌶️ Spicy</option>
-                      <option value="MILD">🍲 Mild</option>
-                      <option value="NO_ROAST">🛡️ None</option>
+                      <option value="SPICY">Spicy</option>
+                      <option value="MILD">Mild</option>
+                      <option value="NO_ROAST">No Roast</option>
                     </select>
                   </div>
 

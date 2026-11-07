@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, X } from 'lucide-react';
 import type { Member } from '../../types';
 import { Button } from '../ui/Button';
+import { getCurrencySymbol } from '../../lib/currency';
 
 interface PayoutModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface PayoutModalProps {
   onConfirm: () => void;
   organizer: Member;
   amountCents: number;
+  currency?: string;
   isLoading: boolean;
 }
 
@@ -19,10 +21,12 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
   onConfirm,
   organizer,
   amountCents,
+  currency = 'INR',
   isLoading,
 }) => {
   if (!isOpen) return null;
 
+  const cur = getCurrencySymbol(currency);
   const formattedAmount = (amountCents / 100).toFixed(2);
 
   return (
@@ -70,12 +74,12 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
               <div className="flex justify-between items-center text-[#8A8FA3]">
                 <span>Disbursement Amount:</span>
                 <span className="text-base font-bold text-[#EDEEF2] tabular-nums">
-                  ₹{formattedAmount}
+                  {cur}{formattedAmount}
                 </span>
               </div>
               <div className="flex justify-between items-center text-[#8A8FA3]">
                 <span>PayPal Fee:</span>
-                <span className="text-[#C6FF3D]">₹0.00 (Zero Fee)</span>
+                <span className="text-[#C6FF3D]">{cur}0.00 (Zero Fee)</span>
               </div>
             </div>
 

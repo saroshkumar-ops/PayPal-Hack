@@ -13,6 +13,7 @@ import { VirtualTripCard } from '../components/cards/VirtualTripCard';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
+import { getCurrencySymbol } from '../lib/currency';
 
 interface OverviewPageProps {
   ledger: TripLedger;
@@ -45,6 +46,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
   const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
   const driftCents = Math.abs(Object.values(ledger.net_balances_cents || {}).reduce((acc, val) => acc + val, 0));
+  const cur = getCurrencySymbol(ledger.currency);
 
   const fallbackMember = {
     user_id: 'user_temp',
@@ -75,13 +77,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <span className={`w-2 h-2 rounded-full ${driftCents === 0 ? 'bg-[#C6FF3D]' : 'bg-[#FF5C7A]'}`} />
             <span className="text-[#8A8FA3]">LEDGER EQUILIBRIUM:</span>
             <span className={driftCents === 0 ? 'text-[#C6FF3D] font-bold' : 'text-[#FF5C7A] font-bold'}>
-              {driftCents === 0 ? '0.00 PAISA DRIFT' : `₹${(driftCents / 100).toFixed(2)} UNBALANCED`}
+              {driftCents === 0 ? `0.00 ${cur} DRIFT` : `${cur}${(driftCents / 100).toFixed(2)} UNBALANCED`}
             </span>
           </div>
           <span className="text-white/10 shrink-0">|</span>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[#8A8FA3]">ESCROW RESERVES:</span>
-            <span className="text-[#EDEEF2] tabular-nums font-semibold">₹{(settledCents / 100).toFixed(2)}</span>
+            <span className="text-[#EDEEF2] tabular-nums font-semibold">{cur}{(settledCents / 100).toFixed(2)}</span>
           </div>
           <span className="text-white/10 shrink-0">|</span>
           <div className="flex items-center gap-2 shrink-0">
@@ -214,7 +216,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                             isCreditor ? 'text-[#C6FF3D]' : isDebtor ? 'text-[#FF5C7A]' : 'text-[#8A8FA3]'
                           }`}
                         >
-                          {isCreditor ? `+₹${(netCents / 100).toFixed(2)}` : isDebtor ? `-₹${(Math.abs(netCents) / 100).toFixed(2)}` : '₹0.00'}
+                          {isCreditor ? `+${cur}${(netCents / 100).toFixed(2)}` : isDebtor ? `-${cur}${(Math.abs(netCents) / 100).toFixed(2)}` : `${cur}0.00`}
                         </div>
                       </div>
                     </motion.div>
@@ -243,7 +245,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           <span className="text-[#FF5C7A] font-semibold">{fromMember}</span>
                           <ArrowRight className="w-3 h-3 text-[#8A8FA3]" />
                           <span className="text-[#C6FF3D] font-semibold">{toMember}</span>
-                          <span className="text-[#8A8FA3] ml-1">₹{(s.amount_cents / 100).toFixed(2)}</span>
+                          <span className="text-[#8A8FA3] ml-1">{cur}{(s.amount_cents / 100).toFixed(2)}</span>
                         </span>
                       );
                     })
@@ -258,7 +260,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="p-3 rounded-xl bg-[#07080D] border border-white/6">
               <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">TOTAL VOLUME</div>
               <div className="text-lg sm:text-2xl font-bold text-[#EDEEF2] tabular-nums mt-0.5">
-                ₹{(totalSpendCents / 100).toFixed(2)}
+                {cur}{(totalSpendCents / 100).toFixed(2)}
               </div>
             </div>
 
@@ -272,7 +274,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="p-3 rounded-xl bg-[#07080D] border border-white/6">
               <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">OUTSTANDING</div>
               <div className="text-lg sm:text-2xl font-bold text-[#FF5C7A] tabular-nums mt-0.5">
-                ₹{(pendingCents / 100).toFixed(2)}
+                {cur}{(pendingCents / 100).toFixed(2)}
               </div>
             </div>
           </div>
@@ -287,6 +289,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               tripName={ledger.trip_name || ledger.name || ledger.trip_id}
               organizerName={organizer.name}
               organizerEmail={organizer.paypal_email}
+              currency={ledger.currency}
               onPayout={onOpenPayoutModal}
             />
           </div>
@@ -311,7 +314,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               <div className="flex justify-between text-[#8A8FA3]">
                 <span>Net Position:</span>
                 <span className="font-bold text-[#EDEEF2] tabular-nums">
-                  ₹{((ledger.net_balances_cents[activeFocusMember.user_id] || 0) / 100).toFixed(2)}
+                  {cur}{((ledger.net_balances_cents[activeFocusMember.user_id] || 0) / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">

@@ -3,6 +3,7 @@ import { ShieldCheck, Radio, CheckCircle, Wallet } from 'lucide-react';
 import type { TripLedger, PayPalEventLog } from '../types';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
+import { getCurrencySymbol } from '../lib/currency';
 
 interface PayoutsPageProps {
   ledger: TripLedger;
@@ -16,6 +17,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
   onOpenPayoutModal,
 }) => {
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const cur = getCurrencySymbol(ledger.currency);
 
   const fallbackMember = {
     user_id: 'user_temp',
@@ -101,13 +103,13 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-[#8A8FA3]">Escrow Pool Collected:</span>
                 <span className="text-[#EDEEF2] tabular-nums font-semibold">
-                  ₹{(settledCents / 100).toFixed(2)}
+                  {cur}{(settledCents / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-white/8">
                 <span className="text-[#8A8FA3]">Reimbursable Balance:</span>
                 <span className="text-base font-bold text-[#C6FF3D] tabular-nums">
-                  ₹{(organizerOwedCents / 100).toFixed(2)}
+                  {cur}{(organizerOwedCents / 100).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -119,7 +121,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
               </div>
               <p className="text-xs text-[#8A8FA3] font-body m-0">
                 {organizerOwedCents > 0
-                  ? `₹${(organizerOwedCents / 100).toFixed(2)} is ready for batch disbursement to ${organizer.paypal_email || organizer.name}.`
+                  ? `${cur}${(organizerOwedCents / 100).toFixed(2)} is ready for batch disbursement to ${organizer.paypal_email || organizer.name}.`
                   : 'All collected group funds have been fully disbursed. Escrow is settled.'}
               </p>
             </div>

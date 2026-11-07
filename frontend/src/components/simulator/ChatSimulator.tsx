@@ -190,7 +190,7 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
                         Consensus Roast Mode: Active
                       </div>
                       <div className="text-xs text-white font-semibold">
-                        Alex Rivera • ₹499.33 Outstanding
+                        Outstanding Settlement Detected
                       </div>
                       <div className="text-[11px] text-zinc-400 italic mt-0.5">
                         "Fronted dinner debts do not settle themselves."
@@ -242,7 +242,7 @@ export const ChatSimulator: React.FC<ChatSimulatorProps> = ({
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type like Sarah: e.g. 'Paid ₹900 for dinner split with Alex'..."
+          placeholder=""
           className="flex-1 bg-zinc-950/80 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500/70 transition-all"
         />
 

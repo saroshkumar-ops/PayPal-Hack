@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Sparkles, ArrowRight } from 'lucide-react';
 import { aiService } from '../../api/services';
 import { Button } from '../ui/Button';
+import { getCurrencySymbol } from '../../lib/currency';
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currency?: string;
   members?: Array<{ user_id?: string; id?: string; name: string }>;
   onConfirmExpense: (
     description: string, 
@@ -18,6 +20,7 @@ interface ReceiptDropModalProps {
 export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   isOpen,
   onClose,
+  currency = 'INR',
   members,
   onConfirmExpense,
 }) => {
@@ -48,10 +51,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     setErrorMsg(null);
     try {
       const res = await aiService.uploadReceipt(file);
-      const symbol = res.currency_symbol || '₹';
+      const symbol = res.currency_symbol || getCurrencySymbol(currency);
       setExtractedReceipt({
         merchant: res.merchant || 'Scanned Receipt',
-        currency: res.currency || 'INR',
+        currency: res.currency || currency,
         currencySymbol: symbol,
         totalCents: res.total_cents || 10000,
         taxCents: res.tax_cents || 0,
@@ -204,13 +207,13 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       {extractedReceipt.merchant}
                     </div>
                     <div className="text-xs text-[#8A8FA3] font-mono mt-0.5">
-                      Tax: ₹{(extractedReceipt.taxCents / 100).toFixed(2)} • Tip: ₹{(extractedReceipt.tipCents / 100).toFixed(2)}
+                      Tax: {extractedReceipt.currencySymbol}{(extractedReceipt.taxCents / 100).toFixed(2)} • Tip: {extractedReceipt.currencySymbol}{(extractedReceipt.tipCents / 100).toFixed(2)}
                     </div>
                   </div>
 
                   <div className="text-right">
                     <div className="text-base font-mono font-bold text-[#C6FF3D] tabular-nums">
-                      ₹{(extractedReceipt.totalCents / 100).toFixed(2)}
+                      {extractedReceipt.currencySymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}
                     </div>
                     <span className="text-[10px] text-[#8A8FA3] font-mono">Total Verified</span>
                   </div>
@@ -233,7 +236,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       <div>
                         <div className="font-semibold text-[#EDEEF2] font-body">{item.name}</div>
                         <div className="font-mono text-xs font-bold text-[#EDEEF2] tabular-nums mt-0.5">
-                          ₹{(item.priceCents / 100).toFixed(2)}
+                          {extractedReceipt.currencySymbol}{(item.priceCents / 100).toFixed(2)}
                         </div>
                       </div>
 

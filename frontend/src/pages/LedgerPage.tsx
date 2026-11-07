@@ -4,6 +4,7 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import type { TripLedger } from '../types';
 import { Search, Lock } from 'lucide-react';
 import { StatusPill } from '../components/ui/StatusPill';
+import { getCurrencySymbol } from '../lib/currency';
 
 interface LedgerPageProps {
   ledger: TripLedger;
@@ -11,6 +12,7 @@ interface LedgerPageProps {
 
 export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   const [quickFilterText, setQuickFilterText] = useState('');
+  const cur = getCurrencySymbol(ledger.currency);
 
   const totalSpendCents = useMemo(() => {
     return ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
@@ -38,7 +40,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         .map((s) => {
           const m = ledger.members.find((mem) => mem.user_id === s.user_id);
           const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: ₹${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
+          return `${firstName}: ${cur}${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
         })
         .join(' • ');
 
@@ -93,13 +95,13 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       },
       {
         field: 'amount',
-        headerName: 'Amount (₹)',
+        headerName: `Amount (${cur})`,
         width: 130,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
           <span className="font-mono text-xs font-bold text-[#C6FF3D] tabular-nums">
-            ₹{params.value}
+            {cur}{params.value}
           </span>
         ),
       },
@@ -149,7 +151,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">TOTAL EXPENDITURE</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#EDEEF2] tabular-nums">
-            ₹{(totalSpendCents / 100).toFixed(2)}
+            {cur}{(totalSpendCents / 100).toFixed(2)}
           </div>
           <div className="text-[11px] text-[#8A8FA3] font-body">{ledger.expenses.length} Total Receipts Logged</div>
         </div>
@@ -157,7 +159,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">SETTLED IN ESCROW</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#C6FF3D] tabular-nums">
-            ₹{(settledCents / 100).toFixed(2)}
+            {cur}{(settledCents / 100).toFixed(2)}
           </div>
           <div className="text-[11px] text-[#C6FF3D] font-mono">{settledPercentage}% Settled on PayPal</div>
         </div>
@@ -165,7 +167,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">OUTSTANDING DEBTS</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#FF5C7A] tabular-nums">
-            ₹{((totalSpendCents - settledCents) / 100).toFixed(2)}
+            {cur}{((totalSpendCents - settledCents) / 100).toFixed(2)}
           </div>
           <div className="text-[11px] text-[#FF5C7A] font-mono">Bipartite Transits Pending</div>
         </div>
@@ -174,7 +176,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
           <div className="text-xl sm:text-2xl font-mono font-bold tabular-nums flex items-center gap-1.5">
             <span className={driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}>
-              ₹{(driftCents / 100).toFixed(2)}
+              {cur}{(driftCents / 100).toFixed(2)}
             </span>
             <Lock className={`w-4 h-4 ${driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}`} />
           </div>
@@ -228,7 +230,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
 
                   <div className="text-right">
                     <div className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums">
-                      ₹{(s.amount_cents / 100).toFixed(2)}
+                      {cur}{(s.amount_cents / 100).toFixed(2)}
                     </div>
                     <div className="text-[10px] text-[#FFC439] font-mono font-semibold">
                       PayPal Ready
@@ -251,7 +253,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
             <Search className="w-4 h-4 text-[#8A8FA3] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search expenses, merchants, members..."
+              placeholder="Search..."
               value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="w-full bg-[#07080D] border border-white/8 rounded-xl pl-10 pr-4 py-2 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"

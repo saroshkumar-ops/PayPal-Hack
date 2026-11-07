@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CreditCard, Lock, CheckCircle2, Copy, Check } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { getCurrencySymbol } from '../../lib/currency';
 
 interface PayPalCheckoutDrawerProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface PayPalCheckoutDrawerProps {
   creditorName: string;
   description: string;
   amountCents: number;
+  currency?: string;
   onConfirmPayment: () => Promise<void>;
 }
 
@@ -22,12 +24,14 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
   creditorName,
   description,
   amountCents,
+  currency = 'INR',
   onConfirmPayment,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+  const cur = getCurrencySymbol(currency);
   const formattedAmount = (amountCents / 100).toFixed(2);
   const paypalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=SIM_${amountCents}_${Date.now()}`;
 
@@ -83,7 +87,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
                 DEBT REIMBURSEMENT AMOUNT
               </div>
               <div className="text-3xl sm:text-4xl font-mono font-bold text-[#EDEEF2] tabular-nums mt-1">
-                <span className="text-[#FFC439]">₹</span>
+                <span className="text-[#FFC439]">{cur}</span>
                 {formattedAmount}
               </div>
               <div className="text-xs text-[#8A8FA3] font-body mt-1">

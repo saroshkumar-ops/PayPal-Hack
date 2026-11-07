@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { RefreshCw, Wallet, CheckCircle } from 'lucide-react';
+import { getCurrencySymbol } from '../../lib/currency';
 
 interface VirtualTripCardProps {
   balanceCents: number;
   tripName: string;
   organizerName: string;
   organizerEmail?: string;
+  currency?: string;
   onPayout: () => void;
 }
 
@@ -15,9 +17,12 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   tripName,
   organizerName,
   organizerEmail,
+  currency = 'INR',
   onPayout,
 }) => {
   const formattedBalance = (balanceCents / 100).toFixed(2);
+  const curSymbol = getCurrencySymbol(currency);
+  const curCode = currency?.toUpperCase() === 'USD' ? 'USD' : 'INR';
   const [isFlipped, setIsFlipped] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -137,9 +142,9 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                 Reimbursable Balance
               </div>
               <div className="text-2xl sm:text-3xl font-bold font-mono text-[#EDEEF2] tracking-tight flex items-baseline gap-1 mt-0.5">
-                <span className="text-[#C6FF3D]">₹</span>
+                <span className="text-[#C6FF3D]">{curSymbol}</span>
                 <span className="tabular-nums">{formattedBalance}</span>
-                <span className="text-[11px] text-[#8A8FA3] font-normal font-mono">INR</span>
+                <span className="text-[11px] text-[#8A8FA3] font-normal font-mono">{curCode}</span>
               </div>
             </div>
 

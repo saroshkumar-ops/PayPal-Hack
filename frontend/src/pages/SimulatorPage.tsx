@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { ChatMessage, TripLedger, EscalationTier } from '../types';
 import { Button } from '../components/ui/Button';
+import { getCurrencySymbol } from '../lib/currency';
 
 interface SimulatorPageProps {
   ledger: TripLedger;
@@ -124,6 +125,9 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
   };
 
   const currentTier = getEscalationTier(ledger.hours_elapsed);
+  const cur = getCurrencySymbol(ledger.currency);
+  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
+  const organizerFirstName = organizer ? organizer.name.split(' ')[0] : 'Organizer';
 
   // Dynamically determine the delinquent debtor with lowest net balance
   const topDebtor = ledger.members
@@ -178,7 +182,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               className="px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_16px_rgba(255,196,57,0.25)]"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>Settle {topDebtor.name.split(' ')[0]} (₹{(topDebtorOwedCents / 100).toFixed(2)})</span>
+              <span>Settle {topDebtor.name.split(' ')[0]} ({cur}{(topDebtorOwedCents / 100).toFixed(2)})</span>
             </button>
           ) : (
             <span className="px-3 py-1.5 rounded-xl bg-[#171A23] border border-white/8 text-xs font-mono text-[#C6FF3D]">
@@ -307,7 +311,6 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             </button>
             <input
               type="text"
-              placeholder="e.g. Paid ₹600 for dinner with Alex and Dave..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="flex-1 bg-[#0F1117] border border-white/8 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"
@@ -361,9 +364,9 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                           {item.name}
                         </div>
                         <div className="text-sm font-mono font-bold text-[#EDEEF2] mt-0.5">
-                          ₹{(item.priceCents / 100).toFixed(2)}{' '}
+                          {cur}{(item.priceCents / 100).toFixed(2)}{' '}
                           <span className="text-[11px] text-[#8A8FA3] font-normal">
-                            (₹{(perPersonCents / 100).toFixed(2)} each)
+                            ({cur}{(perPersonCents / 100).toFixed(2)} each)
                           </span>
                         </div>
                       </div>
@@ -409,7 +412,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                       {member.name.split(' ')[0]}
                     </span>
                     <span className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums mt-0.5">
-                      ₹{(totalCents / 100).toFixed(2)}
+                      {cur}{(totalCents / 100).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -465,8 +468,8 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               <p className="text-xs text-[#EDEEF2] italic font-body leading-relaxed m-0">
                 {topDebtor ? (
                   ledger.hours_elapsed >= 72
-                    ? `"${topDebtor.name.split(' ')[0]}, your outstanding balance of ₹${(topDebtorOwedCents / 100).toFixed(2)} has been delinquent for ${ledger.hours_elapsed} hours. Settle up on PayPal before Sarah triggers sanctions."`
-                    : `"Gentle reminder: ${topDebtor.name.split(' ')[0]} has ₹${(topDebtorOwedCents / 100).toFixed(2)} outstanding in the ledger. Quick PayPal checkout link active above."`
+                    ? `"${topDebtor.name.split(' ')[0]}, your outstanding balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} has been delinquent for ${ledger.hours_elapsed} hours. Settle up on PayPal before ${organizerFirstName} triggers sanctions."`
+                    : `"Gentle reminder: ${topDebtor.name.split(' ')[0]} has ${cur}${(topDebtorOwedCents / 100).toFixed(2)} outstanding in the ledger. Quick PayPal checkout link active above."`
                 ) : (
                   '"All members have fully cleared their balances. No roasts or escalation pending."'
                 )}

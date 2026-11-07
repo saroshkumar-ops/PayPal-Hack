@@ -8,6 +8,7 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { LedgerPage } from './pages/LedgerPage';
 import { PayoutsPage } from './pages/PayoutsPage';
 import { PartyOnboarding } from './components/party/PartyOnboarding';
+import { LandingIntro } from './components/landing/LandingIntro';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
@@ -21,6 +22,7 @@ import {
   chatService, 
   simulatorService, 
   paymentService, 
+  demoService,
   checkHealth 
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog } from './types';
@@ -30,6 +32,7 @@ export function App() {
   const [activeTripId, setActiveTripId] = useState<string | null>(() => {
     return localStorage.getItem('active_trip_id');
   });
+  const [landingMode, setLandingMode] = useState<'intro' | 'create'>('intro');
 
   const [ledger, setLedger] = useState<TripLedger>(EMPTY_LEDGER);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -125,6 +128,25 @@ export function App() {
     setActiveTripId(null);
     setLedger(EMPTY_LEDGER);
     setMessages([]);
+    setLandingMode('create');
+  };
+
+  // One-click demo party seeder
+  const handleSeedDemo = async () => {
+    setIsLoading(true);
+    try {
+      const res = await demoService.seedDemo();
+      if (res && res.ledger) {
+        handlePartyCreated(res.ledger, 'trip_bali_2026');
+      } else {
+        const l = await ledgerService.getLedger('trip_bali_2026');
+        handlePartyCreated(l, 'trip_bali_2026');
+      }
+    } catch (err) {
+      console.error('Demo seed error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const currentTripId = ledger.trip_id || activeTripId || '';
@@ -231,14 +253,24 @@ export function App() {
     }
   };
 
-  // If no party has been created yet, show Party Onboarding
+  // If no party has been created yet, show Landing Intro or Party Onboarding
   if (!activeTripId || !ledger.trip_id || ledger.members.length === 0) {
     return (
       <LenisProvider>
         <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative justify-center">
           <CyberBackground />
           <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center items-center z-10">
-            <PartyOnboarding onPartyCreated={handlePartyCreated} />
+            {landingMode === 'intro' ? (
+              <LandingIntro
+                onCreateParty={() => setLandingMode('create')}
+                onExploreDemo={handleSeedDemo}
+              />
+            ) : (
+              <PartyOnboarding
+                onPartyCreated={handlePartyCreated}
+                onBackToIntro={() => setLandingMode('intro')}
+              />
+            )}
           </main>
         </div>
       </LenisProvider>
@@ -335,6 +367,7 @@ export function App() {
             creditorName={checkoutDrawer.creditorName}
             description={checkoutDrawer.description}
             amountCents={checkoutDrawer.amountCents}
+            currency={ledger.currency}
             onConfirmPayment={handleExecutePayment}
           />
 
@@ -345,6 +378,7 @@ export function App() {
               onConfirm={handleConfirmPayout}
               organizer={organizer}
               amountCents={organizerOwedCents}
+              currency={ledger.currency}
               isLoading={isLoading}
             />
           )}
@@ -352,6 +386,7 @@ export function App() {
           <ReceiptDropModal
             isOpen={isReceiptModalOpen}
             onClose={() => setIsReceiptModalOpen(false)}
+            currency={ledger.currency}
             members={ledger.members}
             onConfirmExpense={handleConfirmScannedExpense}
           />
