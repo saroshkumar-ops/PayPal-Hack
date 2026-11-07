@@ -1,23 +1,18 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Send, 
-  Clock, 
-  Utensils, 
   CreditCard, 
   Flame, 
   Paperclip, 
   Sparkles, 
-  MessageSquare, 
-  ShieldAlert, 
-  Table, 
-  Search,
-  ShieldCheck,
-  Activity
+  Copy, 
+  Check, 
+  Receipt, 
+  Zap 
 } from 'lucide-react';
-import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import type { ChatMessage, TripLedger } from '../types';
-import { Logo } from '../components/common/Logo';
+import type { ChatMessage, TripLedger, EscalationTier } from '../types';
+import { Button } from '../components/ui/Button';
 
 interface SimulatorPageProps {
   ledger: TripLedger;
@@ -41,10 +36,15 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
   isLoading,
 }) => {
   const [inputText, setInputText] = useState('');
-  const [mobileTab, setMobileTab] = useState<'chat' | 'grid' | 'matrix'>('chat');
-  const [rightPanelTab, setRightPanelTab] = useState<'grid' | 'matrix'>('grid');
-  const [gridFilterText, setGridFilterText] = useState('');
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Interactive Live Itemizer state
+  const [interactiveItems, setInteractiveItems] = useState([
+    { id: 'item_1', name: 'Sunset Cliffside Villa Deposit', priceCents: 24000, claimedBy: ['user_sarah', 'user_alex', 'user_dave', 'user_priya'] },
+    { id: 'item_2', name: 'Jimbaran Grilled Jumbo Prawns', priceCents: 8000, claimedBy: ['user_alex', 'user_dave'] },
+    { id: 'item_3', name: 'Fresh Coconuts & Cold Brew', priceCents: 4000, claimedBy: ['user_sarah', 'user_priya'] },
+  ]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,536 +61,363 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
     setInputText('');
   };
 
-  const alexDebtor = ledger.members.find(m => m.user_id === 'user_02') || ledger.members[1];
-  const heat = alexDebtor.heat_score || 75;
+  // Toggle member claiming on an item
+  const toggleClaimant = (itemId: string, userId: string) => {
+    setInteractiveItems(prev => prev.map(item => {
+      if (item.id !== itemId) return item;
+      const exists = item.claimedBy.includes(userId);
+      const nextClaimed = exists 
+        ? item.claimedBy.filter(id => id !== userId)
+        : [...item.claimedBy, userId];
+      return { ...item, claimedBy: nextClaimed.length > 0 ? nextClaimed : [userId] };
+    }));
+  };
 
-  // Calculate live financial metrics for the grid banner
-  const totalSpendCents = ledger.expenses.reduce((sum, exp) => sum + exp.amount_cents, 0);
-  let settledCents = 0;
-  ledger.expenses.forEach((exp) => {
-    exp.splits.forEach((split) => {
-      if (split.paid_status === 'SETTLED') settledCents += split.owes_cents;
+  // Calculate live item-based debt allocation per member
+  const liveMemberTotals = ledger.members.map(member => {
+    let totalCents = 0;
+    interactiveItems.forEach(item => {
+      if (item.claimedBy.includes(member.user_id)) {
+        totalCents += Math.round(item.priceCents / item.claimedBy.length);
+      }
     });
+    return {
+      member,
+      totalCents,
+    };
   });
-  const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
 
-  // AG Grid Row Data (Reactive to live ledger updates)
-  const rowData = useMemo(() => {
-    return ledger.expenses.map((exp) => {
-      const payer = ledger.members.find((m) => m.user_id === exp.paid_by);
-      const isAllSettled = exp.splits.every((s) => s.paid_status === 'SETTLED');
+  // Copy PayPal link interaction
+  const handleCopyLink = (linkId: string, url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedLink(linkId);
+    setTimeout(() => setCopiedLink(null), 2000);
+  };
 
-      const splitSummary = exp.splits
-        .map((s) => {
-          const m = ledger.members.find((mem) => mem.user_id === s.user_id);
-          const firstName = m?.name.split(' ')[0] || s.user_id;
-          return `${firstName}: ₹${(s.owes_cents / 100).toFixed(2)} (${s.paid_status === 'SETTLED' ? 'Settled' : 'Pending'})`;
-        })
-        .join(' • ');
+  // Calculate current escalation tier
+  const getEscalationTier = (hours: number): { tier: EscalationTier; label: string; heat: number; color: string } => {
+    if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Tier 1: Polite Concierge', heat: 20, color: '#C6FF3D' };
+    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Tier 2: Passive Aggressive', heat: 45, color: '#FFC439' };
+    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Tier 3: Disappointed Parent', heat: 68, color: '#FF9B42' };
+    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Tier 4: Public Group Roast', heat: 88, color: '#FF5C7A' };
+    return { tier: 'ITINERARY_EMBARGO', label: 'Tier 5: Itinerary Embargo', heat: 100, color: '#FF5C7A' };
+  };
 
-      return {
-        expense_id: exp.expense_id,
-        date: new Date(exp.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        category: exp.category,
-        description: exp.description,
-        amount: (exp.amount_cents / 100).toFixed(2),
-        paid_by: payer?.name || exp.paid_by,
-        split_summary: splitSummary,
-        status: isAllSettled ? 'SETTLED' : 'PENDING',
-      };
-    });
-  }, [ledger]);
-
-  // AG Grid Column Definitions
-  const colDefs = useMemo<ColDef[]>(() => {
-    return [
-      {
-        field: 'date',
-        headerName: 'Date',
-        width: 85,
-        sortable: true,
-        filter: true,
-      },
-      {
-        field: 'category',
-        headerName: 'Category',
-        width: 105,
-        sortable: true,
-        filter: true,
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-[11px] font-medium text-[#B7C6D3]">{params.value}</span>
-        ),
-      },
-      {
-        field: 'description',
-        headerName: 'Description',
-        flex: 1.3,
-        minWidth: 140,
-        sortable: true,
-        filter: true,
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-semibold text-xs text-[#E7EDF2] truncate">{params.value}</span>
-        ),
-      },
-      {
-        field: 'amount',
-        headerName: 'Amount (INR)',
-        width: 110,
-        sortable: true,
-        filter: 'agNumberColumnFilter',
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono font-bold text-xs text-[#E7EDF2]">₹{params.value}</span>
-        ),
-      },
-      {
-        field: 'status',
-        headerName: 'Status',
-        width: 100,
-        sortable: true,
-        filter: true,
-        cellRenderer: (params: ICellRendererParams) => {
-          const isSettled = params.value === 'SETTLED';
-          return (
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                isSettled
-                  ? 'bg-[#10161C] text-[#E7EDF2] border border-[#4E6A83]'
-                  : 'bg-[#10161C] text-[#8199AE] border border-[#33475A]'
-              }`}
-            >
-              {params.value}
-            </span>
-          );
-        },
-      },
-      {
-        field: 'paid_by',
-        headerName: 'Fronted By',
-        width: 100,
-        sortable: true,
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-[11px] text-[#B7C6D3] truncate">{params.value}</span>
-        ),
-      },
-      {
-        field: 'split_summary',
-        headerName: 'Split Details',
-        flex: 1.5,
-        minWidth: 170,
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-[10px] text-[#8199AE] font-mono truncate">{params.value}</span>
-        ),
-      },
-    ];
-  }, []);
+  const currentTier = getEscalationTier(ledger.hours_elapsed);
 
   return (
-    <div className="space-y-4 w-full py-1">
-      {/* Page Title & Quick Actions */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-[#33475A]">
-        <div>
-          <h1 className="text-xl font-bold text-[#E7EDF2] tracking-tight m-0 flex items-center gap-2">
-            Telegram Group Chat & Judge Simulator
-            <span className="text-[10px] font-mono text-[#8199AE] bg-[#1F2C38] border border-[#33475A] px-2 py-0.5 rounded">
-              Split-Screen Mode
-            </span>
-          </h1>
-          <p className="text-xs text-[#8199AE] m-0 mt-0.5">
-            Real-time interactive chat synchronized with live AG Grid accounting and PayPal sandbox rails
-          </p>
+    <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
+      {/* ================================================================ */}
+      {/* TOP SCENARIO INJECTOR DECK                                       */}
+      {/* ================================================================ */}
+      <div className="rounded-2xl bg-[#0F1117] border border-white/8 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-[#C6FF3D]" />
+          </div>
+          <div>
+            <h2 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+              Cybernetics War Room & Split Simulator
+            </h2>
+            <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
+              Live intent parser, interactive item assigner, and AI roast escalation radar
+            </p>
+          </div>
         </div>
 
-        {/* Action Triggers */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+        {/* Quick Scenario Buttons */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <button
             onClick={onSimulateExpense}
             disabled={isLoading}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-xs font-medium text-[#E7EDF2] transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Utensils className="w-3.5 h-3.5 text-[#8199AE]" />
-            Simulate Dinner
+            <Receipt className="w-3.5 h-3.5 text-[#C6FF3D]" />
+            <span>+₹120 Feast</span>
           </button>
+
           <button
             onClick={() => onAdvanceTime(24)}
             disabled={isLoading}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4E6A83] hover:bg-[#33475A] text-xs font-medium text-[#E7EDF2] transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-[#FF5C7A]/20 border border-white/10 hover:border-[#FF5C7A]/40 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Clock className="w-3.5 h-3.5" />
-            Fast-Forward +24h
+            <Flame className="w-3.5 h-3.5 text-[#FF5C7A]" />
+            <span>Advance +24h</span>
           </button>
+
           <button
-            onClick={() => onPayDebt('user_02', 49933)}
+            onClick={() => onPayDebt('user_alex', 6000, 'exp_villa_demo_01')}
             disabled={isLoading}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-xs font-medium text-[#E7EDF2] transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_16px_rgba(255,196,57,0.25)]"
           >
-            <CreditCard className="w-3.5 h-3.5 text-[#8199AE]" />
-            Pay Alex's Share
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>Settle Alex (₹60)</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile Tab Toggle (< lg only) */}
-      <div className="lg:hidden flex rounded-xl bg-[#1F2C38] border border-[#33475A] p-1">
-        <button
-          onClick={() => setMobileTab('chat')}
-          className={`flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            mobileTab === 'chat'
-              ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-              : 'text-[#8199AE] hover:text-[#B7C6D3]'
-          }`}
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>Chat ({messages.length})</span>
-        </button>
-        <button
-          onClick={() => setMobileTab('grid')}
-          className={`flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            mobileTab === 'grid'
-              ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-              : 'text-[#8199AE] hover:text-[#B7C6D3]'
-          }`}
-        >
-          <Table className="w-3.5 h-3.5" />
-          <span>AG Grid</span>
-        </button>
-        <button
-          onClick={() => setMobileTab('matrix')}
-          className={`flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            mobileTab === 'matrix'
-              ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-              : 'text-[#8199AE] hover:text-[#B7C6D3]'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Escalation ({heat}%)</span>
-        </button>
-      </div>
-
-      {/* Main Grid: Responsive Side-by-Side (PC Full Screen) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Left Column: Chat Feed (6 cols on widescreen) */}
-        <div
-          className={`lg:col-span-6 flex flex-col rounded-2xl border border-[#33475A] bg-[#1F2C38] overflow-hidden shadow-sm h-[calc(100vh-310px)] lg:h-[calc(100vh-190px)] min-h-[480px] lg:min-h-[620px] ${
-            mobileTab === 'chat' ? 'flex' : 'hidden lg:flex'
-          }`}
-        >
-          {/* Channel Header */}
-          <div className="px-4 py-3 border-b border-[#33475A] bg-[#10161C]/50 flex items-center justify-between">
+      {/* ================================================================ */}
+      {/* 2-COLUMN WAR ROOM LAYOUT (45% TELEGRAM WIRE / 55% ITEMIZER)     */}
+      {/* ================================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Left Column: Cyber Terminal & Telegram Intent Interceptor */}
+        <div className="lg:col-span-5 rounded-3xl bg-[#0F1117] border border-white/8 flex flex-col justify-between shadow-[0_16px_48px_rgba(0,0,0,0.8)] overflow-hidden h-[740px]">
+          {/* Terminal Header */}
+          <div className="p-4 border-b border-white/8 bg-[#07080D]/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Logo size="sm" showText={false} />
-              <div>
-                <div className="text-xs font-bold text-[#E7EDF2] leading-tight">
-                  {ledger.trip_name || 'TripSheriff Treasury'} #expenses
-                </div>
-                <div className="text-[10px] text-[#8199AE]">TripSheriff AI Bot Active</div>
-              </div>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#C6FF3D] animate-pulse" />
+              <span className="text-xs font-mono font-bold text-[#EDEEF2]">
+                TELEGRAM CHAT INTERCEPTOR
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-[#8199AE] bg-[#10161C] border border-[#33475A] px-2 py-0.5 rounded-md">
-              Telegram Gateway
+            <span className="text-[10px] font-mono text-[#8A8FA3] bg-[#171A23] px-2 py-0.5 rounded">
+              GEMINI INTENT STREAM
             </span>
           </div>
 
-          {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className="flex flex-col items-start max-w-[92%] sm:max-w-[88%]">
-                <div className="flex items-center gap-2 mb-1 pl-1">
-                  <span className="text-xs font-bold text-[#E7EDF2]">{msg.sender_name}</span>
-                  <span className="text-[10px] text-[#8199AE] font-mono">{msg.sender_handle}</span>
-                  <span className="text-[10px] text-[#8199AE]">• {msg.timestamp}</span>
-                </div>
-
-                <div
-                  className={`rounded-2xl p-3.5 text-xs leading-relaxed border ${
-                    msg.is_bot
-                      ? 'bg-[#10161C] border-[#33475A] text-[#E7EDF2]'
-                      : 'bg-[#33475A]/40 border-[#33475A] text-[#E7EDF2]'
-                  }`}
+          {/* Messages Stream */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 font-body scrollbar-none">
+            {messages.map((msg) => {
+              const isSheriff = msg.sender_id === 'bot_sheriff';
+              return (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex flex-col ${isSheriff ? 'items-start' : 'items-end'}`}
                 >
-                  {msg.badge && (
-                    <div className="mb-2">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1F2C38] border border-[#33475A] text-[#8199AE]">
-                        {msg.badge}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="whitespace-pre-line text-[#B7C6D3]">
-                    {msg.text.split('**').map((part, i) =>
-                      i % 2 === 1 ? <strong key={i} className="text-[#E7EDF2] font-semibold">{part}</strong> : part
-                    )}
+                  <div className="flex items-center gap-2 mb-1 px-1">
+                    <span className="text-[11px] font-mono font-semibold text-[#8A8FA3]">
+                      {msg.sender_name}
+                    </span>
+                    <span className="text-[10px] font-mono text-[#8A8FA3]/60">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
 
-                  {/* Dynamic Pillow WANTED meme poster card from AI microservice */}
-                  {msg.image_card_base64 && (
-                    <div className="mt-3 rounded-xl overflow-hidden border border-[#4E6A83] max-w-xs shadow-md">
-                      <img
-                        src={`data:image/png;base64,${msg.image_card_base64}`}
-                        alt="WANTED Deadbeat Meme Poster"
-                        className="w-full h-auto block"
-                      />
-                    </div>
-                  )}
+                  <div
+                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed border ${
+                      isSheriff
+                        ? 'bg-[#171A23] border-white/12 text-[#EDEEF2] shadow-md'
+                        : 'bg-[#C6FF3D]/10 border-[#C6FF3D]/30 text-[#EDEEF2]'
+                    }`}
+                  >
+                    {msg.badge && (
+                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase mb-2 bg-[#07080D] text-[#C6FF3D] border border-white/10">
+                        <Sparkles className="w-3 h-3 text-[#C6FF3D]" />
+                        <span>{msg.badge}</span>
+                      </div>
+                    )}
 
-                  {/* Public Deadbeat Roast Poster (Tier 4 fallback) */}
-                  {msg.roast_tier === 'PUBLIC_ROAST' && !msg.image_card_base64 && (
-                    <div className="mt-3 p-3 rounded-xl bg-[#10161C] border border-[#4E6A83] text-left">
-                      <div className="text-[10px] font-mono font-bold text-[#E7EDF2] uppercase tracking-wider">
-                        WANTED: DEADBEAT TRAVELER
-                      </div>
-                      <div className="text-xs text-[#E7EDF2] font-semibold mt-1">
-                        Alex Rivera • ₹499.33 INR
-                      </div>
-                      <div className="text-[11px] text-[#8199AE] italic mt-0.5">
-                        "Consensus roast active. Demoted to pull-out couch until settled."
-                      </div>
-                    </div>
-                  )}
+                    <div className="whitespace-pre-line font-body">{msg.text}</div>
 
-                  {/* Interactive PayPal Buttons */}
-                  {msg.buttons && msg.buttons.length > 0 && (
-                    <div className="mt-3 pt-2.5 border-t border-[#33475A] flex flex-wrap gap-2">
-                      {msg.buttons.map((btn, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            if (btn.payload) {
-                              onPayDebt(btn.payload.userId, btn.payload.amountCents, btn.payload.expenseId);
-                            } else {
-                              onPayDebt('user_02', 49933, 'exp_8821');
-                            }
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] transition-all cursor-pointer"
-                        >
-                          <CreditCard className="w-3.5 h-3.5" />
-                          {btn.text}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                    {/* PayPal Settlement Actions */}
+                    {msg.buttons && msg.buttons.length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-white/10 space-y-2">
+                        {msg.buttons.map((btn, bIdx) => {
+                          const mockUrl = `https://paypal.com/checkout/settle?exp=${btn.payload?.expenseId || 'exp_demo'}&debtor=${btn.payload?.userId || 'user_alex'}`;
+                          const isCopied = copiedLink === `${msg.id}_${bIdx}`;
+
+                          return (
+                            <div key={bIdx} className="flex items-center gap-2">
+                              <Button
+                                variant="paypal"
+                                size="sm"
+                                onClick={() => {
+                                  if (btn.payload) {
+                                    onPayDebt(btn.payload.userId, btn.payload.amountCents, btn.payload.expenseId);
+                                  } else {
+                                    onPayDebt('user_alex', 6000, 'exp_villa_demo_01');
+                                  }
+                                }}
+                                icon={<CreditCard className="w-3.5 h-3.5" />}
+                                className="flex-1 text-xs"
+                              >
+                                {btn.text}
+                              </Button>
+
+                              <button
+                                onClick={() => handleCopyLink(`${msg.id}_${bIdx}`, mockUrl)}
+                                title="Copy PayPal Link"
+                                className="p-2 rounded-xl bg-[#07080D] hover:bg-white/8 border border-white/10 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
+                              >
+                                {isCopied ? <Check className="w-3.5 h-3.5 text-[#C6FF3D]" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input Bar */}
-          <form onSubmit={handleSubmit} className="p-3 border-t border-[#33475A] bg-[#10161C]/60 flex items-center gap-2">
+          {/* Prompt Composer */}
+          <form onSubmit={handleSubmit} className="p-3 border-t border-white/8 bg-[#07080D]/80 flex items-center gap-2">
             <button
               type="button"
               onClick={onOpenReceiptModal}
-              title="Upload Receipt"
-              className="p-2.5 rounded-lg bg-[#1F2C38] hover:bg-[#33475A] border border-[#33475A] text-[#8199AE] hover:text-[#E7EDF2] transition-colors cursor-pointer"
+              title="Upload Paper Bill"
+              className="p-2.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
             >
               <Paperclip className="w-4 h-4" />
             </button>
             <input
               type="text"
-              placeholder="e.g. Paid ₹600 for dinner with Alex and Dave..."
+              placeholder="e.g. Paid ₹600 for seafood dinner with Alex and Dave..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="flex-1 bg-[#10161C] border border-[#33475A] rounded-xl px-3.5 py-2 text-xs text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83]"
+              className="flex-1 bg-[#0F1117] border border-white/8 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"
             />
             <button
               type="submit"
               disabled={!inputText.trim() || isLoading}
-              className="p-2.5 rounded-lg bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] transition-all disabled:opacity-40 cursor-pointer"
+              className="p-2.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] transition-all disabled:opacity-30 cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
         </div>
 
-        {/* Right Column: Live AG Grid Ledger / Escalation Matrix (6 cols on widescreen) */}
-        <div
-          className={`lg:col-span-6 flex flex-col rounded-2xl border border-[#33475A] bg-[#1F2C38] overflow-hidden shadow-sm h-[calc(100vh-310px)] lg:h-[calc(100vh-190px)] min-h-[480px] lg:min-h-[620px] ${
-            mobileTab === 'grid' || mobileTab === 'matrix' ? 'flex' : 'hidden lg:flex'
-          }`}
-        >
-          {/* Header Toolbar: Tab Switcher & Live Sync Indicator */}
-          <div className="px-4 py-2.5 border-b border-[#33475A] bg-[#10161C]/50 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#10161C] border border-[#33475A]">
-              <button
-                onClick={() => {
-                  setRightPanelTab('grid');
-                  setMobileTab('grid');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  (mobileTab === 'grid' || (rightPanelTab === 'grid' && mobileTab !== 'matrix'))
-                    ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-                    : 'text-[#8199AE] hover:text-[#B7C6D3]'
-                }`}
-              >
-                <Table className="w-3.5 h-3.5" />
-                <span>Live AG Grid Ledger</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setRightPanelTab('matrix');
-                  setMobileTab('matrix');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  (mobileTab === 'matrix' || (rightPanelTab === 'matrix' && mobileTab !== 'grid'))
-                    ? 'bg-[#4E6A83] text-[#E7EDF2] shadow-sm'
-                    : 'text-[#8199AE] hover:text-[#B7C6D3]'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                <span>Escalation Matrix</span>
-              </button>
+        {/* Right Column: Live Bill Dissection Canvas & Escalation Radar */}
+        <div className="lg:col-span-7 flex flex-col justify-between gap-6">
+          {/* Top Panel: Interactive Bill Dissection Canvas */}
+          <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-5">
+            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+              <div>
+                <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
+                  Interactive Bill Dissection Canvas
+                </h3>
+                <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
+                  Tap traveler avatars to apportion items with real-time integer-paisa recalculation
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 px-2.5 py-1 rounded-full border border-[#C6FF3D]/30">
+                Live Claiming
+              </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-[#E7EDF2] bg-[#10161C] border border-[#33475A] px-2 py-0.5 rounded">
-                <Activity className="w-3 h-3 text-[#8199AE]" />
-                Live Sync
-              </span>
+            {/* Bill Line Items with Claimant Chips */}
+            <div className="space-y-3">
+              {interactiveItems.map((item) => {
+                const perPersonCents = Math.round(item.priceCents / item.claimedBy.length);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-2xl bg-[#07080D] border border-white/6 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-[#EDEEF2] font-body">
+                        {item.name}
+                      </div>
+                      <div className="text-sm font-mono font-bold text-[#EDEEF2] mt-0.5">
+                        ₹{(item.priceCents / 100).toFixed(2)}{' '}
+                        <span className="text-[11px] text-[#8A8FA3] font-normal">
+                          (₹{(perPersonCents / 100).toFixed(2)} each)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Member Claim Toggles */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {ledger.members.map((member) => {
+                        const isClaimed = item.claimedBy.includes(member.user_id);
+                        return (
+                          <button
+                            key={member.user_id}
+                            onClick={() => toggleClaimant(item.id, member.user_id)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                              isClaimed
+                                ? 'bg-[#171A23] border border-[#C6FF3D]/60 text-[#C6FF3D] shadow-[0_0_10px_rgba(198,255,61,0.15)]'
+                                : 'bg-transparent border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] opacity-50'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                            <span>{member.name.split(' ')[0]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live Count-Up Member Totals */}
+            <div className="pt-2 border-t border-white/8">
+              <div className="text-xs font-mono text-[#8A8FA3] mb-2 uppercase">
+                CALCULATED MEMBER SHARES:
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {liveMemberTotals.map(({ member, totalCents }) => (
+                  <div
+                    key={member.user_id}
+                    className="p-2.5 rounded-xl bg-[#171A23] border border-white/8 flex flex-col"
+                  >
+                    <span className="text-[11px] text-[#8A8FA3] font-body truncate">
+                      {member.name.split(' ')[0]}
+                    </span>
+                    <span className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums mt-0.5">
+                      ₹{(totalCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Body Content: View A (AG Grid Ledger) vs View B (Escalation Matrix) */}
-          {(mobileTab === 'grid' || (rightPanelTab === 'grid' && mobileTab !== 'matrix')) ? (
-            <div className="flex-1 flex flex-col p-4 overflow-hidden space-y-3">
-              {/* Quick Search & Summary Banner */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-xs">
-                  <Search className="w-3.5 h-3.5 text-[#8199AE] absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Filter expenses in grid..."
-                    value={gridFilterText}
-                    onChange={(e) => setGridFilterText(e.target.value)}
-                    className="w-full bg-[#10161C] border border-[#33475A] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83]"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <span className="text-[#8199AE] text-[11px]">Total:</span>
-                  <span className="font-bold text-[#E7EDF2]">₹{(totalSpendCents / 100).toFixed(2)}</span>
-                  <span className="text-[#8199AE]">•</span>
-                  <span className="text-[#8199AE] text-[11px]">Settled:</span>
-                  <span className="font-bold text-[#E7EDF2]">{settledPercentage}%</span>
-                </div>
+          {/* Bottom Panel: Dynamic Escalation Heat Radar & AI Roast Card */}
+          <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
+            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-[#FF5C7A]" />
+                <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+                  Autonomous Escalation Heat Radar
+                </h3>
               </div>
+              <span
+                className="text-[11px] font-mono px-2.5 py-0.5 rounded-full font-bold border"
+                style={{ color: currentTier.color, borderColor: `${currentTier.color}40`, backgroundColor: `${currentTier.color}15` }}
+              >
+                {currentTier.label}
+              </span>
+            </div>
 
-              {/* Embedded AG Grid Container */}
-              <div className="flex-1 rounded-xl overflow-hidden border border-[#33475A] bg-[#10161C]">
-                <div className="ag-theme-quartz ag-theme-quartz-dark w-full h-full">
-                  <AgGridReact
-                    rowData={rowData}
-                    columnDefs={colDefs}
-                    quickFilterText={gridFilterText}
-                    defaultColDef={{ resizable: true, sortable: true }}
-                    animateRows={true}
-                    pagination={true}
-                    paginationPageSize={8}
-                  />
-                </div>
+            {/* Heat Progress Track */}
+            <div className="space-y-1.5 font-mono text-xs">
+              <div className="flex justify-between text-[#8A8FA3]">
+                <span>Delinquency Timer: +{ledger.hours_elapsed}h elapsed</span>
+                <span className="font-bold text-[#EDEEF2]">{currentTier.heat}% Pressure</span>
               </div>
-
-              {/* Grid Footer with Escrow & Settlement Indicator */}
-              <div className="p-2.5 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#8199AE]" />
-                  <span className="text-[#8199AE]">Platform Escrow:</span>
-                  <span className="font-bold text-[#E7EDF2]">
-                    ₹{((ledger.platform_escrow_cents || 0) / 100).toFixed(2)} INR
-                  </span>
-                </div>
-                <div className="text-[11px] text-[#8199AE]">
-                  Conserved Balance: ₹0.00
-                </div>
+              <div className="h-2 w-full rounded-full bg-[#07080D] overflow-hidden p-0.5 border border-white/8">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${currentTier.heat}%`,
+                    backgroundColor: currentTier.color,
+                    boxShadow: `0 0 12px ${currentTier.color}`,
+                  }}
+                />
               </div>
             </div>
-          ) : (
-            <div className="flex-1 p-4 overflow-y-auto space-y-4">
-              {/* Debt Escalation Matrix Card */}
-              <div className="rounded-xl border border-[#33475A] bg-[#10161C] p-4 shadow-sm">
-                <div className="flex items-center justify-between pb-3 border-b border-[#33475A]">
-                  <div className="flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-[#8199AE]" />
-                    <span className="text-xs font-bold text-[#E7EDF2] uppercase tracking-wider">
-                      Active Debt Heat Gauge
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-[#8199AE] bg-[#1F2C38] border border-[#33475A] px-2 py-0.5 rounded">
-                    Consent: {alexDebtor.roast_consent}
-                  </span>
-                </div>
 
-                <div className="my-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-[#E7EDF2]">{alexDebtor.name}</div>
-                      <div className="text-[11px] text-[#8199AE] font-mono">{alexDebtor.handle}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold font-mono text-[#E7EDF2]">₹799.33 Overdue</div>
-                      <div className="text-[10px] text-[#8199AE]">{ledger.hours_elapsed}h Unpaid</div>
-                    </div>
-                  </div>
-
-                  {/* Heat Score Bar */}
-                  <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-[#8199AE]">Debt Heat Score</span>
-                      <span className="font-mono text-[#E7EDF2]">{heat}%</span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-[#1F2C38] overflow-hidden">
-                      <div className="h-full bg-[#4E6A83] rounded-full transition-all duration-500" style={{ width: `${heat}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Current Persona Quote */}
-                  <div className="p-3 rounded-xl bg-[#1F2C38] border border-[#33475A] text-[11px] text-[#B7C6D3] italic leading-relaxed">
-                    "Alex beta, I see your stories from the cafe. Sarah is still waiting on your ₹499.33 dinner share from yesterday."
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onAdvanceTime(24)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] text-xs font-semibold text-[#E7EDF2] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Fast-Forward +24h to Escalate Tone
-                </button>
+            {/* AI Roast Preview Card */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#8A8FA3]">TARGET: ALEX HUNTER (@alex_travels)</span>
+                <span className="text-[#FF5C7A] font-bold">ROAST CONSENT: SPICY</span>
               </div>
-
-              {/* Member Net Balances */}
-              <div className="rounded-xl border border-[#33475A] bg-[#10161C] p-4 shadow-sm">
-                <div className="text-xs font-bold text-[#E7EDF2] uppercase tracking-wider pb-2.5 mb-2.5 border-b border-[#33475A]">
-                  Member Net Balances (Conservation Rule)
-                </div>
-
-                <div className="space-y-2">
-                  {ledger.members.map((m) => {
-                    const net = (ledger.net_balances_cents[m.user_id] || 0) / 100;
-                    const isCreditor = net > 0;
-                    const isSettled = net === 0;
-
-                    return (
-                      <div
-                        key={m.user_id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-[#1F2C38] border border-[#33475A]"
-                      >
-                        <div>
-                          <div className="text-xs font-semibold text-[#E7EDF2]">{m.name}</div>
-                          <div className="text-[10px] text-[#8199AE] font-mono">{m.handle}</div>
-                        </div>
-                        <div className="text-right font-mono text-xs font-bold text-[#E7EDF2]">
-                          {isCreditor ? `+₹${net.toFixed(2)}` : isSettled ? '₹0.00' : `-₹${Math.abs(net).toFixed(2)}`}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-[11px] text-[#8199AE] font-mono mt-2.5 m-0">
-                  Net Balance Conservation: Exactly ₹0.00
-                </p>
-              </div>
+              <p className="text-xs text-[#EDEEF2] italic font-body leading-relaxed m-0">
+                {ledger.hours_elapsed >= 72
+                  ? `"Alex, your share of the Sunset Villa is older than the ruins in Ubud. Settle up on PayPal before Sarah starts auctioning your luggage."`
+                  : `"Gentle nudge: Alex has ₹60.00 outstanding for the villa deposit. Quick settlement link active above."`}
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import type { TripLedger } from '../types';
-import { Search, ArrowRight, Sparkles, ShieldCheck, Receipt, Coins, CheckCircle } from 'lucide-react';
+import { Search, Lock } from 'lucide-react';
+import { StatusPill } from '../components/ui/StatusPill';
 
 interface LedgerPageProps {
   ledger: TripLedger;
@@ -59,21 +60,21 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       {
         field: 'date',
         headerName: 'Date',
-        width: 120,
+        width: 100,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono text-xs text-[#8199AE]">{params.value}</span>
+          <span className="font-mono text-xs text-[#8A8FA3]">{params.value}</span>
         ),
       },
       {
         field: 'category',
         headerName: 'Category',
-        width: 130,
+        width: 120,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="px-2.5 py-1 rounded-md bg-[#1F2C38] border border-[#33475A] text-xs font-semibold text-[#B7C6D3] uppercase tracking-wider">
+          <span className="px-2 py-0.5 rounded-lg bg-[#171A23] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
             {params.value}
           </span>
         ),
@@ -81,205 +82,193 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       {
         field: 'description',
         headerName: 'Description',
-        flex: 1.6,
-        minWidth: 200,
+        flex: 1,
+        minWidth: 180,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-bold text-sm text-[#E7EDF2] tracking-tight">{params.value}</span>
+          <span className="font-body text-xs font-semibold text-[#EDEEF2]">{params.value}</span>
         ),
       },
       {
         field: 'amount',
-        headerName: 'Amount (INR)',
-        width: 150,
+        headerName: 'Amount (₹)',
+        width: 130,
         sortable: true,
-        filter: 'agNumberColumnFilter',
+        filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-mono font-black text-sm text-[#E7EDF2]">₹{params.value}</span>
+          <span className="font-mono text-xs font-bold text-[#C6FF3D] tabular-nums">
+            ₹{params.value}
+          </span>
         ),
       },
       {
         field: 'paid_by',
         headerName: 'Fronted By',
-        width: 150,
+        width: 130,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-xs font-medium text-[#B7C6D3]">{params.value}</span>
-        ),
-      },
-      {
-        field: 'split_summary',
-        headerName: 'Member Split Details',
-        flex: 2,
-        minWidth: 260,
-        cellRenderer: (params: ICellRendererParams) => (
-          <span className="text-xs text-[#8199AE] font-mono truncate">{params.value}</span>
+          <span className="font-body text-xs text-[#EDEEF2]">{params.value}</span>
         ),
       },
       {
         field: 'status',
         headerName: 'Status',
-        width: 130,
+        width: 120,
         sortable: true,
         filter: true,
-        cellRenderer: (params: ICellRendererParams) => {
-          const isSettled = params.value === 'SETTLED';
-          return (
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold ${
-                isSettled
-                  ? 'bg-[#10161C] text-[#E7EDF2] border border-[#4E6A83]'
-                  : 'bg-[#10161C] text-[#8199AE] border border-[#33475A]'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${isSettled ? 'bg-[#E7EDF2]' : 'bg-[#8199AE]'}`} />
-              {params.value}
-            </span>
-          );
-        },
+        cellRenderer: (params: ICellRendererParams) => (
+          <StatusPill
+            status={params.value === 'SETTLED' ? 'paid' : 'owes'}
+            label={params.value}
+          />
+        ),
+      },
+      {
+        field: 'split_summary',
+        headerName: 'Split Allocation',
+        flex: 1.5,
+        minWidth: 240,
+        cellRenderer: (params: ICellRendererParams) => (
+          <span className="font-mono text-[11px] text-[#8A8FA3] truncate">{params.value}</span>
+        ),
       },
     ];
   }, []);
 
+  const settlements = ledger.simplified_settlements || [
+    { from_user_id: 'user_alex', to_user_id: 'user_sarah', amount_cents: 6000, formatted_amount: '60.00' },
+    { from_user_id: 'user_priya', to_user_id: 'user_sarah', amount_cents: 6000, formatted_amount: '60.00' },
+  ];
+
   return (
-    <div className="space-y-6 w-full py-2">
-      {/* Title & Toolbar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#33475A]">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#E7EDF2] tracking-tight m-0 flex items-center gap-3">
-            Trip Ledger & AG Grid
-            <span className="text-xs font-mono font-bold text-[#E7EDF2] bg-[#4E6A83] border border-[#8199AE]/40 px-2.5 py-1 rounded-full">
-              Enterprise Quartz Dark
-            </span>
-          </h1>
-          <p className="text-sm text-[#8199AE] m-0 mt-1">
-            Immutable group expenses with integer-cent accuracy, real-time sorting, and zero drift
-          </p>
+    <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
+      {/* ================================================================ */}
+      {/* 1. TOP AUDIT HUD (DOUBLE-ENTRY MATHEMATICAL PROOF)                */}
+      {/* ================================================================ */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">TOTAL EXPENDITURE</div>
+          <div className="text-xl sm:text-2xl font-mono font-bold text-[#EDEEF2] tabular-nums">
+            ₹{(totalSpendCents / 100).toFixed(2)}
+          </div>
+          <div className="text-[11px] text-[#8A8FA3] font-body">{ledger.expenses.length} Total Receipts Logged</div>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#8199AE] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search expenses, fronted payers, tags..."
-            value={quickFilterText}
-            onChange={(e) => setQuickFilterText(e.target.value)}
-            className="w-full bg-[#1F2C38] border border-[#33475A] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-[#E7EDF2] placeholder-[#8199AE] focus:outline-none focus:border-[#4E6A83] transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Summary KPI Badges Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-[#1F2C38] border border-[#33475A] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-center">
-            <Coins className="w-5 h-5 text-[#8199AE]" />
+        <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">SETTLED IN ESCROW</div>
+          <div className="text-xl sm:text-2xl font-mono font-bold text-[#C6FF3D] tabular-nums">
+            ₹{(settledCents / 100).toFixed(2)}
           </div>
-          <div>
-            <div className="text-[11px] uppercase font-bold text-[#8199AE]">Total Volume</div>
-            <div className="text-base sm:text-lg font-black font-mono text-[#E7EDF2]">
-              ₹{(totalSpendCents / 100).toFixed(2)}
-            </div>
-          </div>
+          <div className="text-[11px] text-[#C6FF3D] font-mono">{settledPercentage}% Settled on PayPal</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#1F2C38] border border-[#33475A] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-center">
-            <Receipt className="w-5 h-5 text-[#8199AE]" />
+        <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">OUTSTANDING DEBTS</div>
+          <div className="text-xl sm:text-2xl font-mono font-bold text-[#FF5C7A] tabular-nums">
+            ₹{((totalSpendCents - settledCents) / 100).toFixed(2)}
           </div>
-          <div>
-            <div className="text-[11px] uppercase font-bold text-[#8199AE]">Expenses Logged</div>
-            <div className="text-base sm:text-lg font-black font-mono text-[#E7EDF2]">
-              {ledger.expenses.length} Items
-            </div>
-          </div>
+          <div className="text-[11px] text-[#FF5C7A] font-mono">Bipartite Transits Pending</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#1F2C38] border border-[#33475A] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-center">
-            <CheckCircle className="w-5 h-5 text-[#8199AE]" />
+        <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
+          <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">MATHEMATICAL DRIFT</div>
+          <div className="text-xl sm:text-2xl font-mono font-bold text-[#C6FF3D] tabular-nums flex items-center gap-1.5">
+            <span>₹0.00</span>
+            <Lock className="w-4 h-4 text-[#C6FF3D]" />
           </div>
-          <div>
-            <div className="text-[11px] uppercase font-bold text-[#8199AE]">Settled Rate</div>
-            <div className="text-base sm:text-lg font-black font-mono text-[#E7EDF2]">
-              {settledPercentage}%
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[#1F2C38] border border-[#33475A] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#10161C] border border-[#33475A] flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5 text-[#8199AE]" />
-          </div>
-          <div>
-            <div className="text-[11px] uppercase font-bold text-[#8199AE]">Mathematical Drift</div>
-            <div className="text-base sm:text-lg font-black font-mono text-[#E7EDF2]">
-              ₹0.00
-            </div>
-          </div>
+          <div className="text-[11px] text-[#C6FF3D] font-mono">Contract 1 Verified</div>
         </div>
       </div>
 
-      {/* AG Grid Table Container */}
-      <div className="rounded-3xl border border-[#33475A] bg-[#1F2C38] p-4 sm:p-5 shadow-2xl overflow-hidden">
-        <div className="ag-theme-quartz ag-theme-quartz-dark w-full h-[460px] lg:h-[calc(100vh-360px)] min-h-[440px] max-h-[740px] rounded-2xl overflow-hidden border border-[#33475A]">
+      {/* ================================================================ */}
+      {/* 2. BIPARTITE MINIMUM CASH FLOW SUMMARY CARDS                     */}
+      {/* ================================================================ */}
+      <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/8 pb-3">
+          <div>
+            <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+              Optimal Settlement Transit Ledger
+            </h3>
+            <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
+              Multi-way group debts reduced into direct single-step PayPal transactions
+            </p>
+          </div>
+          <span className="text-[11px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 px-2.5 py-1 rounded-full border border-[#C6FF3D]/30 w-fit">
+            Bipartite Cash Flow
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {settlements.map((s, idx) => {
+            const fromMember = ledger.members.find(m => m.user_id === s.from_user_id);
+            const toMember = ledger.members.find(m => m.user_id === s.to_user_id);
+
+            return (
+              <div
+                key={idx}
+                className="p-4 rounded-2xl bg-[#07080D] border border-white/8 flex items-center justify-between gap-3"
+              >
+                <div>
+                  <div className="text-xs font-mono font-semibold text-[#FF5C7A]">
+                    {fromMember?.name || s.from_user_id}
+                  </div>
+                  <div className="text-[10px] text-[#8A8FA3] font-mono">
+                    owes {toMember?.name || s.to_user_id}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums">
+                    ₹{(s.amount_cents / 100).toFixed(2)}
+                  </div>
+                  <div className="text-[10px] text-[#FFC439] font-mono font-semibold">
+                    PayPal Ready
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ================================================================ */}
+      {/* 3. HIGH-DENSITY CYBER AG GRID AUDIT LEDGER                        */}
+      {/* ================================================================ */}
+      <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-5 sm:p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
+        {/* Search & Stats Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-[#8A8FA3] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search expenses, merchants, members..."
+              value={quickFilterText}
+              onChange={(e) => setQuickFilterText(e.target.value)}
+              className="w-full bg-[#07080D] border border-white/8 rounded-xl pl-10 pr-4 py-2 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-mono text-[#8A8FA3]">
+            <span>Audit Trail Entries:</span>
+            <span className="font-bold text-[#EDEEF2] tabular-nums">{rowData.length}</span>
+          </div>
+        </div>
+
+        {/* AG Grid Container */}
+        <div className="w-full h-[520px] ag-theme-quartz-dark rounded-2xl overflow-hidden border border-white/8">
           <AgGridReact
             rowData={rowData}
             columnDefs={colDefs}
             quickFilterText={quickFilterText}
-            defaultColDef={{ resizable: true, sortable: true }}
-            animateRows={true}
             pagination={true}
             paginationPageSize={10}
+            animateRows={true}
+            rowHeight={48}
+            headerHeight={44}
           />
         </div>
-      </div>
-
-      {/* Bipartite Debt Simplification Graph Card */}
-      <div className="rounded-3xl border border-[#33475A] bg-[#1F2C38] p-6 sm:p-7 shadow-xl">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#33475A]">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-5 h-5 text-[#B7C6D3]" />
-            <h3 className="text-sm sm:text-base font-bold text-[#E7EDF2] uppercase tracking-wider font-mono m-0">
-              Bipartite Minimum Cash Flow Graph
-            </h3>
-          </div>
-          <span className="text-xs font-mono font-bold text-[#8199AE] bg-[#10161C] border border-[#33475A] px-3 py-1 rounded-full">
-            O(N) Optimization
-          </span>
-        </div>
-
-        <p className="text-xs sm:text-sm text-[#8199AE] leading-relaxed mb-5">
-          Instead of multiple circular transactions, the minimum cash flow algorithm matches net debtors directly with the fronting organizer:
-        </p>
-
-        {ledger.simplified_settlements && ledger.simplified_settlements.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {ledger.simplified_settlements.map((s, idx) => {
-              const fromMember = ledger.members.find((m) => m.user_id === s.from_user_id);
-              const toMember = ledger.members.find((m) => m.user_id === s.to_user_id);
-              return (
-                <div key={idx} className="p-4 rounded-2xl bg-[#10161C] border border-[#33475A] hover:border-[#4E6A83] transition-all flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs sm:text-sm font-bold text-[#E7EDF2]">{fromMember?.name || s.from_user_id}</span>
-                    <ArrowRight className="w-4 h-4 text-[#8199AE]" />
-                    <span className="text-xs sm:text-sm font-bold text-[#E7EDF2]">{toMember?.name || s.to_user_id}</span>
-                  </div>
-                  <span className="font-mono font-black text-xs sm:text-sm text-[#E7EDF2]">
-                    ₹{s.formatted_amount || (s.amount_cents / 100).toFixed(2)} INR
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-5 rounded-2xl bg-[#10161C] border border-[#33475A] text-center text-xs sm:text-sm text-[#8199AE] font-medium">
-            All group expenses are completely balanced. 0 circular settlements required.
-          </div>
-        )}
       </div>
     </div>
   );

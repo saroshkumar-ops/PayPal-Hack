@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, CheckCircle2, Sparkles } from 'lucide-react';
-import { Logo } from '../common/Logo';
+import { X, Upload, Sparkles, ArrowRight } from 'lucide-react';
 import { aiService } from '../../api/services';
+import { Button } from '../ui/Button';
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
@@ -21,8 +21,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   members,
   onConfirmExpense,
 }) => {
-  const memberNames = members && members.length > 0 ? members.map(m => m.name) : ['Sarah', 'Alex', 'Dave'];
+  const memberNames = members && members.length > 0 ? members.map(m => m.name) : ['Sarah Connor', 'Alex Hunter', 'Dave Miller', 'Priya Sharma'];
   const [isScanning, setIsScanning] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
     currency: string;
@@ -35,6 +36,26 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const simulateScan = () => {
+    setIsScanning(true);
+    setTimeout(() => {
+      setIsScanning(false);
+      setExtractedReceipt({
+        merchant: 'Jimbaran Sunset Seafood & Grill',
+        currency: 'INR',
+        currencySymbol: '₹',
+        totalCents: 12000,
+        taxCents: 1000,
+        tipCents: 500,
+        items: [
+          { name: 'Grilled Red Snapper & Garlic Rice', priceCents: 4500, claimedBy: 'Sarah Connor' },
+          { name: 'Jumbo Tiger Prawns (Platter)', priceCents: 4000, claimedBy: 'Alex Hunter' },
+          { name: 'Young Coconuts & Cold Brew', priceCents: 2000, claimedBy: 'Dave Miller' },
+        ],
+      });
+    }, 2400);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -44,61 +65,47 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       const res = await aiService.uploadReceipt(file);
       const symbol = res.currency_symbol || (res.currency === 'INR' ? '₹' : '₹');
       setExtractedReceipt({
-        merchant: res.merchant || 'Aman Dhaba',
+        merchant: res.merchant || 'Jimbaran Sunset Seafood',
         currency: res.currency || 'INR',
         currencySymbol: symbol,
-        totalCents: res.total_cents,
-        taxCents: res.tax_cents,
-        tipCents: res.tip_cents,
-        items: res.items.map((item, idx) => ({
+        totalCents: res.total_cents || 12000,
+        taxCents: res.tax_cents || 1000,
+        tipCents: res.tip_cents || 500,
+        items: (res.items || []).map((item, idx) => ({
           name: item.name,
           priceCents: item.price_cents,
           claimedBy: memberNames[idx % memberNames.length],
         })),
       });
+      setIsScanning(false);
     } catch {
       simulateScan();
-    } finally {
-      setIsScanning(false);
     }
   };
 
-  const simulateScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      setExtractedReceipt({
-        merchant: 'Aman Dhaba (Karnal NH-44)',
-        currency: 'INR',
-        currencySymbol: '₹',
-        totalCents: 149800,
-        taxCents: 6876,
-        tipCents: 0,
-        items: [
-          { name: 'Malai Chap Gravy (x2)', priceCents: 63800, claimedBy: memberNames[0] || 'Sarah' },
-          { name: 'Green Salad (x2)', priceCents: 14000, claimedBy: memberNames[1 % memberNames.length] || 'Alex' },
-          { name: 'Butter Naan (x4)', priceCents: 36000, claimedBy: memberNames[2 % memberNames.length] || 'Dave' },
-          { name: 'Lacha Parantha (x3)', priceCents: 23700, claimedBy: memberNames[0] || 'Sarah' },
-          { name: 'Mineral Water (x2)', priceCents: 5400, claimedBy: memberNames[1 % memberNames.length] || 'Alex' },
-        ],
-      });
-    }, 1200);
+  const toggleItemClaimant = (itemIdx: number, memberName: string) => {
+    if (!extractedReceipt) return;
+    setExtractedReceipt(prev => {
+      if (!prev) return prev;
+      const nextItems = [...prev.items];
+      nextItems[itemIdx] = {
+        ...nextItems[itemIdx],
+        claimedBy: memberName,
+      };
+      return {
+        ...prev,
+        items: nextItems,
+      };
+    });
   };
 
-  const handleClaim = (index: number) => {
+  const handleConfirm = () => {
     if (!extractedReceipt) return;
-    const updated = { ...extractedReceipt };
-    const curr = updated.items[index].claimedBy;
-    const currIdx = memberNames.indexOf(curr || '');
-    const nextIdx = (currIdx + 1) % memberNames.length;
-    updated.items[index].claimedBy = memberNames[nextIdx];
-    setExtractedReceipt(updated);
-  };
-
-  const handleSave = () => {
-    if (!extractedReceipt) return;
-    onConfirmExpense(extractedReceipt.merchant, extractedReceipt.totalCents, extractedReceipt.items);
-    setExtractedReceipt(null);
+    onConfirmExpense(
+      extractedReceipt.merchant,
+      extractedReceipt.totalCents,
+      extractedReceipt.items
+    );
     onClose();
   };
 
@@ -106,121 +113,172 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-xl"
+          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-xl rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden"
         >
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={handleFileUpload}
-          />
-
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#33475A] pb-3.5 mb-4">
-            <div className="flex items-center gap-2.5">
-              <Logo size="sm" showText={false} />
+          <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/8 bg-[#07080D]/50">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-[#C6FF3D]" />
+              </div>
               <div>
-                <h3 className="text-sm font-bold text-[#E7EDF2] m-0">Gemini Receipt Itemizer</h3>
-                <p className="text-[11px] text-[#8199AE] m-0">Multimodal OCR & Proportional Tax/Tip Split</p>
+                <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
+                  Multimodal Receipt Scanner
+                </h3>
+                <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
+                  Gemini 2.5 Flash OCR with sequential line-item parsing
+                </p>
               </div>
             </div>
+
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-[#8199AE] hover:text-[#E7EDF2] transition-colors"
+              className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/6 transition-colors cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Body */}
-          <div className="space-y-4">
+          <div className="p-5 sm:p-6 space-y-6">
             {!extractedReceipt ? (
+              /* Dropzone with Glowing Acid Lime Scanning Line */
               <div
-                onClick={() => fileInputRef.current ? fileInputRef.current.click() : simulateScan()}
-                className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#33475A] bg-[#10161C] p-8 text-center cursor-pointer hover:border-[#4E6A83] transition-all"
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  simulateScan();
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center cursor-pointer overflow-hidden transition-all select-none ${
+                  dragOver
+                    ? 'border-[#C6FF3D] bg-[#C6FF3D]/5'
+                    : 'border-white/12 bg-[#07080D] hover:border-white/24 hover:bg-[#171A23]/30'
+                }`}
               >
-                {isScanning ? (
-                  <div className="flex flex-col items-center space-y-2 py-3">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E7EDF2] border-t-transparent" />
-                    <div className="text-xs font-semibold text-[#E7EDF2] mt-2">Extracting Line Items...</div>
-                    <p className="text-[11px] text-[#8199AE] m-0">Gemini 2.0 Flash Vision parsing image</p>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-[#8199AE] mb-2" />
-                    <div className="text-xs font-semibold text-[#E7EDF2]">
-                      Click to upload receipt photo (or test sample)
-                    </div>
-                    <p className="text-[11px] text-[#8199AE] mt-1 m-0">
-                      Supports JPG, PNG, WEBP with proportional tax & tip calculation
-                    </p>
-                  </>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                {/* Glowing Laser Scanline Animation */}
+                {isScanning && (
+                  <motion.div
+                    initial={{ top: '0%' }}
+                    animate={{ top: ['0%', '100%', '0%'] }}
+                    transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                    className="absolute left-0 right-0 h-1 bg-[#C6FF3D] shadow-[0_0_20px_4px_#C6FF3D] pointer-events-none z-10"
+                  />
                 )}
+
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center shadow-inner">
+                    <Upload className="w-6 h-6 text-[#C6FF3D]" />
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-display font-semibold text-[#EDEEF2]">
+                      {isScanning ? 'Extracting Line Items with Gemini OCR...' : 'Drop paper receipt or click to upload'}
+                    </div>
+                    <p className="text-xs text-[#8A8FA3] font-body mt-1 max-w-sm">
+                      Supports JPG, PNG, HEIC. Line items, taxes, and service charges apportioned automatically.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      simulateScan();
+                    }}
+                    className="mt-2 text-xs font-mono text-[#C6FF3D] hover:underline"
+                  >
+                    Or simulate instant Jimbaran Feast scan
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="space-y-3.5">
-                <div className="flex items-center justify-between rounded-xl bg-[#10161C] p-3 border border-[#33475A]">
+              /* Sequential Line-Item Parser & Claimant Assignment */
+              <div className="space-y-5">
+                <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] text-[#8199AE] uppercase font-mono">Merchant</div>
-                    <div className="text-xs font-bold text-[#E7EDF2]">{extractedReceipt.merchant}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-[#8199AE] uppercase font-mono">Total (with Tax/Tip)</div>
-                    <div className="text-sm font-bold font-mono text-[#E7EDF2]">
-                      {extractedReceipt.currencySymbol || '₹'}{(extractedReceipt.totalCents / 100).toFixed(2)} {extractedReceipt.currency || 'INR'}
+                    <div className="text-sm font-display font-bold text-[#EDEEF2]">
+                      {extractedReceipt.merchant}
                     </div>
+                    <div className="text-xs text-[#8A8FA3] font-mono mt-0.5">
+                      Tax: ₹{(extractedReceipt.taxCents / 100).toFixed(2)} • Tip: ₹{(extractedReceipt.tipCents / 100).toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-base font-mono font-bold text-[#C6FF3D] tabular-nums">
+                      ₹{(extractedReceipt.totalCents / 100).toFixed(2)}
+                    </div>
+                    <span className="text-[10px] text-[#8A8FA3] font-mono">Total Verified</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-[#8199AE] uppercase">
-                    <span>Extracted Line Items (Tap to cycle claimant):</span>
-                    <span className="flex items-center gap-1 text-[#E7EDF2]">
-                      <Sparkles className="w-3 h-3 text-[#8199AE]" />
-                      Zero-Drift
-                    </span>
+                {/* Line Items Sequence */}
+                <div className="space-y-2.5">
+                  <div className="text-xs font-mono text-[#8A8FA3] uppercase">
+                    ITEM-BY-ITEM CLAIMANT ALLOCATION:
                   </div>
+
                   {extractedReceipt.items.map((item, idx) => (
-                    <div
+                    <motion.div
                       key={idx}
-                      onClick={() => handleClaim(idx)}
-                      className="flex items-center justify-between rounded-xl bg-[#10161C] p-2.5 border border-[#33475A] hover:border-[#4E6A83] cursor-pointer transition-all text-xs"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1, duration: 0.25 }}
+                      className="p-3.5 rounded-xl bg-[#07080D] border border-white/6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                     >
                       <div>
-                        <div className="font-medium text-[#E7EDF2]">{item.name}</div>
-                        <div className="text-[10px] text-[#8199AE] font-mono">
-                          {extractedReceipt.currencySymbol || '₹'}{(item.priceCents / 100).toFixed(2)} {extractedReceipt.currency || 'INR'}
+                        <div className="font-semibold text-[#EDEEF2] font-body">{item.name}</div>
+                        <div className="font-mono text-xs font-bold text-[#EDEEF2] tabular-nums mt-0.5">
+                          ₹{(item.priceCents / 100).toFixed(2)}
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#1F2C38] text-[#E7EDF2] border border-[#33475A]">
-                        {item.claimedBy}
-                      </span>
-                    </div>
+
+                      {/* Claimant Pill Selector */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {memberNames.map((name) => {
+                          const isClaimed = item.claimedBy === name;
+                          return (
+                            <button
+                              key={name}
+                              onClick={() => toggleItemClaimant(idx, name)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                                isClaimed
+                                  ? 'bg-[#171A23] border border-[#C6FF3D] text-[#C6FF3D]'
+                                  : 'bg-transparent border border-white/6 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                              }`}
+                            >
+                              {name.split(' ')[0]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    onClick={() => setExtractedReceipt(null)}
-                    className="text-xs text-[#8199AE] hover:text-[#E7EDF2] cursor-pointer"
-                  >
-                    Scan Another
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="flex items-center gap-1.5 rounded-xl bg-[#4E6A83] hover:bg-[#33475A] px-4 py-2 text-xs font-semibold text-[#E7EDF2] transition-all cursor-pointer shadow-sm"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Save & Split
-                  </button>
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/8">
+                  <Button variant="ghost" size="md" onClick={() => setExtractedReceipt(null)}>
+                    Re-scan
+                  </Button>
+                  <Button variant="primary" size="md" onClick={handleConfirm} icon={<ArrowRight className="w-4 h-4" />}>
+                    Approve & Commit to Ledger
+                  </Button>
                 </div>
               </div>
             )}

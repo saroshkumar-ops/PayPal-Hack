@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, X, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, X } from 'lucide-react';
 import type { Member } from '../../types';
-import { Logo } from '../common/Logo';
+import { Button } from '../ui/Button';
 
 interface PayoutModalProps {
   isOpen: boolean;
@@ -27,85 +27,77 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-[#33475A] bg-[#1F2C38] p-5 sm:p-6 shadow-xl"
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-md rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#33475A]">
+          <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/8 bg-[#07080D]/50">
             <div className="flex items-center gap-2.5">
-              <Logo size="sm" showText={false} />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FFC439]" />
               <div>
-                <h3 className="text-sm font-bold text-[#E7EDF2] m-0">Confirm Batch Payout</h3>
-                <p className="text-[11px] text-[#8199AE] m-0">Human-in-the-Loop Organizer Authorization</p>
+                <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
+                  Confirm Batch Payout
+                </h3>
+                <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
+                  Human-in-the-Loop Organizer Authorization
+                </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-[#8199AE] hover:text-[#E7EDF2] transition-colors"
+              className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/6 transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Details Card */}
-          <div className="p-4 rounded-xl bg-[#10161C] border border-[#33475A] space-y-2.5 mb-4 text-xs font-mono">
-            <div className="flex justify-between items-center text-[#8199AE]">
-              <span>Beneficiary:</span>
-              <span className="text-[#E7EDF2] font-sans font-semibold">{organizer.name} ({organizer.handle})</span>
+          <div className="p-5 sm:p-6 space-y-5">
+            {/* Beneficiary Breakdown */}
+            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2.5 text-xs font-mono">
+              <div className="flex justify-between items-center text-[#8A8FA3]">
+                <span>Beneficiary:</span>
+                <span className="text-[#EDEEF2] font-body font-semibold">{organizer.name} ({organizer.handle})</span>
+              </div>
+              <div className="flex justify-between items-center text-[#8A8FA3]">
+                <span>PayPal Account:</span>
+                <span className="text-[#C6FF3D] truncate max-w-[180px]">{organizer.paypal_email}</span>
+              </div>
+              <div className="flex justify-between items-center text-[#8A8FA3]">
+                <span>Disbursement Amount:</span>
+                <span className="text-base font-bold text-[#EDEEF2] tabular-nums">
+                  ₹{formattedAmount}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-[#8A8FA3]">
+                <span>PayPal Fee:</span>
+                <span className="text-[#C6FF3D]">₹0.00 (Zero Fee)</span>
+              </div>
             </div>
 
-            <div className="flex justify-between items-center text-[#8199AE]">
-              <span>PayPal Sandbox Email:</span>
-              <span className="text-[#E7EDF2]">{organizer.paypal_email}</span>
-            </div>
-
-            <div className="flex justify-between items-center text-[#8199AE]">
-              <span>Net Reimbursement:</span>
-              <span className="font-bold text-sm text-[#E7EDF2]">₹{formattedAmount} INR</span>
-            </div>
-
-            <div className="flex justify-between items-center text-[#8199AE] pt-2 border-t border-[#33475A] text-[10px]">
-              <span>API Method:</span>
-              <span className="text-[#8199AE]">POST /v1/payments/payouts</span>
-            </div>
-
-            <div className="flex justify-between items-center text-[#8199AE] text-[10px]">
-              <span>Idempotency Key:</span>
-              <span className="text-[#8199AE] truncate max-w-[180px]">
-                UUIDv4-idemp-{Date.now().toString().slice(-8)}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#10161C] border border-[#33475A] mb-5">
-            <CheckCircle2 className="h-4 w-4 text-[#8199AE] mt-0.5 shrink-0" />
-            <p className="text-[11px] text-[#B7C6D3] m-0 leading-relaxed font-sans">
-              Reimburses Sarah Chen via PayPal Batch Payouts API and settles remaining trip splits across the ledger.
+            <p className="text-xs text-[#8A8FA3] font-body leading-relaxed m-0">
+              Disburses pooled escrow balances collected from debtor checkouts directly to {organizer.name}'s PayPal account via PayPal Batch Payouts API v1.
             </p>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5">
-            <button
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8199AE] hover:text-[#E7EDF2] hover:bg-[#33475A]/40 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[#4E6A83] hover:bg-[#33475A] text-[#E7EDF2] transition-all cursor-pointer disabled:opacity-50 shadow-sm"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              {isLoading ? 'Executing Payout...' : 'Confirm & Disburse'}
-            </button>
+            <div className="flex items-center gap-3 pt-2">
+              <Button variant="ghost" size="md" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                variant="paypal"
+                size="md"
+                onClick={onConfirm}
+                disabled={isLoading}
+                icon={<ShieldCheck className="w-4 h-4" />}
+                className="flex-1 text-xs sm:text-sm font-display font-bold"
+              >
+                {isLoading ? 'Disbursing...' : 'Authorize Payout'}
+              </Button>
+            </div>
           </div>
         </motion.div>
       </div>
