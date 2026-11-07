@@ -6,25 +6,27 @@ import {
   ReceiptText, 
   CreditCard, 
   Clock, 
-  Sparkles,
-  Maximize2,
-  Minimize2
+  Users,
+  Maximize2, 
+  Minimize2 
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
 
 interface NavbarProps {
+  tripName?: string;
   hoursElapsed: number;
   isBackendConnected: boolean;
   onOpenReceiptModal: () => void;
-  onSeedDemo?: () => void;
+  onNewParty?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  tripName,
   hoursElapsed,
   isBackendConnected,
   onOpenReceiptModal,
-  onSeedDemo,
+  onNewParty,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -54,96 +56,101 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <>
-      {/* Top Cyber Ledger Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/8 bg-[#07080D]/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
-        <div className="w-full flex items-center justify-between gap-3">
-          {/* Brand Identity */}
-          <div className="flex items-center gap-3">
-            <NavLink to="/" className="no-underline flex items-center">
-              <Logo size="md" />
-            </NavLink>
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b border-white/8 bg-[#07080D]/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
+      <div className="w-full flex items-center justify-between gap-3">
+        {/* Brand Identity & Active Party Name */}
+        <div className="flex items-center gap-3">
+          <NavLink to="/" className="no-underline flex items-center">
+            <Logo size="md" />
+          </NavLink>
 
-          {/* Desktop Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#0F1117] border border-white/8">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all no-underline ${
-                    isActive
-                      ? 'bg-[#171A23] text-[#C6FF3D] font-semibold border border-white/8 shadow-sm'
-                      : 'text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/4'
-                  }`
-                }
-              >
-                {link.icon}
-                <span>{link.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Actions & Utilities */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Quick Demo Seeder Button */}
-            {onSeedDemo && (
-              <button
-                onClick={onSeedDemo}
-                title="Reset showcase trip with 4 members, 2 expenses, and double-entry settlements"
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Seed Demo</span>
-              </button>
-            )}
-
-            {/* Scan Receipt Action Button */}
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onOpenReceiptModal}
-              icon={<ReceiptText className="w-3.5 h-3.5" />}
-              className="text-xs font-display font-semibold"
-            >
-              Scan Receipt
-            </Button>
-
-            {/* Virtual Time Advance Pill */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs text-[#EDEEF2] font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#8A8FA3]" />
-              <span className="tabular-nums">+{hoursElapsed}h</span>
+          {tripName && (
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1117] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
+              <span className="text-[#8A8FA3]">Party:</span>
+              <span className="font-semibold truncate max-w-[140px]">{tripName}</span>
             </div>
-
-            {/* Backend Connectivity Status */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isBackendConnected ? 'bg-[#C6FF3D] shadow-[0_0_8px_#C6FF3D]' : 'bg-[#FF5C7A]'
-                }`}
-              />
-              <span className="text-[#8A8FA3]">
-                {isBackendConnected ? 'Core Live' : 'Offline'}
-              </span>
-            </div>
-
-            {/* PC Fullscreen Mode Button */}
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
-              className="flex items-center justify-center p-2 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
-              aria-label="Toggle Fullscreen"
-            >
-              {isFullscreen ? (
-                <Minimize2 className="w-3.5 h-3.5" />
-              ) : (
-                <Maximize2 className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </div>
+          )}
         </div>
-      </header>
-    </>
+
+        {/* Desktop Navigation Tabs */}
+        <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#0F1117] border border-white/8">
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all no-underline ${
+                  isActive
+                    ? 'bg-[#171A23] text-[#C6FF3D] font-semibold border border-white/8 shadow-sm'
+                    : 'text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/4'
+                }`
+              }
+            >
+              {link.icon}
+              <span>{link.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Actions & Utilities */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* New Party Action Button */}
+          {onNewParty && (
+            <button
+              onClick={onNewParty}
+              title="Create a new party and group ledger"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
+            >
+              <Users className="w-3.5 h-3.5 text-[#C6FF3D]" />
+              <span>New Party</span>
+            </button>
+          )}
+
+          {/* Scan Receipt Action Button */}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onOpenReceiptModal}
+            icon={<ReceiptText className="w-3.5 h-3.5" />}
+            className="text-xs font-display font-semibold"
+          >
+            Scan Receipt
+          </Button>
+
+          {/* Virtual Time Advance Pill */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs text-[#EDEEF2] font-mono">
+            <Clock className="w-3.5 h-3.5 text-[#8A8FA3]" />
+            <span className="tabular-nums">+{hoursElapsed}h</span>
+          </div>
+
+          {/* Backend Connectivity Status */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isBackendConnected ? 'bg-[#C6FF3D] shadow-[0_0_8px_#C6FF3D]' : 'bg-[#FF5C7A]'
+              }`}
+            />
+            <span className="text-[#8A8FA3]">
+              {isBackendConnected ? 'Core Live' : 'Offline'}
+            </span>
+          </div>
+
+          {/* Fullscreen Mode Button */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
+            className="flex items-center justify-center p-2 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
+            aria-label="Toggle Fullscreen"
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+    </header>
   );
 };

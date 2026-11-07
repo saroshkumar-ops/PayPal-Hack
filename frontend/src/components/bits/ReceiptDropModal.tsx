@@ -23,7 +23,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 }) => {
   const memberNames = members && members.length > 0 
     ? members.map(m => m.name) 
-    : ['Sarah Connor', 'Alex Hunter', 'Dave Miller', 'Priya Sharma'];
+    : [];
 
   const [isScanning, setIsScanning] = useState(false);
   const [dragOver, setDragOver] = useState(false);

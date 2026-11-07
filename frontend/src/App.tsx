@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
@@ -7,6 +7,7 @@ import { OverviewPage } from './pages/OverviewPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LedgerPage } from './pages/LedgerPage';
 import { PayoutsPage } from './pages/PayoutsPage';
+import { PartyOnboarding } from './components/party/PartyOnboarding';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
@@ -20,14 +21,17 @@ import {
   chatService, 
   simulatorService, 
   paymentService, 
-  demoService,
   checkHealth 
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog } from './types';
-import { INITIAL_LEDGER } from './api/mockData';
+import { EMPTY_LEDGER } from './api/mockData';
 
 export function App() {
-  const [ledger, setLedger] = useState<TripLedger>(INITIAL_LEDGER);
+  const [activeTripId, setActiveTripId] = useState<string | null>(() => {
+    return localStorage.getItem('active_trip_id');
+  });
+
+  const [ledger, setLedger] = useState<TripLedger>(EMPTY_LEDGER);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [paypalLogs, setPaypalLogs] = useState<PayPalEventLog[]>([]);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
@@ -47,44 +51,14 @@ export function App() {
     expenseId?: string;
   }>({
     isOpen: false,
-    debtorName: 'Alex Hunter',
-    debtorHandle: '@alex_travels',
-    creditorName: 'Sarah Connor',
-    description: 'Sunset Cliffside Villa Deposit Share',
-    amountCents: 6000,
-    userId: 'user_alex',
-    expenseId: 'exp_villa_demo_01',
+    debtorName: '',
+    debtorHandle: '',
+    creditorName: '',
+    description: '',
+    amountCents: 0,
+    userId: '',
+    expenseId: undefined,
   });
-
-  // Load data on startup
-  useEffect(() => {
-    loadData();
-    checkBackend();
-    const interval = setInterval(checkBackend, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkBackend = async () => {
-    const health = await checkHealth();
-    setIsBackendConnected(health.backend);
-  };
-
-  const loadData = async () => {
-    try {
-      await ledgerService.autoBootstrapTrip('trip_bali_2026');
-
-      const [currLedger, currMessages, currLogs] = await Promise.all([
-        ledgerService.getLedger('trip_bali_2026'),
-        chatService.getMessages('trip_bali_2026'),
-        paymentService.getLogs(),
-      ]);
-      setLedger(currLedger);
-      setMessages(currMessages);
-      setPaypalLogs(currLogs);
-    } catch (err) {
-      console.warn('Initial data load falling back to local state:', err);
-    }
-  };
 
   const triggerCelebrationConfetti = () => {
     confetti({
@@ -95,30 +69,75 @@ export function App() {
     });
   };
 
-  // Seed showcase demo trip (Sarah, Alex, Dave, Priya)
-  const handleSeedDemo = async () => {
-    setIsLoading(true);
-    try {
-      const res = await demoService.seedDemo();
-      if (res && res.ledger) {
-        setLedger(res.ledger);
-      } else {
-        await loadData();
-      }
-      triggerCelebrationConfetti();
-    } catch (err) {
-      console.error('Failed to trigger demo seed:', err);
-      await loadData();
-    } finally {
-      setIsLoading(false);
-    }
+  const checkBackend = async () => {
+    const health = await checkHealth();
+    setIsBackendConnected(health.backend);
   };
+
+  const loadData = useCallback(async (tripIdToLoad?: string) => {
+    const targetTripId = tripIdToLoad || activeTripId;
+    if (!targetTripId) return;
+
+    try {
+      const [currLedger, currMessages, currLogs] = await Promise.all([
+        ledgerService.getLedger(targetTripId),
+        chatService.getMessages(targetTripId),
+        paymentService.getLogs(),
+      ]);
+
+      if (currLedger && currLedger.members && currLedger.members.length > 0) {
+        setLedger(currLedger);
+        setMessages(currMessages);
+        setPaypalLogs(currLogs);
+      } else {
+        // Trip does not exist or has no members
+        setLedger(EMPTY_LEDGER);
+      }
+    } catch (err) {
+      console.warn('Data load error:', err);
+    }
+  }, [activeTripId]);
+
+  // Check health and load initial trip if exists
+  useEffect(() => {
+    checkBackend();
+    const interval = setInterval(checkBackend, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (activeTripId) {
+      loadData(activeTripId);
+    }
+  }, [activeTripId, loadData]);
+
+  // Handle new party creation from onboarding
+  const handlePartyCreated = (newLedger: TripLedger, newTripId: string) => {
+    localStorage.setItem('active_trip_id', newTripId);
+    setActiveTripId(newTripId);
+    setLedger(newLedger);
+    triggerCelebrationConfetti();
+  };
+
+  // Reset/switch to new party
+  const handleCreateNewParty = () => {
+    localStorage.removeItem('active_trip_id');
+    setActiveTripId(null);
+    setLedger(EMPTY_LEDGER);
+    setMessages([]);
+  };
+
+  const currentTripId = ledger.trip_id || activeTripId || '';
+  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
+  const organizerId = organizer?.user_id || 'organizer';
+  const organizerOwedCents = organizer ? Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0) : 0;
 
   // Chat message send
   const handleSendMessage = async (text: string) => {
+    if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await chatService.sendMessage('trip_bali_2026', text, 'user_sarah');
+      await chatService.sendMessage(currentTripId, text, organizerId);
       await loadData();
     } finally {
       setIsLoading(false);
@@ -127,9 +146,10 @@ export function App() {
 
   // Advance virtual time +24h
   const handleAdvanceTime = async (hours: number = 24) => {
+    if (!currentTripId) return;
     setIsLoading(true);
     try {
-      const res = await simulatorService.advanceTime('trip_bali_2026', hours);
+      const res = await simulatorService.advanceTime(currentTripId, hours);
       await loadData();
       return res;
     } finally {
@@ -140,26 +160,27 @@ export function App() {
   // Open Checkout Drawer
   const handleOpenCheckout = (userId: string, amountCents: number, expenseId?: string) => {
     const debtor = ledger.members.find((m) => m.user_id === userId);
-    const creditor = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
+    const creditor = organizer;
 
     setCheckoutDrawer({
       isOpen: true,
-      debtorName: debtor ? debtor.name : 'Alex Hunter',
-      debtorHandle: debtor ? debtor.handle : '@alex_travels',
-      creditorName: creditor ? creditor.name : 'Sarah Connor',
+      debtorName: debtor ? debtor.name : 'Party Member',
+      debtorHandle: debtor ? debtor.handle : '@member',
+      creditorName: creditor ? creditor.name : 'Organizer',
       description: 'Trip Settlement via PayPal Escrow',
       amountCents: amountCents,
       userId: userId,
-      expenseId: expenseId || 'exp_villa_demo_01',
+      expenseId: expenseId,
     });
   };
 
   // Execute payment settlement
   const handleExecutePayment = async () => {
+    if (!currentTripId) return;
     setIsLoading(true);
     try {
       await paymentService.captureDebtorSplit(
-        'trip_bali_2026',
+        currentTripId,
         checkoutDrawer.userId,
         checkoutDrawer.amountCents,
         checkoutDrawer.expenseId
@@ -178,10 +199,11 @@ export function App() {
     amountCents: number,
     items?: { name: string; priceCents: number; claimedBy?: string }[]
   ) => {
+    if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await expenseService.createExpense('trip_bali_2026', {
-        paid_by: 'user_sarah',
+      await expenseService.createExpense(currentTripId, {
+        paid_by: organizerId,
         amount_cents: amountCents,
         description: description,
         category: 'FOOD',
@@ -197,9 +219,10 @@ export function App() {
 
   // Confirm Payout
   const handleConfirmPayout = async () => {
+    if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await paymentService.confirmBatchPayout('trip_bali_2026');
+      await paymentService.confirmBatchPayout(currentTripId);
       await loadData();
       setIsPayoutModalOpen(false);
       triggerCelebrationConfetti();
@@ -208,8 +231,19 @@ export function App() {
     }
   };
 
-  const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0];
-  const organizerOwedCents = Math.max(0, ledger.net_balances_cents[organizer.user_id] || 0);
+  // If no party has been created yet, show Party Onboarding
+  if (!activeTripId || !ledger.trip_id || ledger.members.length === 0) {
+    return (
+      <LenisProvider>
+        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-[#C6FF3D]/20 selection:text-[#C6FF3D] relative justify-center">
+          <CyberBackground />
+          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center items-center z-10">
+            <PartyOnboarding onPartyCreated={handlePartyCreated} />
+          </main>
+        </div>
+      </LenisProvider>
+    );
+  }
 
   return (
     <LenisProvider>
@@ -220,10 +254,11 @@ export function App() {
 
           {/* Top Cyber Ledger Navbar */}
           <Navbar
+            tripName={ledger.trip_name || ledger.name}
             hoursElapsed={ledger.hours_elapsed}
             isBackendConnected={isBackendConnected}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
-            onSeedDemo={handleSeedDemo}
+            onNewParty={handleCreateNewParty}
           />
 
           {/* Multi-Page Routes */}
@@ -278,13 +313,20 @@ export function App() {
               <span className="font-display font-medium text-[#EDEEF2]">
                 TripSheriff <span className="text-[#C6FF3D] font-mono text-[10px]">CYBER LEDGER</span>
               </span>
-              <span className="font-mono text-[11px] text-[#8A8FA3]">
-                PayPal AI Hackathon 2026 • Deterministic Zero-Drift Treasury • Spring Boot & Gemini
-              </span>
+              <div className="flex items-center gap-3 font-mono text-[11px]">
+                <button
+                  onClick={handleCreateNewParty}
+                  className="text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
+                >
+                  Create New Party
+                </button>
+                <span>•</span>
+                <span>Active Party: {ledger.trip_name || ledger.name}</span>
+              </div>
             </div>
           </footer>
 
-          {/* Drawers & Modals */}
+          {/* Checkout & Settlement Drawers */}
           <PayPalCheckoutDrawer
             isOpen={checkoutDrawer.isOpen}
             onClose={() => setCheckoutDrawer((prev) => ({ ...prev, isOpen: false }))}
@@ -296,14 +338,16 @@ export function App() {
             onConfirmPayment={handleExecutePayment}
           />
 
-          <PayoutModal
-            isOpen={isPayoutModalOpen}
-            onClose={() => setIsPayoutModalOpen(false)}
-            onConfirm={handleConfirmPayout}
-            organizer={organizer}
-            amountCents={organizerOwedCents}
-            isLoading={isLoading}
-          />
+          {organizer && (
+            <PayoutModal
+              isOpen={isPayoutModalOpen}
+              onClose={() => setIsPayoutModalOpen(false)}
+              onConfirm={handleConfirmPayout}
+              organizer={organizer}
+              amountCents={organizerOwedCents}
+              isLoading={isLoading}
+            />
+          )}
 
           <ReceiptDropModal
             isOpen={isReceiptModalOpen}
