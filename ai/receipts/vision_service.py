@@ -254,9 +254,9 @@ class ReceiptVisionService:
 
         models_to_try = [
             settings.GEMINI_MODEL,
-            "gemini-3.5-flash",
-            "gemini-3-flash-preview",
-            "gemini-flash-latest"
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash"
         ]
 
         last_error = None

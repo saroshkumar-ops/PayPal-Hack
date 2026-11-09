@@ -586,8 +586,11 @@ export const aiService = {
     try {
       const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_PARSE, req, { timeout: 60000 });
       return res.data;
-    } catch (err) {
-      console.error('[aiService.parseReceipt] Failed, using fallback:', err);
+    } catch (err: any) {
+      console.error('[aiService.parseReceipt] Failed:', err);
+      if (err?.code !== 'ERR_NETWORK' && err?.code !== 'ECONNABORTED' && err?.response) {
+        throw err;
+      }
       return {
         status: 'SUCCESS',
         merchant: 'Aman Dhaba (Karnal NH-44)',
@@ -624,8 +627,11 @@ export const aiService = {
         timeout: 60000,
       });
       return res.data;
-    } catch (err) {
-      console.error('[aiService.uploadReceipt] Failed, using fallback:', err);
+    } catch (err: any) {
+      console.error('[aiService.uploadReceipt] Failed:', err);
+      if (err?.code !== 'ERR_NETWORK' && err?.code !== 'ECONNABORTED' && err?.response) {
+        throw err;
+      }
       return {
         status: 'SUCCESS',
         merchant: 'Aman Dhaba (Karnal NH-44)',
