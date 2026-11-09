@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export type StatusVariant = 'paid' | 'owes' | 'pending' | 'escrow' | 'active' | 'organizer';
+export type StatusVariant = 'paid' | 'owes' | 'pending' | 'active' | 'organizer';
 
 export interface StatusPillProps {
   status: StatusVariant;
@@ -21,78 +21,66 @@ export const StatusPill: React.FC<StatusPillProps> = ({
     { bg: string; text: string; border: string; dot: string; defaultLabel: string }
   > = {
     paid: {
-      bg: 'bg-[#C6FF3D]/10',
-      text: 'text-[#C6FF3D]',
-      border: 'border-[#C6FF3D]/30',
-      dot: 'bg-[#C6FF3D]',
+      bg: 'bg-[var(--settled)]/10',
+      text: 'text-[var(--settled)]',
+      border: 'border-[var(--settled)]/30',
+      dot: 'bg-[var(--settled)]',
       defaultLabel: 'Settled',
     },
     owes: {
-      bg: 'bg-[#FF5C7A]/10',
-      text: 'text-[#FF5C7A]',
-      border: 'border-[#FF5C7A]/30',
-      dot: 'bg-[#FF5C7A]',
+      bg: 'bg-[var(--owes)]/10',
+      text: 'text-[var(--owes)]',
+      border: 'border-[var(--owes)]/30',
+      dot: 'bg-[var(--owes)]',
       defaultLabel: 'Owes',
     },
     pending: {
       bg: 'bg-white/5',
-      text: 'text-[#8A8FA3]',
-      border: 'border-white/10',
-      dot: 'bg-[#8A8FA3]',
+      text: 'text-[var(--muted)]',
+      border: 'border-[var(--border)]',
+      dot: 'bg-[var(--muted)]',
       defaultLabel: 'Pending',
     },
-    escrow: {
-      bg: 'bg-[#FFC439]/10',
-      text: 'text-[#FFC439]',
-      border: 'border-[#FFC439]/30',
-      dot: 'bg-[#FFC439]',
-      defaultLabel: 'In Escrow',
-    },
     active: {
-      bg: 'bg-[#C6FF3D]/10',
-      text: 'text-[#C6FF3D]',
-      border: 'border-[#C6FF3D]/30',
-      dot: 'bg-[#C6FF3D]',
-      defaultLabel: 'Live',
+      bg: 'bg-white/5',
+      text: 'text-[var(--text)]',
+      border: 'border-white/20',
+      dot: 'bg-white/70',
+      defaultLabel: 'Active',
     },
     organizer: {
-      bg: 'bg-[#171A23]',
-      text: 'text-[#EDEEF2]',
-      border: 'border-white/16',
-      dot: 'bg-[#C6FF3D]',
+      bg: 'bg-[var(--surface-elevated)]',
+      text: 'text-[var(--text)]',
+      border: 'border-[var(--border)]',
+      dot: 'bg-white/60',
       defaultLabel: 'Organizer',
     },
   };
 
-  const config = configs[status] || configs.pending;
-  const displayLabel = label || config.defaultLabel;
+  const current = configs[status] || configs.pending;
+  const displayLabel = label || current.defaultLabel;
 
   if (dotOnly) {
     return (
-      <span className={cn('relative flex h-2 w-2', className)}>
-        <span
-          className={cn(
-            'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
-            config.dot
-          )}
-        />
-        <span className={cn('relative inline-flex rounded-full h-2 w-2', config.dot)} />
-      </span>
+      <span
+        className={cn('inline-block w-2 h-2 rounded-full', current.dot, className)}
+        title={displayLabel}
+      />
     );
   }
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium border tracking-tight',
-        config.bg,
-        config.text,
-        config.border,
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono border select-none',
+        current.bg,
+        current.text,
+        current.border,
         className
       )}
     >
-      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', config.dot)} />
-      <span>{displayLabel}</span>
+      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', current.dot)} />
+      <span className="font-semibold tracking-tight">{displayLabel}</span>
     </span>
   );
 };

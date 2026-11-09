@@ -58,33 +58,33 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/8 bg-[#07080D]/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--canvas)] px-4 sm:px-6 lg:px-8 py-3">
       <div className="w-full flex items-center justify-between gap-3">
-        {/* Brand Identity & Active Party Name */}
+        {/* Brand Identity & Active Trip Name */}
         <div className="flex items-center gap-3">
           <NavLink to="/" className="no-underline flex items-center">
             <Logo size="md" />
           </NavLink>
 
           {tripName && (
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1117] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
+            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-[11px] font-mono text-[var(--text)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
               <span className="font-semibold truncate max-w-[160px]">{formatPartyName(tripName)}</span>
             </div>
           )}
         </div>
 
         {/* Desktop Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#0F1117] border border-white/8">
+        <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all no-underline ${
+                `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-body transition-all no-underline ${
                   isActive
-                    ? 'bg-[#171A23] text-[#C6FF3D] font-semibold border border-white/8 shadow-sm'
-                    : 'text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/4'
+                    ? 'bg-[var(--surface-elevated)] text-[var(--text)] font-semibold border border-[var(--border)]'
+                    : 'text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/[0.04]'
                 }`
               }
             >
@@ -101,38 +101,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onNewParty}
               title="Create a new trip"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#EDEEF2] text-xs font-mono font-medium transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
             >
-              <Users className="w-3.5 h-3.5 text-[#C6FF3D]" />
+              <Users className="w-3.5 h-3.5 text-[var(--muted)]" />
               <span>New Trip</span>
             </button>
           )}
 
-          {/* Upload Bill Action Button */}
+          {/* Upload Bill Secondary Action (Allows page to own the single lime button) */}
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
             onClick={onOpenReceiptModal}
             icon={<ReceiptText className="w-3.5 h-3.5" />}
-            className="text-xs font-display font-semibold"
           >
             Upload Bill
           </Button>
 
           {/* Authentication Status / Sign In */}
           {currentUser ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono text-[#EDEEF2]">
-              <div className="w-4 h-4 rounded-full bg-[#171A23] border border-[#C6FF3D]/40 flex items-center justify-center text-[10px] text-[#C6FF3D] font-bold">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[11px] sm:text-xs font-mono text-[var(--text)]">
+              <div className="w-4 h-4 rounded-full bg-[var(--surface-elevated)] border border-white/20 flex items-center justify-center text-[10px] text-[var(--text)] font-bold">
                 {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <span className="truncate max-w-[90px] text-[#C6FF3D] font-medium hidden sm:inline">
+              <span className="truncate max-w-[90px] font-medium hidden sm:inline">
                 {currentUser.handle || currentUser.name}
               </span>
               {onLogout && (
                 <button
                   onClick={onLogout}
                   title="Sign Out"
-                  className="ml-1 p-0.5 text-[#8A8FA3] hover:text-[#FF5C7A] transition-colors cursor-pointer"
+                  className="ml-1 p-0.5 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -144,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
-            className="flex items-center justify-center p-2 rounded-xl bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
+            className="flex items-center justify-center p-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
             aria-label="Toggle Fullscreen"
           >
             {isFullscreen ? (

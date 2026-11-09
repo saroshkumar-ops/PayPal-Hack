@@ -10,25 +10,24 @@ export interface AvatarProps {
   className?: string;
 }
 
-// 8 distinct deterministic colors derived from cyber ledger family
-const AVATAR_PALETTE = [
-  { bg: 'rgba(198, 255, 61, 0.15)', text: '#C6FF3D', border: 'rgba(198, 255, 61, 0.4)' }, // Acid Lime
-  { bg: 'rgba(56, 225, 255, 0.15)', text: '#38E1FF', border: 'rgba(56, 225, 255, 0.4)' }, // Cyan Electric
-  { bg: 'rgba(255, 155, 66, 0.15)', text: '#FF9B42', border: 'rgba(255, 155, 66, 0.4)' }, // Sunset Amber
-  { bg: 'rgba(183, 198, 211, 0.15)', text: '#B7C6D3', border: 'rgba(183, 198, 211, 0.4)' }, // Titanium Slate
-  { bg: 'rgba(255, 92, 122, 0.15)', text: '#FF5C7A', border: 'rgba(255, 92, 122, 0.4)' }, // Coral Owes
-  { bg: 'rgba(162, 123, 255, 0.15)', text: '#A27BFF', border: 'rgba(162, 123, 255, 0.4)' }, // Cyber Orchid
-  { bg: 'rgba(78, 106, 131, 0.25)', text: '#B7C6D3', border: 'rgba(78, 106, 131, 0.5)' }, // Deep Steel
-  { bg: 'rgba(255, 196, 57, 0.15)', text: '#FFC439', border: 'rgba(255, 196, 57, 0.4)' }, // PayPal Gold
+// 6 deterministic member tag tokens (cycled in order, no orange)
+export const MEMBER_TAG_PALETTE = [
+  { token: 'cyan', bg: 'rgba(56, 225, 255, 0.12)', text: '#38E1FF', border: 'rgba(56, 225, 255, 0.35)' },
+  { token: 'blue', bg: 'rgba(91, 140, 255, 0.12)', text: '#5B8CFF', border: 'rgba(91, 140, 255, 0.35)' },
+  { token: 'purple', bg: 'rgba(162, 123, 255, 0.12)', text: '#A27BFF', border: 'rgba(162, 123, 255, 0.35)' },
+  { token: 'pink', bg: 'rgba(244, 114, 208, 0.12)', text: '#F472D0', border: 'rgba(244, 114, 208, 0.35)' },
+  { token: 'sand', bg: 'rgba(232, 213, 163, 0.12)', text: '#E8D5A3', border: 'rgba(232, 213, 163, 0.35)' },
+  { token: 'teal', bg: 'rgba(45, 212, 191, 0.12)', text: '#2DD4BF', border: 'rgba(45, 212, 191, 0.35)' },
 ];
 
-function getPaletteIndex(key: string): number {
+export function getMemberTagColor(identifier: string) {
   let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash << 5) - hash + key.charCodeAt(i);
+  for (let i = 0; i < identifier.length; i++) {
+    hash = (hash << 5) - hash + identifier.charCodeAt(i);
     hash |= 0;
   }
-  return Math.abs(hash) % AVATAR_PALETTE.length;
+  const index = Math.abs(hash) % MEMBER_TAG_PALETTE.length;
+  return MEMBER_TAG_PALETTE[index];
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -40,52 +39,53 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
 }) => {
   const identifier = userId || name || 'User';
-  const color = AVATAR_PALETTE[getPaletteIndex(identifier)];
+  const color = getMemberTagColor(identifier);
 
-  // Get 1 or 2 initials
+  // Extract 1 or 2 uppercase initials
   const initials = name
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('') || '?';
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || name.slice(0, 1).toUpperCase() || 'U';
 
   const sizeClasses = {
     xs: 'w-6 h-6 text-[10px]',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-xs sm:text-sm',
-    lg: 'w-12 h-12 text-sm sm:text-base font-bold',
-    xl: 'w-16 h-16 text-lg font-bold',
+    lg: 'w-12 h-12 text-sm sm:text-base',
+    xl: 'w-16 h-16 text-lg',
   };
 
-  const statusColors = {
-    paid: 'bg-[#C6FF3D]',
-    owes: 'bg-[#FF5C7A]',
-    pending: 'bg-[#8A8FA3]',
+  const statusDotColors = {
+    paid: 'bg-[var(--settled)]',
+    owes: 'bg-[var(--owes)]',
+    pending: 'bg-[var(--muted)]',
   };
 
   return (
-    <div className={cn('relative inline-flex items-center justify-center shrink-0', className)}>
+    <div className={cn('relative inline-flex items-center justify-center shrink-0 select-none', className)}>
       <div
         style={{
           backgroundColor: color.bg,
-          color: color.text,
           borderColor: color.border,
+          color: color.text,
         }}
         className={cn(
-          'rounded-xl border font-mono font-semibold flex items-center justify-center select-none tracking-tight shadow-sm',
+          'rounded-xl border flex items-center justify-center font-mono font-bold tracking-tight transition-transform',
           sizeClasses[size]
         )}
       >
-        {initials}
+        <span>{initials}</span>
       </div>
 
       {showStatus && (
         <span
           className={cn(
-            'absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[#0F1117]',
-            statusColors[status]
+            'absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[var(--canvas)]',
+            statusDotColors[status]
           )}
+          title={`Status: ${status}`}
         />
       )}
     </div>

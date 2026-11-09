@@ -557,12 +557,12 @@ export function App() {
           </main>
 
           {/* Bottom Footer */}
-          <footer className="w-full border-t border-white/8 bg-[#07080D]/90 backdrop-blur-md px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-[#8A8FA3] z-20">
+          <footer className="w-full border-t border-[var(--border)] bg-[var(--canvas)] px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-[var(--muted)] z-20">
             <div className="flex items-center gap-3">
               <span>TripSheriff</span>
             </div>
-            <div className="text-[10px] sm:text-[11px] text-[#8A8FA3]">
-              User: <span className="text-[#C6FF3D]">{currentUser.handle || currentUser.name}</span>
+            <div className="text-[10px] sm:text-[11px] text-[var(--muted)]">
+              Traveler: <span className="text-[var(--text)] font-medium">{currentUser.handle || currentUser.name}</span>
             </div>
           </footer>
 

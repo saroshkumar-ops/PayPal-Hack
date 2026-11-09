@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { RefreshCw, Wallet, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { RefreshCw, Wallet, ArrowUpRight } from 'lucide-react';
 import { getCurrencySymbol } from '../../lib/currency';
 import { formatPartyName } from '../../lib/formatters';
 
@@ -25,39 +25,6 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   const curSymbol = getCurrencySymbol(currency);
   const curCode = currency?.toUpperCase() === 'USD' ? 'USD' : 'INR';
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-
-  // 3D Parallax Mouse Tracking
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Smooth spring physics for 60fps tilt
-  const springConfig = { stiffness: 180, damping: 20 };
-  const smoothX = useSpring(mouseX, springConfig);
-  const smoothY = useSpring(mouseY, springConfig);
-
-  const rotateX = useTransform(smoothY, [-0.5, 0.5], [12, -12]);
-  const rotateY = useTransform(smoothX, [-0.5, 0.5], [-16, 16]);
-  const glareX = useTransform(smoothX, [-0.5, 0.5], [15, 85]);
-  const glareY = useTransform(smoothY, [-0.5, 0.5], [15, 85]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  const handleMouseEnter = () => setIsHovered(true);
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    mouseX.set(0);
-    mouseY.set(0);
-  };
 
   const toggleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,152 +32,133 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
   };
 
   return (
-    <div className="relative w-full flex flex-col items-center justify-center py-2 select-none">
-      {/* Top controls: Flip toggle */}
-      <div className="w-full flex items-center justify-between mb-3 px-1">
-        <span className="text-[11px] font-mono text-[#8A8FA3] uppercase tracking-wider">
-          TRIP CARD
-        </span>
+    <div className="relative w-full flex flex-col justify-between select-none">
+      {/* Top Bar: Label & Flip Toggle */}
+      <div className="w-full flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
+          <span className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider">
+            ORGANIZER TREASURY
+          </span>
+        </div>
         <button
           onClick={toggleFlip}
-          title="Flip card in 3D"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1117] hover:bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] text-xs font-mono transition-colors cursor-pointer"
+          title="Flip card details"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] text-xs font-mono transition-colors cursor-pointer"
         >
           <RefreshCw className="w-3 h-3" />
-          <span>Flip</span>
+          <span>{isFlipped ? 'Front' : 'Details'}</span>
         </button>
       </div>
 
-      {/* 3D Perspective Card Stage */}
+      {/* Card Stage with Smooth Perspective */}
       <div
-        ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[400px] h-[220px] sm:h-[230px] flex items-center justify-center cursor-pointer"
-        style={{ perspective: 1200 }}
+        className="relative w-full h-[220px] rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-sm"
+        style={{ perspective: 1000 }}
       >
         <motion.div
-          style={{
-            rotateX: rotateX,
-            rotateY: isFlipped ? 180 : rotateY,
-            transformStyle: 'preserve-3d',
-            transformOrigin: 'center center',
-          }}
-          animate={{
-            scale: isHovered ? 1.02 : 1.0,
-          }}
-          transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-          className="w-full h-full rounded-2xl border border-white/12 shadow-[0_24px_50px_rgba(0,0,0,0.85)] relative overflow-hidden"
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full h-full relative [transform-style:preserve-3d]"
         >
           {/* FRONT FACE */}
           <div
-            className={`absolute inset-0 p-5 sm:p-6 flex flex-col justify-between transition-opacity duration-300 ${
-              isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            className={`absolute inset-0 p-5 flex flex-col justify-between bg-[var(--surface-elevated)] [backface-visibility:hidden] ${
+              isFlipped ? 'pointer-events-none' : ''
             }`}
-            style={{
-              background: 'linear-gradient(135deg, #171A23 0%, #0F1117 60%, #07080D 100%)',
-              boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.1)',
-            }}
           >
-            {/* Dynamic Specular Glare */}
-            <motion.div
-              className="pointer-events-none absolute inset-0 opacity-30 mix-blend-color-dodge transition-opacity duration-300"
-              style={{
-                background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(255, 255, 255, 0.08) 0%, transparent 60%)`,
-              }}
-            />
-
-            {/* Card Header: Trip Name & Escrow Status */}
-            <div className="flex items-center justify-between relative z-10">
+            {/* Header: Trip Name & PayPal Channel */}
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#07080D] border border-white/10 flex items-center justify-center">
-                  <Wallet className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                <div className="w-6 h-6 rounded-md bg-[var(--canvas)] border border-[var(--border)] flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-[var(--text)]" />
                 </div>
-                <span className="text-xs font-display font-bold tracking-tight text-[#EDEEF2] truncate max-w-[180px]">
+                <span className="text-xs font-display font-bold text-[var(--text)] truncate max-w-[170px]">
                   {formatPartyName(tripName)}
                 </span>
               </div>
 
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#C6FF3D]/10 text-[#C6FF3D] border border-[#C6FF3D]/30">
+              <span className="text-[11px] font-mono font-bold tracking-tight text-[var(--paypal)]">
                 PayPal
               </span>
             </div>
 
-            {/* Card Core: Balance Display */}
-            <div className="relative z-10 my-1">
-              <div className="text-[10px] uppercase tracking-wider text-[#8A8FA3] font-mono">
-                Available Payout
+            {/* Core: Collected Payout Balance */}
+            <div className="my-1">
+              <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] font-mono">
+                Available to Payout
               </div>
-              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#EDEEF2] tracking-tight flex items-baseline gap-1 mt-0.5">
-                <span className="text-[#C6FF3D]">{curSymbol}</span>
-                <span className="tabular-nums">{formattedBalance}</span>
-                <span className="text-[11px] text-[#8A8FA3] font-normal font-mono">{curCode}</span>
+              <div className="text-3xl font-display font-extrabold text-[var(--text)] tracking-tight flex items-baseline gap-1 mt-1">
+                <span>{curSymbol}</span>
+                <span className="tabular-nums font-mono">{formattedBalance}</span>
+                <span className="text-xs text-[var(--muted)] font-mono font-normal">{curCode}</span>
               </div>
             </div>
 
-            {/* Card Footer: Organizer & Payout Trigger */}
-            <div className="flex items-end justify-between relative z-10 pt-2 border-t border-white/8">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-[#8A8FA3] font-mono">
+            {/* Footer: Organizer Receiver & Action */}
+            <div className="flex items-end justify-between pt-3 border-t border-[var(--border)]">
+              <div className="min-w-0 pr-2">
+                <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] font-mono">
                   Receiver
                 </div>
-                <div className="text-xs font-semibold text-[#EDEEF2] font-body truncate max-w-[180px]">
+                <div className="text-xs font-body font-semibold text-[var(--text)] truncate max-w-[170px]">
                   {organizerName}
                 </div>
                 {organizerEmail && (
-                  <div className="text-[10px] text-[#8A8FA3] font-mono truncate max-w-[180px]">
+                  <div className="text-[10px] text-[var(--muted)] font-mono truncate max-w-[170px]">
                     {organizerEmail}
                   </div>
                 )}
               </div>
 
+              {/* Dedicated PayPal Gold Payout Button */}
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPayout();
                 }}
                 disabled={balanceCents <= 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] disabled:opacity-40 disabled:cursor-not-allowed text-[#07080D] text-xs font-bold font-body transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--paypal)] hover:brightness-105 disabled:opacity-30 disabled:cursor-not-allowed text-[#07080D] text-xs font-body font-bold transition-all cursor-pointer shrink-0"
               >
                 <span>Payout</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* BACK FACE (FLIPPED) */}
           <div
-            className={`absolute inset-0 p-5 sm:p-6 flex flex-col justify-between bg-[#0F1117] transition-opacity duration-300 [transform:rotateY(180deg)] ${
-              isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`absolute inset-0 p-5 flex flex-col justify-between bg-[var(--surface)] border border-[var(--border)] [transform:rotateY(180deg)] [backface-visibility:hidden] ${
+              !isFlipped ? 'pointer-events-none' : ''
             }`}
           >
-            <div className="flex items-center justify-between border-b border-white/8 pb-2">
-              <span className="text-xs font-display font-semibold text-[#EDEEF2]">
-                Details
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
+              <span className="text-xs font-display font-bold text-[var(--text)]">
+                Payout Details
               </span>
-              <span className="text-[10px] font-mono text-[#C6FF3D]">Verified</span>
+              <span className="text-[10px] font-mono text-[var(--muted)]">API v1</span>
             </div>
 
             <div className="space-y-2 text-xs font-mono">
-              <div className="flex justify-between text-[#8A8FA3]">
+              <div className="flex justify-between text-[var(--muted)]">
                 <span>Trip:</span>
-                <span className="text-[#EDEEF2] truncate max-w-[180px]">{formatPartyName(tripName)}</span>
+                <span className="text-[var(--text)] truncate max-w-[170px]">{formatPartyName(tripName)}</span>
               </div>
-              <div className="flex justify-between text-[#8A8FA3]">
-                <span>Settlement:</span>
-                <span className="text-[#EDEEF2]">Optimized</span>
+              <div className="flex justify-between text-[var(--muted)]">
+                <span>Receiver:</span>
+                <span className="text-[var(--text)] truncate max-w-[170px]">{organizerName}</span>
               </div>
-              <div className="flex justify-between text-[#8A8FA3]">
-                <span>Balance Status:</span>
-                <span className={balanceCents > 0 ? 'text-[#FFC439]' : 'text-[#C6FF3D]'}>
-                  {balanceCents > 0 ? 'Awaiting Payout' : 'Fully Settled'}
+              <div className="flex justify-between text-[var(--muted)]">
+                <span>Status:</span>
+                <span className={balanceCents > 0 ? 'text-[var(--paypal)]' : 'text-[var(--settled)]'}>
+                  {balanceCents > 0 ? 'Awaiting Payout' : 'All Settled'}
                 </span>
               </div>
             </div>
 
-            <div className="text-[10px] font-mono text-[#C6FF3D] flex items-center gap-1.5 pt-2 border-t border-white/8">
-              <CheckCircle className="w-3 h-3" />
-              <span>Exact balance verified</span>
+            <div className="text-[11px] font-body text-[var(--muted)] pt-2 border-t border-[var(--border)] leading-relaxed">
+              When members pay their split, funds pool here until transferred to the organizer's PayPal account.
             </div>
           </div>
         </motion.div>

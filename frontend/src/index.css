@@ -2,60 +2,35 @@
 @import "ag-grid-community/styles/ag-grid.css";
 @import "ag-grid-community/styles/ag-theme-quartz.css";
 
-@theme {
+:root {
+  /* ========================================================================
+     TRIPSHERIFF TOKENS (SINGLE SOURCE OF TRUTH)
+     ======================================================================== */
+  --canvas: #07080D;
+  --surface: #0F1117;
+  --surface-elevated: #171A23;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #EDEEF2;
+  --muted: #8A8FA3;
+  --settled: #C6FF3D;
+  --owes: #FF5C7A;
+  --paypal: #FFC439;
+  --receipt-paper: #F4EFE6;
+  --receipt-ink: #1A1A1A;
+
+  /* 6 Deterministic Member Tag Tokens (Cyclic assignment, no orange) */
+  --tag-cyan: #38E1FF;
+  --tag-blue: #5B8CFF;
+  --tag-purple: #A27BFF;
+  --tag-pink: #F472D0;
+  --tag-sand: #E8D5A3;
+  --tag-teal: #2DD4BF;
+
+  /* Typography */
   --font-display: 'Unbounded', sans-serif;
   --font-body: 'Manrope', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-
-  --color-bg: #07080D;
-  --color-surface: #0F1117;
-  --color-surface-2: #171A23;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text: #EDEEF2;
-  --color-muted: #8A8FA3;
-  --color-accent: #C6FF3D;
-  --color-paid: #C6FF3D;
-  --color-owes: #FF5C7A;
-  --color-paypal: #FFC439;
-}
-
-:root {
-  /* Exact requested color tokens */
-  --bg: #07080D;
-  --surface: #0F1117;
-  --surface-2: #171A23;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --border-accent: rgba(255, 255, 255, 0.16);
-  --text: #EDEEF2;
-  --muted: #8A8FA3;
-  --accent: #C6FF3D;
-  --paid: #C6FF3D;
-  --owes: #FF5C7A;
-  --paypal: #FFC439;
-
-  /* Member Avatar Consistent Palette (6-8 distinct colors derived from palette family) */
-  --avatar-0: #C6FF3D; /* Acid Lime */
-  --avatar-1: #38E1FF; /* Cyan Electric */
-  --avatar-2: #FF9B42; /* Sunset Amber */
-  --avatar-3: #B7C6D3; /* Titanium Gray */
-  --avatar-4: #FF5C7A; /* Coral Owes */
-  --avatar-5: #A27BFF; /* Cyber Orchid */
-  --avatar-6: #4E6A83; /* Deep Steel */
-  --avatar-7: #FFC439; /* PayPal Gold */
-
-  /* Type Scale */
-  --font-size-2xs: 0.6875rem; /* 11px */
-  --font-size-xs: 0.75rem;    /* 12px */
-  --font-size-sm: 0.875rem;   /* 14px */
-  --font-size-base: 1rem;     /* 16px */
-  --font-size-lg: 1.125rem;   /* 18px */
-  --font-size-xl: 1.25rem;    /* 20px */
-  --font-size-2xl: 1.5rem;    /* 24px */
-  --font-size-3xl: 1.875rem;  /* 30px */
-  --font-size-4xl: 2.25rem;   /* 36px */
-  --font-size-5xl: 3rem;      /* 48px */
-  --font-size-6xl: 3.75rem;   /* 60px */
 
   /* Spacing Scale */
   --space-1: 0.25rem;
@@ -65,11 +40,8 @@
   --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
 
-  /* Radius Scale */
+  /* Radius System: Deliberate mixture of sharp and rounded */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -77,11 +49,32 @@
   --radius-xl: 22px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-hairline: 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-surface: 0 8px 32px -4px rgba(0, 0, 0, 0.7);
-
   color-scheme: dark;
+}
+
+@theme {
+  --font-display: 'Unbounded', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-settled: var(--settled);
+  --color-owes: var(--owes);
+  --color-paypal: var(--paypal);
+  --color-receipt-paper: var(--receipt-paper);
+  --color-receipt-ink: var(--receipt-ink);
+
+  --color-tag-cyan: var(--tag-cyan);
+  --color-tag-blue: var(--tag-blue);
+  --color-tag-purple: var(--tag-purple);
+  --color-tag-pink: var(--tag-pink);
+  --color-tag-sand: var(--tag-sand);
+  --color-tag-teal: var(--tag-teal);
 }
 
 @layer base {
@@ -89,51 +82,62 @@
     border-color: var(--border);
   }
 
-  html, body {
+  html {
+    background-color: var(--canvas);
+    color: var(--text);
+  }
+
+  body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg);
+    background-color: var(--canvas);
+    /* Subtle tactile static grain on dark canvas (no animated blobs or glows) */
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-attachment: fixed;
     color: var(--text);
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-body);
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Display and headings: Unbounded */
+  /* Headings & Big Numerals: Unbounded */
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Unbounded', sans-serif;
+    font-family: var(--font-display);
     color: var(--text);
     letter-spacing: -0.03em;
   }
 
-  /* Body: Manrope */
+  /* Body text: Manrope (strictly >= 4.5:1 contrast against surface) */
   p, span, label, input, textarea, button, .font-body {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-body);
   }
 
-  /* Numbers, amounts, codes: JetBrains Mono with tabular numerals */
+  /* Amounts, currency codes, and receipt text: JetBrains Mono with tabular numerals */
   code, pre, .font-mono, [data-numeral] {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
     font-feature-settings: 'tnum' on, 'zero' on;
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Hairline glass panel utility */
-.glass-panel {
-  background: rgba(15, 17, 23, 0.95);
-  border: 1px solid var(--border);
+/* ==========================================================================
+   PHYSICAL PAPER RECEIPT STYLES
+   ========================================================================== */
+.receipt-paper {
+  background-color: var(--receipt-paper);
+  color: var(--receipt-ink);
+  font-family: var(--font-mono);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.65), 0 2px 8px -1px rgba(0, 0, 0, 0.4);
 }
 
-.glass-panel-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-panel-hover:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
+/* Subtle jagged tear edge top & bottom */
+.receipt-tear-top {
+  mask-image: radial-gradient(circle at 6px 0, transparent 4px, black 4.5px);
+  mask-size: 12px 100%;
+  mask-repeat: repeat-x;
 }
 
 /* ==========================================================================
@@ -142,62 +146,62 @@
 .ag-theme-quartz,
 .ag-theme-quartz-dark,
 [class*="ag-theme-"] {
-  --ag-background-color: #07080D !important;
-  --ag-header-background-color: #0F1117 !important;
-  --ag-odd-row-background-color: #07080D !important;
+  --ag-background-color: var(--canvas) !important;
+  --ag-header-background-color: var(--surface) !important;
+  --ag-odd-row-background-color: var(--canvas) !important;
   --ag-even-row-background-color: #0A0C12 !important;
-  --ag-border-color: rgba(255, 255, 255, 0.08) !important;
-  --ag-secondary-border-color: rgba(255, 255, 255, 0.06) !important;
-  --ag-row-border-color: rgba(255, 255, 255, 0.06) !important;
-  --ag-row-hover-color: rgba(198, 255, 61, 0.06) !important;
-  --ag-selected-row-background-color: rgba(198, 255, 61, 0.12) !important;
-  --ag-foreground-color: #EDEEF2 !important;
-  --ag-header-foreground-color: #EDEEF2 !important;
-  --ag-secondary-foreground-color: #8A8FA3 !important;
-  --ag-disabled-foreground-color: #8A8FA3 !important;
-  --ag-data-color: #EDEEF2 !important;
-  --ag-font-family: 'JetBrains Mono', monospace !important;
+  --ag-border-color: var(--border) !important;
+  --ag-secondary-border-color: rgba(255, 255, 255, 0.04) !important;
+  --ag-row-border-color: rgba(255, 255, 255, 0.04) !important;
+  --ag-row-hover-color: rgba(255, 255, 255, 0.04) !important;
+  --ag-selected-row-background-color: rgba(255, 255, 255, 0.08) !important;
+  --ag-foreground-color: var(--text) !important;
+  --ag-header-foreground-color: var(--text) !important;
+  --ag-secondary-foreground-color: var(--muted) !important;
+  --ag-disabled-foreground-color: var(--muted) !important;
+  --ag-data-color: var(--text) !important;
+  --ag-font-family: var(--font-mono) !important;
   --ag-font-size: 12px !important;
   --ag-header-font-size: 11px !important;
   --ag-header-cell-font-weight: 600 !important;
   --ag-cell-horizontal-padding: 16px !important;
-  --ag-header-cell-hover-background-color: #171A23 !important;
+  --ag-header-cell-hover-background-color: var(--surface-elevated) !important;
 }
 
 .ag-root-wrapper {
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 16px !important;
-  background-color: #07080D !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  background-color: var(--canvas) !important;
   overflow: hidden !important;
 }
 
 .ag-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
 .ag-header-cell-text {
-  font-family: 'Unbounded', sans-serif !important;
+  font-family: var(--font-display) !important;
   font-size: 10px !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
-  color: #8A8FA3 !important;
+  color: var(--muted) !important;
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #07080D;
+  background: var(--canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #171A23;
-  border-radius: 4px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-xs);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8A8FA3;
+  background: var(--muted);
 }
