@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, ArrowRight, Mail, AtSign, User } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { formatPartyName } from '../../lib/formatters';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -66,7 +67,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   Add Member
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Add a friend to {tripName || 'this trip'}
+                  Add a friend to {formatPartyName(tripName) || 'this trip'}
                 </p>
               </div>
             </div>

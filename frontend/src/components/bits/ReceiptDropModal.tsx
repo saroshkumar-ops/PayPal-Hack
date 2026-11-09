@@ -1,21 +1,30 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Upload, Sparkles, ArrowRight, Users, ListFilter, Check, User } from 'lucide-react';
 import { aiService } from '../../api/services';
 import { Button } from '../ui/Button';
 import { getCurrencySymbol } from '../../lib/currency';
+
+export interface ExtractedItemDraft {
+  name: string;
+  priceCents: number;
+  claimedByUserIds: string[];
+}
 
 interface ReceiptDropModalProps {
   isOpen: boolean;
   onClose: () => void;
   currency?: string;
-  members?: Array<{ user_id?: string; id?: string; name: string }>;
+  members?: Array<{ user_id: string; name: string }>;
+  currentUserId?: string;
   onConfirmExpense: (
     description: string, 
     amountCents: number, 
-    items?: { name: string; priceCents: number; claimedBy?: string }[],
+    splitType: 'EQUAL' | 'ITEMIZED',
+    items?: ExtractedItemDraft[],
     taxCents?: number,
-    tipCents?: number
+    tipCents?: number,
+    paidByUserId?: string
   ) => void;
 }
 
@@ -23,16 +32,21 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   isOpen,
   onClose,
   currency = 'INR',
-  members,
+  members = [],
+  currentUserId,
   onConfirmExpense,
 }) => {
-  const memberNames = members && members.length > 0 
-    ? members.map(m => m.name) 
-    : [];
+  const activeMembers = members && members.length > 0 ? members : [];
+  const allUserIds = activeMembers.map(m => m.user_id);
 
   const [isScanning, setIsScanning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState<'EQUAL' | 'ITEMIZED'>('EQUAL');
+  const [paidByUserId, setPaidByUserId] = useState<string>(() => {
+    return currentUserId || activeMembers[0]?.user_id || '';
+  });
+
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
     currency: string;
@@ -40,7 +54,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     totalCents: number;
     taxCents: number;
     tipCents: number;
-    items: { name: string; priceCents: number; claimedBy?: string }[];
+    items: ExtractedItemDraft[];
   }>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,21 +66,27 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     setIsScanning(true);
     setErrorMsg(null);
     try {
-      const res = await aiService.uploadReceipt(file);
+      const res = await aiService.uploadReceipt(file, currency);
       const symbol = res.currency_symbol || getCurrencySymbol(currency);
+      
       setExtractedReceipt({
-        merchant: res.merchant || 'Scanned Receipt',
+        merchant: res.merchant || 'Scanned Bill',
         currency: res.currency || currency,
         currencySymbol: symbol,
         totalCents: res.total_cents || 10000,
         taxCents: res.tax_cents || 0,
         tipCents: res.tip_cents || 0,
-        items: (res.items || []).map((item, idx) => ({
+        // By default, every item is split equally among ALL members of the party!
+        items: (res.items || []).map((item) => ({
           name: item.name,
           priceCents: item.price_cents,
-          claimedBy: memberNames[idx % memberNames.length],
+          claimedByUserIds: [...allUserIds],
         })),
       });
+
+      if (!paidByUserId && activeMembers.length > 0) {
+        setPaidByUserId(currentUserId || activeMembers[0].user_id);
+      }
     } catch (err) {
       console.error('Receipt parse failed:', err);
       setErrorMsg('Could not parse receipt image. Please ensure the image is clear or try again.');
@@ -75,35 +95,87 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     }
   };
 
-  const toggleItemClaimant = (itemIdx: number, memberName: string) => {
+  // Toggle a member in or out of an item split
+  const toggleItemMember = (itemIdx: number, userId: string) => {
+    if (!extractedReceipt) return;
+    setExtractedReceipt(prev => {
+      if (!prev) return prev;
+      const nextItems = [...prev.items];
+      const currentClaimed = nextItems[itemIdx].claimedByUserIds;
+      const alreadyClaimed = currentClaimed.includes(userId);
+
+      let updatedClaimed: string[];
+      if (alreadyClaimed) {
+        // If clicking to unselect, don't allow 0 members; keep at least this member or switch
+        updatedClaimed = currentClaimed.filter(id => id !== userId);
+        if (updatedClaimed.length === 0) {
+          updatedClaimed = [userId];
+        }
+      } else {
+        updatedClaimed = [...currentClaimed, userId];
+      }
+
+      nextItems[itemIdx] = {
+        ...nextItems[itemIdx],
+        claimedByUserIds: updatedClaimed,
+      };
+
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  // Assign an item to ALL members with 1 click
+  const setItemToEveryone = (itemIdx: number) => {
     if (!extractedReceipt) return;
     setExtractedReceipt(prev => {
       if (!prev) return prev;
       const nextItems = [...prev.items];
       nextItems[itemIdx] = {
         ...nextItems[itemIdx],
-        claimedBy: memberName,
+        claimedByUserIds: [...allUserIds],
       };
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  // Assign ALL items to ALL members
+  const splitAllWithEveryone = () => {
+    if (!extractedReceipt) return;
+    setExtractedReceipt(prev => {
+      if (!prev) return prev;
       return {
         ...prev,
-        items: nextItems,
+        items: prev.items.map(it => ({
+          ...it,
+          claimedByUserIds: [...allUserIds],
+        })),
       };
     });
   };
 
   const handleConfirm = () => {
     if (!extractedReceipt) return;
+    const selectedPayer = paidByUserId || currentUserId || activeMembers[0]?.user_id;
+
     onConfirmExpense(
       extractedReceipt.merchant,
       extractedReceipt.totalCents,
-      extractedReceipt.items,
+      splitMode,
+      splitMode === 'ITEMIZED' ? extractedReceipt.items : undefined,
       extractedReceipt.taxCents,
-      extractedReceipt.tipCents
+      extractedReceipt.tipCents,
+      selectedPayer
     );
     onClose();
   };
 
   if (!isOpen) return null;
+
+  const memberCount = Math.max(1, activeMembers.length);
+  const curSymbol = extractedReceipt?.currencySymbol || getCurrencySymbol(currency);
+  const perPersonEqualCents = extractedReceipt 
+    ? Math.round(extractedReceipt.totalCents / memberCount) 
+    : 0;
 
   return (
     <AnimatePresence>
@@ -113,7 +185,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-xl rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden"
+          className="relative w-full max-w-xl rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-6"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/8 bg-[#07080D]/50">
@@ -123,10 +195,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
-                  Scan Bill
+                  Upload Bill
                 </h3>
                 <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Upload a bill or receipt to split items with friends
+                  Scan receipt and split between all party members
                 </p>
               </div>
             </div>
@@ -139,9 +211,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
             </button>
           </div>
 
-          <div className="p-5 sm:p-6 space-y-6">
+          <div className="p-5 sm:p-6 space-y-5">
             {!extractedReceipt ? (
-              /* Dropzone with Scanning Line */
+              /* Dropzone */
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -171,7 +243,6 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   className="hidden"
                 />
 
-                {/* Laser Scanline Animation */}
                 {isScanning && (
                   <motion.div
                     initial={{ top: '0%' }}
@@ -191,7 +262,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       {isScanning ? 'Scanning Bill...' : 'Drop receipt or click to upload'}
                     </div>
                     <p className="text-xs text-[#8A8FA3] font-body mt-1 max-w-sm">
-                      Supports JPG, PNG, WEBP.
+                      Upload photo or PDF to split automatically
                     </p>
                   </div>
 
@@ -203,76 +274,200 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 </div>
               </div>
             ) : (
-              /* Sequential Line-Item Parser & Claimant Assignment */
-              <div className="space-y-5">
+              /* Parsed Receipt Review & Split Configuration */
+              <div className="space-y-4">
+                {/* Bill Header Info Card */}
                 <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 flex items-center justify-between">
                   <div>
                     <div className="text-sm font-display font-bold text-[#EDEEF2]">
                       {extractedReceipt.merchant}
                     </div>
                     <div className="text-xs text-[#8A8FA3] font-mono mt-0.5">
-                      Tax: {extractedReceipt.currencySymbol}{(extractedReceipt.taxCents / 100).toFixed(2)} • Tip: {extractedReceipt.currencySymbol}{(extractedReceipt.tipCents / 100).toFixed(2)}
+                      {activeMembers.length} {activeMembers.length === 1 ? 'Party Member' : 'Party Members'}
                     </div>
                   </div>
 
                   <div className="text-right">
                     <div className="text-base font-mono font-bold text-[#C6FF3D] tabular-nums">
-                      {extractedReceipt.currencySymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}
+                      {curSymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}
                     </div>
-                    <span className="text-[10px] text-[#8A8FA3] font-mono">Total</span>
+                    <span className="text-[10px] text-[#8A8FA3] font-mono">Total Bill</span>
                   </div>
                 </div>
 
-                {/* Line Items Sequence */}
-                <div className="space-y-2.5">
-                  <div className="text-xs font-mono text-[#8A8FA3] uppercase">
-                    ASSIGN ITEMS TO FRIENDS:
+                {/* Who Paid Section */}
+                <div className="p-3.5 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
+                  <div className="text-xs font-mono text-[#8A8FA3] flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                    <span>WHO PAID THE BILL?</span>
                   </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeMembers.map((m) => {
+                      const isPayer = (paidByUserId || currentUserId) === m.user_id;
+                      return (
+                        <button
+                          key={m.user_id}
+                          type="button"
+                          onClick={() => setPaidByUserId(m.user_id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition-all cursor-pointer ${
+                            isPayer
+                              ? 'bg-[#171A23] border border-[#C6FF3D] text-[#C6FF3D]'
+                              : 'bg-transparent border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                          }`}
+                        >
+                          {m.name} {m.user_id === currentUserId ? '(You)' : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                  {extractedReceipt.items.map((item, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1, duration: 0.25 }}
-                      className="p-3.5 rounded-xl bg-[#07080D] border border-white/6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                {/* Split Method Toggle: Split Equally vs Itemized */}
+                <div className="space-y-2">
+                  <div className="text-xs font-mono text-[#8A8FA3] uppercase">
+                    HOW DO YOU WANT TO SPLIT?
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSplitMode('EQUAL')}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
+                        splitMode === 'EQUAL'
+                          ? 'bg-[#171A23] border-[#C6FF3D] text-[#C6FF3D]'
+                          : 'bg-[#07080D] border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                      }`}
                     >
-                      <div>
-                        <div className="font-semibold text-[#EDEEF2] font-body">{item.name}</div>
-                        <div className="font-mono text-xs font-bold text-[#EDEEF2] tabular-nums mt-0.5">
-                          {extractedReceipt.currencySymbol}{(item.priceCents / 100).toFixed(2)}
-                        </div>
-                      </div>
+                      <Users className="w-3.5 h-3.5" />
+                      <span>Split Equally (All)</span>
+                    </button>
 
-                      {/* Claimant Pill Selector */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {memberNames.map((name) => {
-                          const isClaimed = item.claimedBy === name;
-                          return (
+                    <button
+                      type="button"
+                      onClick={() => setSplitMode('ITEMIZED')}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
+                        splitMode === 'ITEMIZED'
+                          ? 'bg-[#171A23] border-[#C6FF3D] text-[#C6FF3D]'
+                          : 'bg-[#07080D] border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                      }`}
+                    >
+                      <ListFilter className="w-3.5 h-3.5" />
+                      <span>Split by Items</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Equal Split Preview Panel */}
+                {splitMode === 'EQUAL' ? (
+                  <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-[#8A8FA3]">PER PERSON SHARE:</span>
+                      <span className="text-base font-bold text-[#C6FF3D] tabular-nums">
+                        {curSymbol}{(perPersonEqualCents / 100).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/6 space-y-1.5">
+                      <div className="text-[11px] text-[#8A8FA3] font-body">
+                        Split equally among all {activeMembers.length} members:
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeMembers.map(m => (
+                          <span
+                            key={m.user_id}
+                            className="px-2.5 py-1 rounded-lg bg-[#171A23] border border-white/8 text-xs font-mono text-[#EDEEF2] flex items-center gap-1.5"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
+                            <span>{m.name}: {curSymbol}{(perPersonEqualCents / 100).toFixed(2)}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Itemized Split Selector with "Everyone" Pills */
+                  <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-[#8A8FA3]">SELECT WHO SHARES EACH ITEM:</span>
+                      <button
+                        type="button"
+                        onClick={splitAllWithEveryone}
+                        className="text-[11px] text-[#C6FF3D] hover:underline cursor-pointer"
+                      >
+                        Reset All to Everyone
+                      </button>
+                    </div>
+
+                    {extractedReceipt.items.map((item, idx) => {
+                      const isSplitWithAll = item.claimedByUserIds.length === activeMembers.length;
+                      const splitCount = Math.max(1, item.claimedByUserIds.length);
+                      const perPersonItemCents = Math.round(item.priceCents / splitCount);
+
+                      return (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-xl bg-[#07080D] border border-white/6 space-y-2 text-xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-[#EDEEF2] font-body">{item.name}</div>
+                              <div className="font-mono text-xs font-bold text-[#C6FF3D] tabular-nums mt-0.5">
+                                {curSymbol}{(item.priceCents / 100).toFixed(2)}
+                                {splitCount > 1 && (
+                                  <span className="text-[11px] font-normal text-[#8A8FA3] ml-1.5">
+                                    ({curSymbol}{(perPersonItemCents / 100).toFixed(2)} each • {splitCount} people)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* "Everyone" Quick Button */}
                             <button
-                              key={name}
-                              onClick={() => toggleItemClaimant(idx, name)}
+                              type="button"
+                              onClick={() => setItemToEveryone(idx)}
                               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
-                                isClaimed
-                                  ? 'bg-[#171A23] border border-[#C6FF3D] text-[#C6FF3D]'
-                                  : 'bg-transparent border border-white/6 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                                isSplitWithAll
+                                  ? 'bg-[#C6FF3D]/15 border border-[#C6FF3D] text-[#C6FF3D]'
+                                  : 'bg-[#171A23] border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
                               }`}
                             >
-                              {name.split(' ')[0]}
+                              Everyone
                             </button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                          </div>
 
+                          {/* Member Chips for this item */}
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/6">
+                            {activeMembers.map((m) => {
+                              const isClaimed = item.claimedByUserIds.includes(m.user_id);
+                              return (
+                                <button
+                                  key={m.user_id}
+                                  type="button"
+                                  onClick={() => toggleItemMember(idx, m.user_id)}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer flex items-center gap-1 ${
+                                    isClaimed
+                                      ? 'bg-[#171A23] border border-[#C6FF3D] text-[#C6FF3D]'
+                                      : 'bg-transparent border border-white/6 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                                  }`}
+                                >
+                                  {isClaimed && <Check className="w-3 h-3 text-[#C6FF3D]" />}
+                                  <span>{m.name.split(' ')[0]}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Footer Buttons */}
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/8">
                   <Button variant="ghost" size="md" onClick={() => setExtractedReceipt(null)}>
                     Scan Another
                   </Button>
                   <Button variant="primary" size="md" onClick={handleConfirm} icon={<ArrowRight className="w-4 h-4" />}>
-                    Save Expense
+                    Confirm & Split Bill
                   </Button>
                 </div>
               </div>

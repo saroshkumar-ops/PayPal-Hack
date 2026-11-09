@@ -10,7 +10,7 @@ import { PayoutsPage } from './pages/PayoutsPage';
 import { LoginPage } from './pages/LoginPage';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
-import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
+import { ReceiptDropModal, type ExtractedItemDraft } from './components/bits/ReceiptDropModal';
 import { CreatePartyModal, type PartyMemberDraft } from './components/bits/CreatePartyModal';
 import { AddMemberModal } from './components/bits/AddMemberModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
@@ -28,6 +28,7 @@ import {
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
+import { formatPartyName } from './lib/formatters';
 
 export function App() {
   // Authentication state
@@ -361,36 +362,32 @@ export function App() {
   const handleConfirmScannedExpense = async (
     description: string,
     amountCents: number,
-    items?: { name: string; priceCents: number; claimedBy?: string }[],
+    splitType: 'EQUAL' | 'ITEMIZED' = 'EQUAL',
+    items?: ExtractedItemDraft[],
     taxCents?: number,
-    tipCents?: number
+    tipCents?: number,
+    paidByUserId?: string
   ) => {
     if (!currentTripId) return;
     setIsLoading(true);
     try {
-      let formattedItems: ItemClaimDto[] | undefined = undefined;
-      if (items && items.length > 0) {
-        formattedItems = items.map((it) => {
-          const matched = ledger.members.find(
-            (m) => m.name.toLowerCase() === it.claimedBy?.toLowerCase() || m.user_id === it.claimedBy
-          );
-          const userId = matched ? matched.user_id : organizerId;
-          return {
-            name: it.name,
-            price_cents: it.priceCents,
-            claimed_by_user_ids: [userId],
-          };
-        });
-      }
-
+      const payerId = paidByUserId || organizerId;
       const allMemberIds = ledger.members && ledger.members.length > 0 
         ? ledger.members.map(m => m.user_id) 
-        : [organizerId];
+        : [payerId];
 
-      if (formattedItems && formattedItems.length > 0) {
+      if (splitType === 'ITEMIZED' && items && items.length > 0) {
+        const formattedItems: ItemClaimDto[] = items.map((it) => ({
+          name: it.name,
+          price_cents: it.priceCents,
+          claimed_by_user_ids: it.claimedByUserIds && it.claimedByUserIds.length > 0 
+            ? it.claimedByUserIds 
+            : allMemberIds,
+        }));
+
         try {
           await expenseService.createExpense(currentTripId, {
-            paid_by: organizerId,
+            paid_by: payerId,
             amount_cents: amountCents,
             description: description,
             category: 'FOOD',
@@ -402,7 +399,7 @@ export function App() {
         } catch (itemErr) {
           console.warn('Itemized split rejected, falling back to equal split:', itemErr);
           await expenseService.createExpense(currentTripId, {
-            paid_by: organizerId,
+            paid_by: payerId,
             amount_cents: amountCents,
             description: description,
             category: 'FOOD',
@@ -411,8 +408,9 @@ export function App() {
           });
         }
       } else {
+        // Equal split across all party members
         await expenseService.createExpense(currentTripId, {
-          paid_by: organizerId,
+          paid_by: payerId,
           amount_cents: amountCents,
           description: description,
           category: 'FOOD',
@@ -598,6 +596,7 @@ export function App() {
             onClose={() => setIsReceiptModalOpen(false)}
             currency={ledger.currency}
             members={ledger.members}
+            currentUserId={currentUser?.user_id}
             onConfirmExpense={handleConfirmScannedExpense}
           />
 
@@ -611,7 +610,7 @@ export function App() {
           <AddMemberModal
             isOpen={isAddMemberModalOpen}
             onClose={() => setIsAddMemberModalOpen(false)}
-            tripName={ledger.trip_name || ledger.name}
+            tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}
             onAddMember={handleAddMemberToCurrentParty}
           />
         </div>

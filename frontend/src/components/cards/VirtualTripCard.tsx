@@ -193,8 +193,8 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
 
             <div className="space-y-2 text-xs font-mono">
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Trip ID:</span>
-                <span className="text-[#EDEEF2] truncate max-w-[180px]">{tripName}</span>
+                <span>Trip:</span>
+                <span className="text-[#EDEEF2] truncate max-w-[180px]">{formatPartyName(tripName)}</span>
               </div>
               <div className="flex justify-between text-[#8A8FA3]">
                 <span>Settlement:</span>

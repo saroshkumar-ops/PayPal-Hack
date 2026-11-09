@@ -25,7 +25,6 @@ import { formatPartyName } from '../lib/formatters';
 
 interface OverviewPageProps {
   ledger: TripLedger;
-  onAdvanceTime?: () => void;
   onOpenReceiptModal: () => void;
   onOpenPayoutModal: () => void;
   onOpenAddMemberModal?: () => void;
