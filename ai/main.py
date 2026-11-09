@@ -71,7 +71,7 @@ app.include_router(whatsapp_router)
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
     has_live_key = bool(settings.GROQ_API_KEY or settings.GEMINI_API_KEY)
-    active_model = settings.GROQ_VISION_MODEL if settings.GROQ_API_KEY else settings.GEMINI_MODEL
+    active_model = settings.GEMINI_MODEL if settings.GEMINI_API_KEY else (settings.GROQ_VISION_MODEL if settings.GROQ_API_KEY else "none")
     return HealthResponse(
         status="ok",
         service="TripSheriff AI Microservice",
