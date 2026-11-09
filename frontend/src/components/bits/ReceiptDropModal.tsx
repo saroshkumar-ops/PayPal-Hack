@@ -37,7 +37,8 @@ interface ReceiptDropModalProps {
     items?: ExtractedItemDraft[],
     taxCents?: number,
     tipCents?: number,
-    paidByUserId?: string
+    paidByUserId?: string,
+    customSplits?: Array<{ user_id: string; owes_cents: number }>
   ) => void;
 }
 
@@ -165,9 +166,64 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     });
   };
 
+  // Dynamically compute each traveler's owed cents in Itemized / Custom split mode:
+  const computeItemizedShares = (): Record<string, number> => {
+    if (!extractedReceipt || !extractedReceipt.items) return {};
+    const shares: Record<string, number> = {};
+    activeMembers.forEach((m) => { shares[m.user_id] = 0; });
+
+    let itemsSubtotal = 0;
+    extractedReceipt.items.forEach((item) => {
+      itemsSubtotal += item.priceCents;
+      const claimants = item.claimedByUserIds && item.claimedByUserIds.length > 0 
+        ? item.claimedByUserIds 
+        : allUserIds;
+      const claimCount = Math.max(1, claimants.length);
+      const baseShare = Math.floor(item.priceCents / claimCount);
+      const rem = item.priceCents % claimCount;
+      claimants.forEach((uid, i) => {
+        const itemShare = baseShare + (i < rem ? 1 : 0);
+        shares[uid] = (shares[uid] || 0) + itemShare;
+      });
+    });
+
+    // If receipt has no line items, distribute the total equally across all active travelers
+    if (itemsSubtotal === 0 && activeMembers.length > 0) {
+      const base = Math.floor(extractedReceipt.totalCents / activeMembers.length);
+      const rem = extractedReceipt.totalCents % activeMembers.length;
+      activeMembers.forEach((m, i) => {
+        shares[m.user_id] = base + (i < rem ? 1 : 0);
+      });
+      return shares;
+    }
+
+    // Proportionally distribute taxes, tips, or unallocated difference to match totalCents exactly
+    const unallocatedCents = extractedReceipt.totalCents - itemsSubtotal;
+    if (unallocatedCents !== 0 && itemsSubtotal > 0) {
+      let distributedExtra = 0;
+      activeMembers.forEach((m, idx) => {
+        if (idx === activeMembers.length - 1) {
+          shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + (unallocatedCents - distributedExtra));
+        } else {
+          const userDirect = shares[m.user_id] || 0;
+          const extra = Math.round((userDirect * unallocatedCents) / itemsSubtotal);
+          shares[m.user_id] = Math.max(0, userDirect + extra);
+          distributedExtra += extra;
+        }
+      });
+    }
+
+    return shares;
+  };
+
   const handleConfirm = () => {
     if (!extractedReceipt) return;
     const selectedPayer = paidByUserId || currentUserId || activeMembers[0]?.user_id;
+    const calculatedShares = computeItemizedShares();
+    const customSplits = activeMembers.map((m) => ({
+      user_id: m.user_id,
+      owes_cents: calculatedShares[m.user_id] || 0,
+    }));
 
     onConfirmExpense(
       extractedReceipt.merchant,
@@ -176,7 +232,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       splitMode === 'ITEMIZED' ? extractedReceipt.items : undefined,
       extractedReceipt.taxCents,
       extractedReceipt.tipCents,
-      selectedPayer
+      selectedPayer,
+      splitMode === 'ITEMIZED' ? customSplits : undefined
     );
     onClose();
   };
@@ -188,6 +245,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const perPersonEqualCents = extractedReceipt 
     ? Math.round(extractedReceipt.totalCents / memberCount) 
     : 0;
+  const itemizedShares = computeItemizedShares();
 
   return (
     <AnimatePresence>
@@ -480,10 +538,51 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       </div>
                     </div>
                   ) : (
-                    /* Itemized Split: Tap / Toggle Members per Item */
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs font-mono">
-                        <span className="text-[var(--muted)]">ASSIGN ITEMS TO TRAVELERS:</span>
+                    /* Itemized / Custom Split: Live Traveler Shares + Item Claimant Assigners */
+                    <div className="space-y-3">
+                      {/* Live Traveler Custom Split Breakdown */}
+                      <div className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2">
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-[var(--muted)] font-semibold uppercase tracking-wider">
+                            Custom Traveler Shares:
+                          </span>
+                          <span className="text-xs font-bold text-[var(--text)] tabular-nums font-mono">
+                            {curSymbol}{(extractedReceipt.totalCents / 100).toFixed(2)} Total
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {activeMembers.map((m) => {
+                            const tag = getMemberTagColor(m.user_id);
+                            const userShareCents = itemizedShares[m.user_id] || 0;
+                            return (
+                              <div
+                                key={m.user_id}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)] flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    style={{
+                                      backgroundColor: tag.bg,
+                                      color: tag.text,
+                                      borderColor: tag.border,
+                                    }}
+                                    className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                                  >
+                                    {m.name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                  <span className="truncate max-w-[95px]">{m.name}</span>
+                                </div>
+                                <span className="tabular-nums font-semibold">
+                                  {curSymbol}{(userShareCents / 100).toFixed(2)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs font-mono pt-1">
+                        <span className="text-[var(--muted)] uppercase">ASSIGN ITEMS TO TRAVELERS:</span>
                         {extractedReceipt.items.length > 0 && (
                           <button
                             type="button"

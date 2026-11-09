@@ -26,7 +26,7 @@ import {
   tripService,
   memberService
 } from './api/services';
-import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, AuthResponseDto } from './types';
+import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, CustomSplitDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
 import { formatPartyName } from './lib/formatters';
 
@@ -366,7 +366,8 @@ export function App() {
     items?: ExtractedItemDraft[],
     taxCents?: number,
     tipCents?: number,
-    paidByUserId?: string
+    paidByUserId?: string,
+    customSplits?: Array<{ user_id: string; owes_cents: number }>
   ) => {
     if (!currentTripId) return;
     setIsLoading(true);
@@ -385,6 +386,36 @@ export function App() {
             : allMemberIds,
         }));
 
+        // Compute exact custom splits if needed:
+        const exactSplits: CustomSplitDto[] = customSplits && customSplits.length > 0
+          ? customSplits
+          : (() => {
+              const shares: Record<string, number> = {};
+              allMemberIds.forEach((id) => { shares[id] = 0; });
+              let sub = 0;
+              items.forEach((it) => {
+                sub += it.priceCents;
+                const c = it.claimedByUserIds?.length ? it.claimedByUserIds : allMemberIds;
+                const base = Math.floor(it.priceCents / c.length);
+                const rem = it.priceCents % c.length;
+                c.forEach((uid, i) => { shares[uid] = (shares[uid] || 0) + base + (i < rem ? 1 : 0); });
+              });
+              const diff = amountCents - sub;
+              if (diff !== 0 && sub > 0) {
+                let dist = 0;
+                allMemberIds.forEach((uid, idx) => {
+                  if (idx === allMemberIds.length - 1) {
+                    shares[uid] = Math.max(0, (shares[uid] || 0) + (diff - dist));
+                  } else {
+                    const extra = Math.round(((shares[uid] || 0) * diff) / sub);
+                    shares[uid] = Math.max(0, (shares[uid] || 0) + extra);
+                    dist += extra;
+                  }
+                });
+              }
+              return allMemberIds.map((uid) => ({ user_id: uid, owes_cents: shares[uid] || 0 }));
+            })();
+
         try {
           await expenseService.createExpense(currentTripId, {
             paid_by: payerId,
@@ -397,14 +428,15 @@ export function App() {
             tip_cents: tipCents || 0,
           });
         } catch (itemErr) {
-          console.warn('Itemized split rejected, falling back to equal split:', itemErr);
+          console.warn('Itemized split rejected by backend (likely tax/tip discrepancy). Falling back to EXACT custom split to preserve member shares:', itemErr);
+          // FALLBACK TO EXACT CUSTOM SPLIT TO PRESERVE USER ASSIGNMENTS!
           await expenseService.createExpense(currentTripId, {
             paid_by: payerId,
             amount_cents: amountCents,
             description: description,
             category: 'FOOD',
-            split_type: 'EQUAL',
-            split_with_user_ids: allMemberIds,
+            split_type: 'EXACT',
+            custom_splits: exactSplits,
           });
         }
       } else {

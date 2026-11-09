@@ -118,11 +118,15 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                       <div className="font-semibold text-xs leading-tight truncate">
                         {item.name}
                       </div>
-                      {claimedCount > 1 && (
-                        <div className="text-[10px] opacity-60 tabular-nums">
+                      {claimedCount === 1 ? (
+                        <div className="text-[10px] opacity-65 font-body">
+                          Claimed by {members.find(m => m.user_id === item.claimedByUserIds?.[0])?.name.split(' ')[0] || '1 traveler'}
+                        </div>
+                      ) : claimedCount > 1 ? (
+                        <div className="text-[10px] opacity-65 tabular-nums">
                           {cur}{(perPersonCents / 100).toFixed(2)} each ({claimedCount} shares)
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     <div className="font-bold tabular-nums shrink-0 text-xs">
                       {cur}{(item.priceCents / 100).toFixed(2)}
