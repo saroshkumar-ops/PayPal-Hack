@@ -21,6 +21,9 @@ import { PaperReceipt } from './PaperReceipt';
 
 export interface ExtractedItemDraft {
   name: string;
+  qty?: number;
+  quantity?: number;
+  unitPriceCents?: number;
   priceCents: number;
   claimedByUserIds: string[];
 }
@@ -91,6 +94,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     totalCents: number;
     taxCents: number;
     tipCents: number;
+    roundOffCents: number;
+    fallbackPriceUsed?: boolean;
     items: ExtractedItemDraft[];
   }>(null);
 
@@ -131,21 +136,30 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
       const taxCents = extractedReceipt.taxCents || 0;
       const tipCents = extractedReceipt.tipCents || 0;
-      const totalTaxTip = taxCents + tipCents;
 
-      // Provisional shares = claimedDirectShares + proportional tax & tip
+      // Determine round-off: if not set or if gap is <= 100 cents, treat gap as round-off
+      const rawGap = extractedReceipt.totalCents - (itemsSubtotal + taxCents + tipCents);
+      let roundOff = extractedReceipt.roundOffCents || 0;
+      if (roundOff === 0 && Math.abs(rawGap) > 0 && Math.abs(rawGap) <= 100) {
+        roundOff = rawGap;
+      }
+
+      // Communal adjustments to allocate proportionally (tax + tip + round-off)
+      const communalAdjustments = taxCents + tipCents + roundOff;
+
+      // Provisional shares = claimedDirectShares + proportional communal adjustments
       const provisionalShares: Record<string, number> = {};
-      if (itemsSubtotal > 0 && totalTaxTip > 0) {
-        let distributedTaxTip = 0;
+      if (itemsSubtotal > 0 && communalAdjustments !== 0) {
+        let distributedAdjustments = 0;
         activeMembers.forEach((m, idx) => {
           if (idx === activeMembers.length - 1) {
-            const extra = totalTaxTip - distributedTaxTip;
+            const extra = communalAdjustments - distributedAdjustments;
             provisionalShares[m.user_id] = (claimedDirectShares[m.user_id] || 0) + extra;
           } else {
             const userSubtotal = claimedDirectShares[m.user_id] || 0;
-            const extra = Math.round((userSubtotal * totalTaxTip) / itemsSubtotal);
+            const extra = Math.round((userSubtotal * communalAdjustments) / itemsSubtotal);
             provisionalShares[m.user_id] = userSubtotal + extra;
-            distributedTaxTip += extra;
+            distributedAdjustments += extra;
           }
         });
       } else {
@@ -154,7 +168,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
         });
       }
 
-      const totalAllocated = itemsSubtotal + totalTaxTip;
+      const totalAllocated = itemsSubtotal + communalAdjustments;
       const diffToBillTotal = extractedReceipt.totalCents - totalAllocated;
 
       if (diffToBillTotal === 0) {
@@ -228,11 +242,44 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       const taxCents = res.tax_cents || 0;
       const tipCents = res.tip_cents || 0;
       const itemsList = res.items || [];
+      let usedOldFallbackPrice = false;
 
+      const mappedItems: ExtractedItemDraft[] = itemsList.map((item) => {
+        let lineTotal: number;
+        let unitPrice: number | undefined = item.unit_price_cents;
+        const qty = item.quantity ?? item.qty ?? 1;
+
+        if (item.line_total_cents !== undefined && item.line_total_cents !== null && item.line_total_cents > 0) {
+          lineTotal = item.line_total_cents;
+        } else if (item.price_cents !== undefined && item.price_cents !== null && item.price_cents > 0) {
+          lineTotal = item.price_cents;
+          if (item.line_total_cents === undefined || item.line_total_cents === null) {
+            usedOldFallbackPrice = true;
+          }
+        } else {
+          lineTotal = 0;
+        }
+
+        if (unitPrice === undefined && qty > 1 && lineTotal > 0) {
+          unitPrice = Math.round(lineTotal / qty);
+        } else if (unitPrice === undefined) {
+          unitPrice = lineTotal;
+        }
+
+        return {
+          name: item.name,
+          qty,
+          quantity: qty,
+          unitPriceCents: unitPrice,
+          priceCents: lineTotal,
+          claimedByUserIds: [...allUserIds],
+        };
+      });
+
+      const itemsSum = mappedItems.reduce((acc, it) => acc + (it.priceCents || 0), 0);
       let totalCents = res.total_cents;
       if (!totalCents || totalCents <= 0) {
-        if (itemsList.length > 0) {
-          const itemsSum = itemsList.reduce((acc, it) => acc + (it.price_cents || 0), 0);
+        if (mappedItems.length > 0) {
           totalCents = itemsSum + taxCents + tipCents;
         }
       }
@@ -243,6 +290,12 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
         return;
       }
 
+      let roundOffCents = res.round_off_cents || 0;
+      const rawGap = totalCents - (itemsSum + taxCents + tipCents);
+      if (roundOffCents === 0 && Math.abs(rawGap) > 0 && Math.abs(rawGap) <= 100) {
+        roundOffCents = rawGap;
+      }
+
       const parsed = {
         merchant: res.merchant || 'Scanned Bill',
         currency: res.currency || currency,
@@ -250,11 +303,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
         totalCents: totalCents,
         taxCents: taxCents,
         tipCents: tipCents,
-        items: itemsList.map((item) => ({
-          name: item.name,
-          priceCents: item.price_cents,
-          claimedByUserIds: [...allUserIds],
-        })),
+        roundOffCents: roundOffCents,
+        fallbackPriceUsed: usedOldFallbackPrice,
+        items: mappedItems,
       };
 
       setExtractedReceipt(parsed);
@@ -408,7 +459,13 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const itemsSubtotalCents = extractedReceipt?.items.reduce((sum, it) => sum + (it.priceCents || 0), 0) || 0;
   const itemsPlusTaxTipCents = itemsSubtotalCents + (extractedReceipt?.taxCents || 0) + (extractedReceipt?.tipCents || 0);
   const mismatchCents = extractedReceipt ? extractedReceipt.totalCents - itemsPlusTaxTipCents : 0;
-  const hasMismatchNotice = extractedReceipt && extractedReceipt.totalCents > 0 && Math.abs(mismatchCents) > Math.round(extractedReceipt.totalCents * 0.01);
+  const mismatchThreshold = extractedReceipt ? Math.min(100, Math.round(extractedReceipt.totalCents * 0.01)) : 100;
+  const hasMismatchNotice = Boolean(
+    extractedReceipt && (
+      extractedReceipt.fallbackPriceUsed ||
+      (extractedReceipt.totalCents > 0 && Math.abs(mismatchCents) > mismatchThreshold)
+    )
+  );
 
   // Active shares computation
   const activeShares = useMemo(() => {
@@ -801,6 +858,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     items={extractedReceipt.items}
                     taxCents={extractedReceipt.taxCents}
                     tipCents={extractedReceipt.tipCents}
+                    roundOffCents={extractedReceipt.roundOffCents || (Math.abs(mismatchCents) <= 100 ? mismatchCents : 0)}
                     totalCents={extractedReceipt.totalCents}
                     members={activeMembers}
                     memberSplits={activeMembers.map((m) => ({
@@ -1116,14 +1174,21 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                 >
                                   {/* Editable Item Header */}
                                   <div className="flex items-center justify-between text-xs font-mono gap-2">
-                                    <input
-                                      type="text"
-                                      value={item.name}
-                                      onChange={(e) => handleUpdateItemName(itemIdx, e.target.value)}
-                                      placeholder="Item name"
-                                      aria-label={`Item ${itemIdx + 1} name`}
-                                      className="flex-1 bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-white/40 text-xs font-mono text-[var(--text)] py-0.5 focus:outline-none font-medium truncate"
-                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => handleUpdateItemName(itemIdx, e.target.value)}
+                                        placeholder="Item name"
+                                        aria-label={`Item ${itemIdx + 1} name`}
+                                        className="w-full bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-white/40 text-xs font-mono text-[var(--text)] py-0.5 focus:outline-none font-medium truncate"
+                                      />
+                                      {(item.quantity || item.qty || 1) > 1 && item.unitPriceCents ? (
+                                        <div className="text-[10px] text-[var(--muted)] font-mono">
+                                          {(item.quantity || item.qty)} x @ {curSymbol}{(item.unitPriceCents / 100).toFixed(2)} = {curSymbol}{(item.priceCents / 100).toFixed(2)}
+                                        </div>
+                                      ) : null}
+                                    </div>
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <span className="text-xs text-[var(--muted)] font-mono">{curSymbol}</span>
                                       <input
@@ -1204,6 +1269,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                             Items: {curSymbol}{(itemsSubtotalCents / 100).toFixed(2)}
                             {extractedReceipt.taxCents > 0 && ` • Tax: ${curSymbol}${(extractedReceipt.taxCents / 100).toFixed(2)}`}
                             {extractedReceipt.tipCents > 0 && ` • Tip: ${curSymbol}${(extractedReceipt.tipCents / 100).toFixed(2)}`}
+                            {(extractedReceipt.roundOffCents !== 0 || (Math.abs(mismatchCents) <= 100 && mismatchCents !== 0)) && (
+                              ` • Round-off: ${(extractedReceipt.roundOffCents || mismatchCents) > 0 ? '+' : '-'}${curSymbol}${(Math.abs(extractedReceipt.roundOffCents || mismatchCents) / 100).toFixed(2)}`
+                            )}
                           </div>
                         </div>
                       </div>

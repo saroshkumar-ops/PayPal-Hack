@@ -212,6 +212,9 @@ export interface ReceiptItem {
   index?: number;
   name: string;
   qty?: number;
+  quantity?: number;
+  unit_price_cents?: number;
+  line_total_cents?: number;
   price_cents: number;
   claimed_by_user_ids?: string[];
 }
@@ -229,6 +232,9 @@ export interface ReceiptParseResponse {
   currency?: string;
   currency_symbol?: string;
   subtotal_cents: number;
+  printed_subtotal_cents?: number;
+  round_off_cents?: number;
+  subtotal_mismatch?: boolean;
   tax_cents: number;
   tip_cents: number;
   total_cents: number;

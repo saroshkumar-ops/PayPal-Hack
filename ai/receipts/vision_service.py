@@ -33,15 +33,18 @@ Rules:
 2. Extract the transaction date if legible (YYYY-MM-DD or readable string).
 3. Detect the currency ISO code (e.g., "INR", "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "SGD") and currency symbol ("₹", "$", "€", "£", "¥") from the image. For example, if the amount has '₹' or mentions UPI/India banks/paise, the currency is "INR" and symbol is "₹". If '$', "USD". If '€', "EUR". If not clearly visible, default to the requested currency.
 4. Extract each individual line item with:
-   - "name": Clean item description (e.g., "Truffle Pasta", "Draft Beer")
-   - "qty": Item count (integer >= 1)
-   - "price_cents": Item price in INTEGER CENTS (or lowest currency unit, e.g. paise / cents)
-   NOTE: If the image is a payment confirmation screenshot, UPI slip, banking app screenshot, or lump-sum receipt WITHOUT itemized lines, create a single item representing the full charge with the merchant or transaction remarks (e.g., "Swiggy Limited - Pay for Intent", qty: 1, price_cents: total_cents).
+   - "name": Clean item description (e.g., "MALAI CHAP GRAVY", "Truffle Pasta")
+   - "quantity": Item count as an integer >= 1 (from QTY column)
+   - "unit_price_cents": Unit rate or single-item price in INTEGER CENTS / paise (from RATE or unit price column).
+   - "line_total_cents": Total line amount in INTEGER CENTS / paise (from AMOUNT, TOTAL, or line price column, equal to quantity x unit_price_cents).
+   NOTE: If the receipt only has a single price column, use that value for both unit_price_cents and line_total_cents (with quantity: 1).
+   NOTE: If the image is a payment confirmation screenshot, UPI slip, banking app screenshot, or lump-sum receipt WITHOUT itemized lines, create a single item representing the full charge with the merchant or transaction remarks (e.g., "Swiggy Limited - Pay for Intent", quantity: 1, unit_price_cents: total_cents, line_total_cents: total_cents).
 5. Extract financial totals in INTEGER CENTS (paise / cents):
-   - "subtotal_cents": Pre-tax subtotal
-   - "tax_cents": Total sales tax / VAT (0 if none)
+   - "subtotal_cents": Pre-tax subtotal (printed on the receipt, e.g. SUB_TOT)
+   - "tax_cents": Total sales tax / VAT / GST (0 if none)
    - "tip_cents": Gratuity or tip (0 if none)
-   - "total_cents": Final bill/payment total
+   - "round_off_cents": Round-off adjustment in integer cents if printed (e.g. +24 paise or -10 paise; positive if rounded up, negative if rounded down, 0 if none)
+   - "total_cents": Final bill/payment total (e.g. BL.TOT, CASH, GRAND TOTAL)
 
 You MUST respond strictly with a valid JSON object matching this schema:
 {
@@ -50,11 +53,17 @@ You MUST respond strictly with a valid JSON object matching this schema:
   "currency": "USD",
   "currency_symbol": "$",
   "items": [
-    {"name": "string", "qty": 1, "price_cents": 1200}
+    {
+      "name": "string",
+      "quantity": 1,
+      "unit_price_cents": 1200,
+      "line_total_cents": 1200
+    }
   ],
   "subtotal_cents": 1200,
   "tax_cents": 0,
   "tip_cents": 0,
+  "round_off_cents": 0,
   "total_cents": 1200
 }
 """
@@ -128,25 +137,75 @@ class ReceiptVisionService:
         computed_subtotal = 0
 
         for idx, item_data in enumerate(raw_items):
-            qty = max(1, int(item_data.get("qty", 1)))
-            price_cents = int(item_data.get("price_cents", 0))
+            qty = max(1, int(item_data.get("quantity") or item_data.get("qty", 1)))
+
+            raw_unit = item_data.get("unit_price_cents")
+            raw_line = item_data.get("line_total_cents")
+            raw_price = item_data.get("price_cents")
+
+            # Determine line_total_cents and unit_price_cents
+            if raw_line is not None and int(raw_line) > 0:
+                line_total_cents = int(raw_line)
+                unit_price_cents = int(raw_unit) if raw_unit is not None else round(line_total_cents / qty)
+            elif raw_unit is not None and int(raw_unit) > 0:
+                unit_price_cents = int(raw_unit)
+                line_total_cents = unit_price_cents * qty
+            elif raw_price is not None and int(raw_price) > 0:
+                # If only legacy price_cents was returned:
+                # Check if price_cents is unit rate (when qty > 1 and printed subtotal matches price_cents * qty)
+                val = int(raw_price)
+                if qty > 1 and subtotal_cents > 0 and abs(val * qty - subtotal_cents) <= 10:
+                    unit_price_cents = val
+                    line_total_cents = val * qty
+                else:
+                    line_total_cents = val
+                    unit_price_cents = round(val / qty)
+            else:
+                unit_price_cents = 0
+                line_total_cents = 0
+
             name = str(item_data.get("name", f"Item #{idx+1}")).strip()
 
-            items.append(ReceiptItem(index=idx, name=name, qty=qty, price_cents=price_cents))
-            computed_subtotal += (price_cents * qty)
+            items.append(ReceiptItem(
+                index=idx,
+                name=name,
+                qty=qty,
+                quantity=qty,
+                unit_price_cents=unit_price_cents,
+                line_total_cents=line_total_cents,
+                price_cents=line_total_cents
+            ))
+            computed_subtotal += line_total_cents
 
         # Fallback for single lump-sum payments / UPI receipts without itemized breakdown
         if len(items) == 0 and total_cents > 0:
             fallback_name = f"{merchant} (Lump-sum Payment)"
-            items.append(ReceiptItem(index=0, name=fallback_name, qty=1, price_cents=total_cents))
+            items.append(ReceiptItem(
+                index=0,
+                name=fallback_name,
+                qty=1,
+                quantity=1,
+                unit_price_cents=total_cents,
+                line_total_cents=total_cents,
+                price_cents=total_cents
+            ))
             computed_subtotal = total_cents
 
-        if subtotal_cents <= 0 or abs(computed_subtotal - subtotal_cents) <= 5:
-            subtotal_cents = computed_subtotal
+        printed_subtotal_cents = subtotal_cents if subtotal_cents > 0 else None
+        round_off_cents = int(data.get("round_off_cents", 0))
 
-        expected_total = subtotal_cents + tax_cents + tip_cents
-        if total_cents <= 0 or abs(expected_total - total_cents) <= 5:
-            total_cents = expected_total
+        # Check for subtotal mismatch
+        subtotal_mismatch = False
+        if printed_subtotal_cents is not None and printed_subtotal_cents > 0:
+            if abs(computed_subtotal - printed_subtotal_cents) > 5:
+                subtotal_mismatch = True
+
+        # Auto-detect round-off if not explicitly extracted
+        if round_off_cents == 0 and total_cents > 0:
+            expected_total = (printed_subtotal_cents or computed_subtotal) + tax_cents + tip_cents
+            diff = total_cents - expected_total
+            if 0 < abs(diff) <= 100:
+                round_off_cents = diff
 
         total_fmt = f"{currency_symbol}{total_cents / 100:.2f}"
         if len(items) == 1 and any(term in items[0].name.lower() for term in ["payment", "pay for intent", "lump-sum", "transfer"]):
@@ -166,7 +225,10 @@ class ReceiptVisionService:
             date=date,
             currency=currency,
             currency_symbol=currency_symbol,
-            subtotal_cents=subtotal_cents,
+            subtotal_cents=printed_subtotal_cents if (printed_subtotal_cents and not subtotal_mismatch) else computed_subtotal,
+            printed_subtotal_cents=printed_subtotal_cents,
+            round_off_cents=round_off_cents,
+            subtotal_mismatch=subtotal_mismatch,
             tax_cents=tax_cents,
             tip_cents=tip_cents,
             total_cents=total_cents,
@@ -224,13 +286,13 @@ class ReceiptVisionService:
         """
         Calls Groq's Vision endpoint if available.
         """
-        from groq import Groq
+        from groq import AsyncGroq
 
-        client = Groq(api_key=settings.GROQ_API_KEY)
-        base64_str = base64.b64encode(cleaned_bytes).decode("utf-8")
-        data_url = f"data:{resolved_mime};base64,{base64_str}"
+        client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        base64_img = base64.b64encode(cleaned_bytes).decode("utf-8")
+        data_url = f"data:{resolved_mime};base64,{base64_img}"
 
-        completion = client.chat.completions.create(
+        completion = await client.chat.completions.create(
             model=settings.GROQ_VISION_MODEL,
             messages=[{
                 "role": "user",
@@ -270,13 +332,14 @@ class ReceiptVisionService:
                 "currency": currency,
                 "currency_symbol": CURRENCY_SYMBOLS.get(currency.upper(), "$"),
                 "items": [
-                    {"name": "Grilled Red Snapper", "qty": 1, "price_cents": 4500},
-                    {"name": "Truffle Fries", "qty": 2, "price_cents": 2500},
-                    {"name": "Tropical Cocktails", "qty": 3, "price_cents": 5000},
+                    {"name": "Grilled Red Snapper", "quantity": 1, "unit_price_cents": 4500, "line_total_cents": 4500},
+                    {"name": "Truffle Fries", "quantity": 2, "unit_price_cents": 1250, "line_total_cents": 2500},
+                    {"name": "Tropical Cocktails", "quantity": 3, "unit_price_cents": 1667, "line_total_cents": 5000},
                 ],
                 "subtotal_cents": 12000,
                 "tax_cents": 1200,
                 "tip_cents": 2400,
+                "round_off_cents": 0,
                 "total_cents": 15600
             }
             return cls._reconcile_receipt_math(mock_data, requested_currency=currency)

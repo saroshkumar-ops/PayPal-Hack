@@ -6,6 +6,9 @@ import { getMemberTagColor } from '../ui/Avatar';
 export interface ReceiptItemData {
   id?: string;
   name: string;
+  qty?: number;
+  quantity?: number;
+  unitPriceCents?: number;
   priceCents: number;
   claimedByUserIds?: string[];
 }
@@ -18,6 +21,7 @@ export interface PaperReceiptProps {
   items: ReceiptItemData[];
   taxCents?: number;
   tipCents?: number;
+  roundOffCents?: number;
   totalCents: number;
   members?: Array<{ user_id: string; name: string }>;
   memberSplits?: Array<{ user_id: string; owes_cents: number; name?: string }>;
@@ -39,6 +43,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
   items = [],
   taxCents = 0,
   tipCents = 0,
+  roundOffCents = 0,
   totalCents,
   members = [],
   memberSplits,
@@ -200,7 +205,11 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-xs leading-tight truncate">
-                        {item.name}
+                        {(item.quantity || item.qty || 1) > 1 && item.unitPriceCents ? (
+                          `${item.quantity || item.qty} x ${item.name} @ ${(item.unitPriceCents / 100).toFixed(2)} = ${(item.priceCents / 100).toFixed(2)}`
+                        ) : (
+                          item.name
+                        )}
                       </div>
                       {claimedCount === 1 ? (
                         <div className="text-[10px] opacity-65 font-body">
@@ -267,6 +276,15 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
             <div className="flex justify-between text-[11px] opacity-75">
               <span>TIP</span>
               <span className="tabular-nums">{cur}{(tipCents / 100).toFixed(2)}</span>
+            </div>
+          )}
+
+          {roundOffCents !== undefined && roundOffCents !== 0 && (
+            <div className="flex justify-between text-[11px] opacity-75">
+              <span>ROUND-OFF</span>
+              <span className="tabular-nums">
+                {roundOffCents > 0 ? '+' : '-'}{cur}{(Math.abs(roundOffCents) / 100).toFixed(2)}
+              </span>
             </div>
           )}
 

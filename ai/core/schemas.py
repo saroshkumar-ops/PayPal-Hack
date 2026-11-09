@@ -113,6 +113,9 @@ class ReceiptItem(BaseModel):
     index: Optional[int] = None
     name: str
     qty: int = 1
+    quantity: int = 1
+    unit_price_cents: Optional[int] = None
+    line_total_cents: Optional[int] = None
     price_cents: int
 
 
@@ -129,6 +132,9 @@ class ReceiptParseResponse(BaseModel):
     currency: str = "USD"
     currency_symbol: str = "$"
     subtotal_cents: int
+    printed_subtotal_cents: Optional[int] = None
+    round_off_cents: int = 0
+    subtotal_mismatch: bool = False
     tax_cents: int = 0
     tip_cents: int = 0
     total_cents: int
