@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Radio, 
-  CheckCircle, 
   Wallet, 
   HelpCircle, 
   CreditCard,
@@ -209,14 +208,6 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
               </p>
             </div>
           </div>
-
-          <div className="p-3 rounded-xl bg-[#171A23] border border-white/8 text-[11px] font-mono text-[#8A8FA3] flex items-center justify-between">
-            <span>Status:</span>
-            <span className="text-[#C6FF3D] flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" />
-              <span>Balanced</span>
-            </span>
-          </div>
         </div>
 
         {/* Right Column: Real-Time PayPal SSE Webhook Radar (7 cols) */}
@@ -290,11 +281,6 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                 );
               })
             )}
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#07080D] border border-white/6 flex items-center justify-between text-xs font-mono text-[#8A8FA3]">
-            <span>Listener: /api/trips/{ledger.trip_id}/events</span>
-            <span className="text-[#C6FF3D]">Connected</span>
           </div>
         </div>
       </div>

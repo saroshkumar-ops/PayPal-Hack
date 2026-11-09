@@ -5,7 +5,6 @@ import {
   LayoutDashboard, 
   ReceiptText, 
   CreditCard, 
-  Clock, 
   Users,
   Maximize2, 
   Minimize2,
@@ -17,8 +16,6 @@ import type { AuthResponseDto } from '../../types';
 
 interface NavbarProps {
   tripName?: string;
-  hoursElapsed: number;
-  isBackendConnected: boolean;
   onOpenReceiptModal: () => void;
   onNewParty?: () => void;
   currentUser?: AuthResponseDto | null;
@@ -27,8 +24,6 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   tripName,
-  hoursElapsed,
-  isBackendConnected,
   onOpenReceiptModal,
   onNewParty,
   currentUser,
@@ -122,24 +117,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Upload Bill
           </Button>
-
-          {/* Virtual Time Advance Pill */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs text-[#EDEEF2] font-mono">
-            <Clock className="w-3.5 h-3.5 text-[#8A8FA3]" />
-            <span className="tabular-nums">+{hoursElapsed}h</span>
-          </div>
-
-          {/* Backend Connectivity Status */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0F1117] border border-white/8 text-[11px] sm:text-xs font-mono">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isBackendConnected ? 'bg-[#C6FF3D]' : 'bg-[#FF5C7A]'
-              }`}
-            />
-            <span className="text-[#8A8FA3]">
-              {isBackendConnected ? 'Online' : 'Offline'}
-            </span>
-          </div>
 
           {/* Authentication Status / Sign In */}
           {currentUser ? (

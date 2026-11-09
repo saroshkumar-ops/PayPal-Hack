@@ -23,8 +23,7 @@ import {
   paymentService, 
   authService,
   tripService,
-  memberService,
-  checkHealth 
+  memberService
 } from './api/services';
 import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
@@ -43,7 +42,6 @@ export function App() {
   const [ledger, setLedger] = useState<TripLedger>(EMPTY_LEDGER);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [paypalLogs, setPaypalLogs] = useState<PayPalEventLog[]>([]);
-  const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Modals state
@@ -77,11 +75,6 @@ export function App() {
       origin: { y: 0.6 },
       colors: ['#C6FF3D', '#38E1FF', '#FFC439', '#EDEEF2'],
     });
-  };
-
-  const checkBackend = async () => {
-    const health = await checkHealth();
-    setIsBackendConnected(health.backend);
   };
 
   const loadData = useCallback(async (tripIdToLoad?: string) => {
@@ -157,13 +150,6 @@ export function App() {
     } catch (err) {
       console.warn('ensureUserParty error:', err);
     }
-  }, []);
-
-  // Check health on mount
-  useEffect(() => {
-    checkBackend();
-    const interval = setInterval(checkBackend, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   // Verify auth on mount
@@ -441,11 +427,9 @@ export function App() {
     <LenisProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
-          {/* Top Cyber Ledger Navbar */}
+          {/* Top Navbar */}
           <Navbar
             tripName={ledger.trip_name || ledger.name}
-            hoursElapsed={ledger.hours_elapsed}
-            isBackendConnected={isBackendConnected}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
             onNewParty={() => setIsCreatePartyModalOpen(true)}
             currentUser={currentUser}
@@ -460,7 +444,6 @@ export function App() {
                 element={
                   <OverviewPage
                     ledger={ledger}
-                    onAdvanceTime={() => handleAdvanceTime(24)}
                     onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
                     onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
                   />
@@ -502,15 +485,10 @@ export function App() {
             </Routes>
           </main>
 
-          {/* Bottom Cyber Status Ticker */}
+          {/* Bottom Footer */}
           <footer className="w-full border-t border-white/8 bg-[#07080D]/90 backdrop-blur-md px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-[#8A8FA3] z-20">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
-                <span>TripSheriff</span>
-              </span>
-              <span className="hidden sm:inline text-white/20">•</span>
-              <span className="hidden sm:inline">PayPal Connected</span>
+              <span>TripSheriff</span>
             </div>
             <div className="text-[10px] sm:text-[11px] text-[#8A8FA3]">
               User: <span className="text-[#C6FF3D]">{currentUser.handle || currentUser.name}</span>

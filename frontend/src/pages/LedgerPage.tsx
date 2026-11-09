@@ -5,10 +5,7 @@ import { Link } from 'react-router-dom';
 import type { TripLedger } from '../types';
 import { 
   Search, 
-  Lock, 
-  HelpCircle, 
-  Receipt, 
-  ShieldCheck
+  Receipt
 } from 'lucide-react';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
@@ -19,7 +16,6 @@ interface LedgerPageProps {
 
 export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   const [quickFilterText, setQuickFilterText] = useState('');
-  const [showExplanation, setShowExplanation] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
 
   const totalSpendCents = useMemo(() => {
@@ -36,7 +32,6 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   });
 
   const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
-  const driftCents = Math.abs(Object.values(ledger.net_balances_cents || {}).reduce((acc, val) => acc + val, 0));
 
   // Row Data for AG Grid
   const rowData = useMemo(() => {
@@ -153,9 +148,9 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
       {/* ================================================================ */}
-      {/* 1. TOP AUDIT HUD (DOUBLE-ENTRY MATHEMATICAL PROOF)                */}
+      {/* 1. TOP SUMMARY HUD                                               */}
       {/* ================================================================ */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
           <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">TOTAL SPENT</div>
           <div className="text-xl sm:text-2xl font-mono font-bold text-[#EDEEF2] tabular-nums">
@@ -179,64 +174,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           </div>
           <div className="text-[11px] text-[#FF5C7A] font-mono">Pending Payments</div>
         </div>
-
-        <div className="p-4 rounded-2xl bg-[#0F1117] border border-white/8 space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="text-[10px] text-[#8A8FA3] font-mono uppercase tracking-wider">BALANCE STATUS</div>
-            <button
-              onClick={() => setShowExplanation(!showExplanation)}
-              className="text-[#C6FF3D] hover:underline text-[10px] font-mono flex items-center gap-1 cursor-pointer"
-            >
-              <HelpCircle className="w-3 h-3" />
-              <span>{showExplanation ? 'Hide' : 'Explain'}</span>
-            </button>
-          </div>
-          <div className="text-xl sm:text-2xl font-mono font-bold tabular-nums flex items-center gap-1.5">
-            <span className={driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}>
-              {cur}{(driftCents / 100).toFixed(2)}
-            </span>
-            <Lock className={`w-4 h-4 ${driftCents === 0 ? 'text-[#C6FF3D]' : 'text-[#FF5C7A]'}`} />
-          </div>
-          <div className="text-[11px] font-mono text-[#8A8FA3]">
-            {driftCents === 0 ? 'Balanced' : 'Unbalanced'}
-          </div>
-        </div>
       </div>
-
-      {/* ================================================================ */}
-      {/* 2. VISUAL EXPLANATION OF DOUBLE-ENTRY AUDIT ENGINE               */}
-      {/* ================================================================ */}
-      {showExplanation && (
-        <div className="p-5 rounded-3xl bg-[#0F1117] border border-[#C6FF3D]/30 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#C6FF3D]">
-            <ShieldCheck className="w-4 h-4" />
-            <span>HOW EXPENSE BALANCING WORKS</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#EDEEF2] font-semibold font-body">1. Balanced Ledger</div>
-              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Every bill paid is matched with member splits so total credits match total debits.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#C6FF3D] font-semibold font-body">2. Exact Cent Math</div>
-              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Amounts are stored in integer cents to eliminate decimal rounding errors.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="text-[#FFC439] font-semibold font-body">3. Smart Settlement</div>
-              <p className="text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Minimizes total transfers so friends only make direct payments.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ================================================================ */}
       {/* 3. BIPARTITE MINIMUM CASH FLOW SUMMARY CARDS                     */}

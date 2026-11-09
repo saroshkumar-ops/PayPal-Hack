@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Clock, 
   ArrowRight, 
   Receipt, 
   ChevronRight,
@@ -24,14 +23,13 @@ import { getNotificationLabel } from '../lib/notifications';
 
 interface OverviewPageProps {
   ledger: TripLedger;
-  onAdvanceTime: () => void;
+  onAdvanceTime?: () => void;
   onOpenReceiptModal: () => void;
   onOpenPayoutModal: () => void;
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
   ledger,
-  onAdvanceTime,
   onOpenReceiptModal,
   onOpenPayoutModal,
 }) => {
@@ -54,7 +52,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   });
 
   const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
-  const driftCents = Math.abs(Object.values(ledger.net_balances_cents || {}).reduce((acc, val) => acc + val, 0));
   const cur = getCurrencySymbol(ledger.currency);
 
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || {
@@ -77,50 +74,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
       {/* ================================================================ */}
-      {/* 1. FINANCIAL TICKER BAR                                          */}
-      {/* ================================================================ */}
-      <div className="w-full rounded-xl bg-[#0F1117] border border-white/8 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-sm">
-        <div className="flex items-center gap-4 overflow-x-auto scrollbar-none py-0.5">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className={`w-2 h-2 rounded-full ${driftCents === 0 ? 'bg-[#C6FF3D]' : 'bg-[#FF5C7A]'}`} />
-            <span className="text-[#8A8FA3]">STATUS:</span>
-            <span className={driftCents === 0 ? 'text-[#C6FF3D] font-bold' : 'text-[#FF5C7A] font-bold'}>
-              {driftCents === 0 ? 'BALANCED' : `${cur}${(driftCents / 100).toFixed(2)} UNBALANCED`}
-            </span>
-          </div>
-          <span className="text-white/10 shrink-0">|</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[#8A8FA3]">COLLECTED:</span>
-            <span className="text-[#EDEEF2] tabular-nums font-semibold">{cur}{(settledCents / 100).toFixed(2)}</span>
-          </div>
-          <span className="text-white/10 shrink-0">|</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[#8A8FA3]">TIME:</span>
-            <span className="text-[#EDEEF2] tabular-nums">+{ledger.hours_elapsed}h</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setShowGuide(!showGuide)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
-          >
-            <HelpCircle className="w-3 h-3 text-[#C6FF3D]" />
-            <span>{showGuide ? 'Hide Guide' : 'How It Works'}</span>
-          </button>
-
-          <button
-            onClick={onAdvanceTime}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-white/6 border border-white/10 text-[11px] text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
-          >
-            <Clock className="w-3 h-3 text-[#C6FF3D]" />
-            <span>+24h</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ================================================================ */}
-      {/* 2. INTERACTIVE VISUAL EXPLANATION & ARCHITECTURE GUIDE (TOGGLE)  */}
+      {/* INTERACTIVE VISUAL EXPLANATION & GUIDE (TOGGLE)                  */}
       {/* ================================================================ */}
       <AnimatePresence>
         {showGuide && (
@@ -320,16 +274,24 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 >
                   Upload Bill
                 </Button>
-                <Link to="/simulator" className="no-underline w-full sm:w-auto">
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    icon={<ArrowRight className="w-4 h-4" />}
-                    className="w-full"
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowGuide(!showGuide)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
                   >
-                    Simulator
-                  </Button>
-                </Link>
+                    <HelpCircle className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                    <span>{showGuide ? 'Hide Guide' : 'How It Works'}</span>
+                  </button>
+                  <Link to="/simulator" className="no-underline">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      icon={<ArrowRight className="w-4 h-4" />}
+                    >
+                      Simulator
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
 
