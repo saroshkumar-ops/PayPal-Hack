@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { 
   Send, 
   CreditCard, 
-  Flame, 
   Paperclip, 
   Sparkles, 
   Copy, 
@@ -157,7 +156,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               Simulator
             </h2>
             <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-              Simulate time, automated reminders, and natural chat splits
+              Automated reminders and natural chat expense splits
             </p>
           </div>
         </div>
@@ -177,8 +176,8 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             disabled={isLoading}
             className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-[#FF5C7A]/20 border border-white/10 hover:border-[#FF5C7A]/40 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Flame className="w-3.5 h-3.5 text-[#FF5C7A]" />
-            <span>+24 Hours</span>
+            <Bell className="w-3.5 h-3.5 text-[#FF5C7A]" />
+            <span>Escalate Reminder</span>
           </button>
 
           {topDebtor ? (
@@ -518,8 +517,8 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             {/* Heat Progress Track */}
             <div className="space-y-1.5 font-mono text-xs">
               <div className="flex justify-between text-[#8A8FA3]">
-                <span>Time elapsed: +{ledger.hours_elapsed}h</span>
-                <span className="font-bold text-[#EDEEF2]">Level: {currentTier.heat}%</span>
+                <span>Escalation Level</span>
+                <span className="font-bold text-[#EDEEF2]">Intensity: {currentTier.heat}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-[#07080D] overflow-hidden p-0.5 border border-white/8">
                 <div
@@ -527,7 +526,6 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                   style={{
                     width: `${currentTier.heat}%`,
                     backgroundColor: currentTier.color,
-                    
                   }}
                 />
               </div>
@@ -546,10 +544,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
               <p className="text-xs text-[#EDEEF2] font-body leading-relaxed m-0">
                 {topDebtor ? (
                   ledger.hours_elapsed >= 72
-                    ? `[Urgent] ${topDebtor.name.split(' ')[0]}, balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} is overdue (+${ledger.hours_elapsed}h). Settle with PayPal above.`
+                    ? `[Urgent] ${topDebtor.name.split(' ')[0]}, balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} is overdue. Settle with PayPal above.`
                     : `[Reminder] ${topDebtor.name.split(' ')[0]} owes ${cur}${(topDebtorOwedCents / 100).toFixed(2)}. Settle with PayPal above.`
                 ) : (
-                  'All members are settled. When balances age past 24h, automated reminders appear here.'
+                  'All members are settled. Automated reminders appear here when balances are pending.'
                 )}
               </p>
             </div>
