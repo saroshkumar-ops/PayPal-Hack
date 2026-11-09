@@ -11,7 +11,8 @@ import { LoginPage } from './pages/LoginPage';
 
 import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal } from './components/bits/ReceiptDropModal';
-import { CreatePartyModal } from './components/bits/CreatePartyModal';
+import { CreatePartyModal, type PartyMemberDraft } from './components/bits/CreatePartyModal';
+import { AddMemberModal } from './components/bits/AddMemberModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
 import { LenisProvider } from './components/common/LenisProvider';
 
@@ -48,6 +49,7 @@ export function App() {
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isCreatePartyModalOpen, setIsCreatePartyModalOpen] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [checkoutDrawer, setCheckoutDrawer] = useState<{
     isOpen: boolean;
     debtorName: string;
@@ -206,7 +208,11 @@ export function App() {
     setMessages([]);
   };
 
-  const handleCreateNewParty = async (name: string, currency: 'USD' | 'INR') => {
+  const handleCreateNewParty = async (
+    name: string, 
+    currency: 'USD' | 'INR',
+    additionalMembers?: PartyMemberDraft[]
+  ) => {
     if (!currentUser) return;
     const safeSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     const newTripId = `party_${safeSlug}_${Date.now().toString(36).slice(-4)}`;
@@ -217,6 +223,7 @@ export function App() {
       currency: currency,
     });
 
+    // 1. Add current user as organizer
     await memberService.addMember(newTripId, {
       user_id: currentUser.user_id,
       name: currentUser.name,
@@ -226,10 +233,53 @@ export function App() {
       roast_consent: 'SPICY',
     });
 
+    // 2. Add invited friends
+    if (additionalMembers && additionalMembers.length > 0) {
+      for (const m of additionalMembers) {
+        const memberSlug = m.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        await memberService.addMember(newTripId, {
+          user_id: `usr_${memberSlug}_${Date.now().toString(36).slice(-3)}`,
+          name: m.name,
+          handle: m.handle?.startsWith('@') ? m.handle : (m.handle ? `@${m.handle}` : `@${memberSlug}`),
+          paypal_email: m.paypal_email || `${memberSlug}@personal.example.com`,
+          role: 'MEMBER',
+          roast_consent: 'MILD',
+        });
+      }
+    }
+
     localStorage.setItem('active_trip_id', newTripId);
     setActiveTripId(newTripId);
     await loadData(newTripId);
     triggerCelebrationConfetti();
+  };
+
+  // Add a new member to the active trip
+  const handleAddMemberToCurrentParty = async (
+    name: string,
+    handle?: string,
+    paypalEmail?: string
+  ) => {
+    if (!currentTripId) return;
+    setIsLoading(true);
+    try {
+      const memberSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      await memberService.addMember(currentTripId, {
+        user_id: `usr_${memberSlug}_${Date.now().toString(36).slice(-3)}`,
+        name: name.trim(),
+        handle: handle?.startsWith('@') ? handle : (handle ? `@${handle.trim()}` : `@${memberSlug}`),
+        paypal_email: paypalEmail?.trim() || `${memberSlug}@personal.example.com`,
+        role: 'MEMBER',
+        roast_consent: 'MILD',
+      });
+      await loadData(currentTripId);
+      setIsAddMemberModalOpen(false);
+      triggerCelebrationConfetti();
+    } catch (err) {
+      console.error('Failed to add member to party:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const currentTripId = ledger.trip_id || activeTripId || '';
@@ -467,6 +517,7 @@ export function App() {
                     ledger={ledger}
                     onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
                     onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
+                    onOpenAddMemberModal={() => setIsAddMemberModalOpen(true)}
                   />
                 }
               />
@@ -553,7 +604,15 @@ export function App() {
           <CreatePartyModal
             isOpen={isCreatePartyModalOpen}
             onClose={() => setIsCreatePartyModalOpen(false)}
+            organizerName={currentUser?.name}
             onCreateParty={handleCreateNewParty}
+          />
+
+          <AddMemberModal
+            isOpen={isAddMemberModalOpen}
+            onClose={() => setIsAddMemberModalOpen(false)}
+            tripName={ledger.trip_name || ledger.name}
+            onAddMember={handleAddMemberToCurrentParty}
           />
         </div>
       </BrowserRouter>

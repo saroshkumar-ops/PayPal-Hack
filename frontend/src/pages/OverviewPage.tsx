@@ -11,7 +11,8 @@ import {
   CreditCard,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  UserPlus
 } from 'lucide-react';
 import type { TripLedger } from '../types';
 import { VirtualTripCard } from '../components/cards/VirtualTripCard';
@@ -27,12 +28,14 @@ interface OverviewPageProps {
   onAdvanceTime?: () => void;
   onOpenReceiptModal: () => void;
   onOpenPayoutModal: () => void;
+  onOpenAddMemberModal?: () => void;
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
   ledger,
   onOpenReceiptModal,
   onOpenPayoutModal,
+  onOpenAddMemberModal,
 }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
@@ -327,12 +330,18 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     WHO OWES WHO
                   </span>
                   <span className="text-[10px] font-mono text-[#8A8FA3] bg-[#171A23] px-2 py-0.5 rounded">
-                    Optimized
+                    {ledger.members.length} {ledger.members.length === 1 ? 'Member' : 'Members'}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-[#8A8FA3]">
-                  Click a member to inspect
-                </span>
+                {onOpenAddMemberModal && (
+                  <button
+                    onClick={onOpenAddMemberModal}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] hover:bg-[#C6FF3D]/10 border border-white/10 hover:border-[#C6FF3D]/30 text-xs font-mono text-[#C6FF3D] transition-colors cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Add Member</span>
+                  </button>
+                )}
               </div>
 
               {/* Visual Node Grid */}
@@ -391,6 +400,21 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     </motion.div>
                   );
                 })}
+
+                {/* Add Member Card */}
+                {onOpenAddMemberModal && (
+                  <button
+                    onClick={onOpenAddMemberModal}
+                    className="p-3.5 rounded-xl border border-dashed border-white/12 hover:border-[#C6FF3D]/40 bg-[#0F1117]/50 hover:bg-[#171A23] transition-all cursor-pointer flex flex-col items-center justify-center gap-2 h-28 text-center group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#171A23] group-hover:bg-[#C6FF3D]/10 border border-white/10 group-hover:border-[#C6FF3D]/30 flex items-center justify-center transition-colors">
+                      <UserPlus className="w-4 h-4 text-[#8A8FA3] group-hover:text-[#C6FF3D]" />
+                    </div>
+                    <span className="text-xs font-mono text-[#8A8FA3] group-hover:text-[#EDEEF2] transition-colors">
+                      + Add Member
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* Settlement Vector Preview */}
