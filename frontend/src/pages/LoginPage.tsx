@@ -8,8 +8,7 @@ import {
   User, 
   AtSign, 
   CreditCard, 
-  AlertCircle,
-  ShieldCheck
+  AlertCircle 
 } from 'lucide-react';
 import { authService } from '../api/services';
 import { Logo } from '../components/common/Logo';
@@ -95,29 +94,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col items-center justify-center p-4 sm:p-6 font-body selection:bg-white/20 selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text)] flex flex-col items-center justify-center p-4 sm:p-6 font-body relative overflow-hidden select-none">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md z-10 flex flex-col items-center"
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="w-full max-w-md z-10 flex flex-col items-center space-y-6"
       >
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center space-y-2 mb-8">
+        <div className="flex flex-col items-center text-center space-y-2">
           <Logo size="lg" />
+          <p className="text-xs text-[var(--muted)] font-mono tracking-tight m-0">
+            Trip expense ledger & direct PayPal settlement
+          </p>
         </div>
 
-        {/* Auth Card */}
-        <div className="w-full rounded-3xl bg-[#0F1117] border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.85)] p-6 sm:p-8 space-y-6">
-          {/* Tab Selector */}
-          <div className="grid grid-cols-2 p-1 bg-[#07080D] rounded-xl border border-white/8">
+        {/* Auth Card with hairline border */}
+        <div className="w-full rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-6 sm:p-8 space-y-5">
+          {/* Tab Selector: strictly no lime text */}
+          <div className="grid grid-cols-2 p-1 bg-[var(--canvas)] rounded-xl border border-[var(--border)]">
             <button
               type="button"
               onClick={() => { setMode('login'); setErrorMsg(null); }}
-              className={`py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              className={`py-2 text-xs font-mono font-medium rounded-lg transition-colors cursor-pointer ${
                 mode === 'login'
-                  ? 'bg-[#171A23] text-[#C6FF3D] border border-white/10 shadow-sm'
-                  : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
+                  ? 'bg-[var(--surface-elevated)] text-[var(--text)] border border-white/20 shadow-sm'
+                  : 'text-[var(--muted)] hover:text-[var(--text)]'
               }`}
             >
               Sign In
@@ -125,10 +127,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="button"
               onClick={() => { setMode('register'); setErrorMsg(null); }}
-              className={`py-2 text-xs font-mono font-medium rounded-lg transition-all cursor-pointer ${
+              className={`py-2 text-xs font-mono font-medium rounded-lg transition-colors cursor-pointer ${
                 mode === 'register'
-                  ? 'bg-[#171A23] text-[#C6FF3D] border border-white/10 shadow-sm'
-                  : 'text-[#8A8FA3] hover:text-[#EDEEF2]'
+                  ? 'bg-[var(--surface-elevated)] text-[var(--text)] border border-white/20 shadow-sm'
+                  : 'text-[var(--muted)] hover:text-[var(--text)]'
               }`}
             >
               Register
@@ -138,7 +140,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMsg && (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#FF5C7A]/10 border border-[#FF5C7A]/30 text-xs font-mono text-[#FF5C7A]">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)]">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
@@ -148,30 +150,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <>
                 {/* Name */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                    <span>Name</span>
+                  <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[var(--muted)]" />
+                    <span>Full Name</span>
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                    placeholder="Alex Chen"
+                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
                     required
                   />
                 </div>
 
                 {/* Handle */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
-                    <AtSign className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                    <span>Username (optional)</span>
+                  <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
+                    <AtSign className="w-3.5 h-3.5 text-[var(--muted)]" />
+                    <span>Trip Handle (optional)</span>
                   </label>
                   <input
                     type="text"
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
-                    className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                    placeholder="@alex"
+                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                   />
                 </div>
               </>
@@ -179,30 +183,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Email</span>
+              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-[var(--muted)]" />
+                <span>Email Address</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                placeholder="traveler@example.com"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 required
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#C6FF3D]" />
+              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[var(--muted)]" />
                 <span>Password</span>
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                placeholder="••••••••"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 required
               />
             </div>
@@ -210,19 +216,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {mode === 'register' && (
               /* PayPal Email */
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8A8FA3] font-body flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                  <span>PayPal Email (optional)</span>
+                <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <span>PayPal Receiver Email (optional)</span>
                 </label>
                 <input
                   type="email"
                   value={paypalEmail}
                   onChange={(e) => setPaypalEmail(e.target.value)}
-                  className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                  placeholder="alex.paypal@example.com"
+                  className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 />
               </div>
             )}
 
+            {/* The single primary lime action on screen */}
             <div className="pt-2">
               <Button
                 variant="primary"
@@ -233,38 +241,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className="w-full text-xs font-display font-semibold justify-center py-3"
               >
                 {isLoading 
-                  ? 'Loading...' 
+                  ? 'Verifying...' 
                   : (mode === 'login' ? 'Sign In' : 'Create Account')}
               </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-1.5 pt-2 text-[11px] font-mono text-[#8A8FA3]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#C6FF3D]" />
-              <span>Encrypted & secure</span>
             </div>
           </form>
         </div>
 
-        {/* Toggle Mode Quick Link */}
-        <div className="mt-6 text-xs text-[#8A8FA3] font-mono text-center">
+        {/* Toggle Mode Quick Link: subtle text link */}
+        <div className="text-xs text-[var(--muted)] font-mono text-center">
           {mode === 'login' ? (
             <span>
-              Need an account?{' '}
+              New traveler?{' '}
               <button
                 type="button"
                 onClick={() => { setMode('register'); setErrorMsg(null); }}
-                className="text-[#C6FF3D] hover:underline font-semibold cursor-pointer"
+                className="text-[var(--text)] hover:underline font-semibold cursor-pointer ml-1"
               >
-                Register
+                Create an account
               </button>
             </span>
           ) : (
             <span>
-              Already have an account?{' '}
+              Already registered?{' '}
               <button
                 type="button"
                 onClick={() => { setMode('login'); setErrorMsg(null); }}
-                className="text-[#C6FF3D] hover:underline font-semibold cursor-pointer"
+                className="text-[var(--text)] hover:underline font-semibold cursor-pointer ml-1"
               >
                 Sign In
               </button>

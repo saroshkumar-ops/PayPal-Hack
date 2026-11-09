@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ReceiptText, 
   ArrowRight, 
@@ -34,6 +35,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [lastExpenseId, setLastExpenseId] = useState<string | null>(null);
+  const [isSeparating, setIsSeparating] = useState(false);
+
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
 
   // Compute live financial totals from real ledger data (no placeholders)
   const totalSpendCents = ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
@@ -74,6 +82,18 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   const latestExpense = ledger.expenses.length > 0 
     ? [...ledger.expenses].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
     : null;
+
+  // Split result moment: animate each person's share separating from receipt and landing on avatar
+  useEffect(() => {
+    if (latestExpense?.expense_id) {
+      if (lastExpenseId && lastExpenseId !== latestExpense.expense_id) {
+        setIsSeparating(true);
+        const timer = setTimeout(() => setIsSeparating(false), 2400);
+        return () => clearTimeout(timer);
+      }
+      setLastExpenseId(latestExpense.expense_id);
+    }
+  }, [latestExpense?.expense_id, lastExpenseId]);
 
   const memberSplits = latestExpense 
     ? latestExpense.splits.map((s) => {
@@ -265,13 +285,22 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar
-                        userId={member.user_id}
-                        name={member.name}
-                        size="md"
-                        showStatus
-                        status={isCreditor ? 'paid' : isDebtor ? 'owes' : 'pending'}
-                      />
+                      <motion.div
+                        animate={
+                          isSeparating && !prefersReducedMotion && ((latestExpense?.splits.find((s) => s.user_id === member.user_id)?.owes_cents || 0) > 0)
+                            ? { scale: [1, 1.15, 1] }
+                            : {}
+                        }
+                        transition={{ duration: 0.45, ease: 'easeOut' }}
+                      >
+                        <Avatar
+                          userId={member.user_id}
+                          name={member.name}
+                          size="md"
+                          showStatus
+                          status={isCreditor ? 'paid' : isDebtor ? 'owes' : 'pending'}
+                        />
+                      </motion.div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-body font-semibold text-[var(--text)] truncate">
@@ -280,6 +309,18 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded border border-[var(--border)] text-[var(--muted)]">
                             {member.role}
                           </span>
+                          <AnimatePresence>
+                            {isSeparating && ((latestExpense?.splits.find((s) => s.user_id === member.user_id)?.owes_cents || 0) > 0) && (
+                              <motion.span
+                                initial={{ opacity: 0, x: 6 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-[9px] font-mono text-[var(--owes)] bg-[var(--owes)]/10 px-1.5 py-0.2 rounded border border-[var(--owes)]/20 font-bold"
+                              >
+                                Assigned
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
                         </div>
                         <div className="text-[11px] font-mono text-[var(--muted)] truncate">
                           {member.handle}
@@ -376,6 +417,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   splitType={latestExpense.split_type === 'EQUAL' ? 'EQUAL' : 'CUSTOM'}
                   rotateDeg={-0.8}
                   interactive={false}
+                  animatingSplit={isSeparating}
                 />
               ) : (
                 <div 

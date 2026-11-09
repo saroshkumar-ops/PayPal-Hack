@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Send, 
@@ -7,15 +7,17 @@ import {
   Sparkles, 
   Copy, 
   Check, 
-  Zap, 
   Receipt, 
   Layers,
-  Bell
+  Bell,
+  Clock
 } from 'lucide-react';
 import type { ChatMessage, TripLedger, EscalationTier } from '../types';
 import { Button } from '../components/ui/Button';
 import { getCurrencySymbol } from '../lib/currency';
 import { getNotificationLabel } from '../lib/notifications';
+import { getMemberTagColor } from '../components/ui/Avatar';
+import { formatPartyName } from '../lib/formatters';
 
 interface SimulatorPageProps {
   ledger: TripLedger;
@@ -97,33 +99,35 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
   };
 
   // Calculate live item-based debt allocation per member
-  const liveMemberTotals = ledger.members.map((member) => {
-    let totalCents = 0;
-    interactiveItems.forEach((item) => {
-      if (item.claimedBy.includes(member.user_id)) {
-        totalCents += Math.round(item.priceCents / (item.claimedBy.length || 1));
-      }
+  const liveMemberTotals = useMemo(() => {
+    return ledger.members.map((member) => {
+      let totalCents = 0;
+      interactiveItems.forEach((item) => {
+        if (item.claimedBy.includes(member.user_id)) {
+          totalCents += Math.round(item.priceCents / (item.claimedBy.length || 1));
+        }
+      });
+      return {
+        member,
+        totalCents,
+      };
     });
-    return {
-      member,
-      totalCents,
-    };
-  });
+  }, [ledger.members, interactiveItems]);
 
-  // Copy PayPal link interaction
+  // Copy PayPal link interaction with feedback
   const handleCopyLink = (linkId: string, url: string) => {
     navigator.clipboard.writeText(url);
     setCopiedLink(linkId);
     setTimeout(() => setCopiedLink(null), 2000);
   };
 
-  // Calculate current escalation tier
-  const getEscalationTier = (hours: number): { tier: EscalationTier; label: string; heat: number; color: string } => {
-    if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Friendly Nudge', heat: 20, color: '#C6FF3D' };
-    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Follow-Up', heat: 45, color: '#FFC439' };
-    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Firm Reminder', heat: 68, color: '#FF9B42' };
-    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Urgent Reminder', heat: 88, color: '#FF5C7A' };
-    return { tier: 'ITINERARY_EMBARGO', label: 'Final Notice', heat: 100, color: '#FF5C7A' };
+  // Calculate current escalation tier (Strict Section 3 Palette: NO orange #FF9B42)
+  const getEscalationTier = (hours: number): { tier: EscalationTier; label: string; heat: number; tokenColor: string } => {
+    if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Polite Concierge', heat: 20, tokenColor: 'var(--muted)' };
+    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Follow-Up Notice', heat: 45, tokenColor: 'var(--paypal)' };
+    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Firm Reminder', heat: 68, tokenColor: 'var(--tag-sand)' };
+    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Urgent Notice', heat: 88, tokenColor: 'var(--owes)' };
+    return { tier: 'ITINERARY_EMBARGO', label: 'Itinerary Embargo', heat: 100, tokenColor: 'var(--owes)' };
   };
 
   const currentTier = getEscalationTier(ledger.hours_elapsed);
@@ -132,9 +136,9 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
   // Partner member for suggestion prompt
   const friendMember = ledger.members.find((m) => m.user_id !== organizer?.user_id) || ledger.members[0];
-  const friendFirstName = friendMember ? friendMember.name.split(' ')[0] : 'friend';
+  const friendFirstName = friendMember ? friendMember.name.split(' ')[0] : 'traveler';
 
-  // Dynamically determine the delinquent debtor with lowest net balance
+  // Determine delinquent debtor with lowest net balance
   const topDebtor = ledger.members
     .filter((m) => (ledger.net_balances_cents[m.user_id] || 0) < 0)
     .sort((a, b) => (ledger.net_balances_cents[a.user_id] || 0) - (ledger.net_balances_cents[b.user_id] || 0))[0];
@@ -144,114 +148,123 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
       {/* ================================================================ */}
-      {/* TOP OPERATIONS CONTROL DECK                                      */}
+      {/* 1. OPERATIONS COCKPIT DECK                                       */}
       {/* ================================================================ */}
-      <div className="rounded-2xl bg-[#0F1117] border border-white/8 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-[#C6FF3D]" />
-          </div>
-          <div>
-            <h2 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-              Simulator
-            </h2>
-            <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-              Automated reminders and natural chat expense splits
+      <section className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+              <span className="w-1.5 h-1.5 bg-white/70 rounded-full" />
+              <span className="font-semibold">{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
+              <span className="text-[var(--muted)]">·</span>
+              <span className="text-[var(--muted)] flex items-center gap-1">
+                <Clock className="w-3 h-3 text-[var(--muted)]" />
+                <span>T+{ledger.hours_elapsed}h Simulated</span>
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-[var(--text)] tracking-tight leading-none m-0">
+              Operations Simulator
+            </h1>
+
+            <p className="text-xs sm:text-sm text-[var(--muted)] font-body leading-relaxed m-0">
+              Simulate debt aging, test natural language expense parsing, and trigger automated reminders.
             </p>
           </div>
-        </div>
 
-        {/* Operational Action Controls */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={onOpenReceiptModal}
-            className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Receipt className="w-3.5 h-3.5 text-[#C6FF3D]" />
-            <span>Upload Bill</span>
-          </button>
-
-          <button
-            onClick={() => onAdvanceTime(24)}
-            disabled={isLoading}
-            className="px-3 py-1.5 rounded-xl bg-[#171A23] hover:bg-[#FF5C7A]/20 border border-white/10 hover:border-[#FF5C7A]/40 text-xs font-mono font-medium text-[#EDEEF2] flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Bell className="w-3.5 h-3.5 text-[#FF5C7A]" />
-            <span>Escalate Reminder</span>
-          </button>
-
-          {topDebtor ? (
+          {/* Action Row: Outline/secondary actions, plus real PayPal touchpoint */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
-              onClick={() => onPayDebt(topDebtor.user_id, topDebtorOwedCents)}
-              disabled={isLoading}
-              className="px-3 py-1.5 rounded-xl bg-[#FFC439] hover:bg-[#f5b828] text-[#07080D] text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              type="button"
+              onClick={onOpenReceiptModal}
+              className="px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono font-medium text-[var(--text)] flex items-center gap-2 transition-colors cursor-pointer"
             >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Settle {topDebtor.name.split(' ')[0]} ({cur}{(topDebtorOwedCents / 100).toFixed(2)})</span>
+              <Receipt className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <span>Scan Bill</span>
             </button>
-          ) : (
-            <span className="px-3 py-1.5 rounded-xl bg-[#171A23] border border-white/8 text-xs font-mono text-[#C6FF3D]">
-              All Settled
-            </span>
-          )}
+
+            <button
+              type="button"
+              onClick={() => onAdvanceTime(24)}
+              disabled={isLoading}
+              className="px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono font-medium text-[var(--text)] flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-40"
+            >
+              <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <span>Advance Time (+24h)</span>
+            </button>
+
+            {topDebtor ? (
+              <Button
+                variant="paypal"
+                size="md"
+                onClick={() => onPayDebt(topDebtor.user_id, topDebtorOwedCents)}
+                disabled={isLoading}
+                icon={<CreditCard className="w-4 h-4" />}
+              >
+                <span>Settle {topDebtor.name.split(' ')[0]} ({cur}{(topDebtorOwedCents / 100).toFixed(2)})</span>
+              </Button>
+            ) : (
+              <div className="px-3.5 py-2 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-xs font-mono text-[var(--settled)] flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>All Balances Settled</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ================================================================ */}
-      {/* 2-COLUMN WAR ROOM LAYOUT                                         */}
+      {/* 2. MAIN COCKPIT: CHAT (LEFT) & DISSECTION CANVAS (RIGHT)         */}
       {/* ================================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left Column: Natural Language Intent Interceptor */}
-        <div className="lg:col-span-5 rounded-3xl bg-[#0F1117] border border-white/8 flex flex-col justify-between shadow-[0_16px_48px_rgba(0,0,0,0.8)] overflow-hidden h-[740px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN (5 COLS): NATURAL CONVERSATIONAL ASSISTANT */}
+        <section className="lg:col-span-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex flex-col justify-between shadow-sm overflow-hidden h-[760px]">
           {/* Header */}
-          <div className="p-4 border-b border-white/8 bg-[#07080D]/60 flex items-center justify-between">
+          <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-elevated)] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#C6FF3D] animate-pulse" />
-              <span className="text-xs font-mono font-bold text-[#EDEEF2]">
+              <span className="w-2 h-2 rounded-full bg-white/70" />
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                 Chat Assistant
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[#8A8FA3]">
-              {messages.length} Messages
+            <span className="text-[10px] font-mono text-[var(--muted)]">
+              {messages.length} {messages.length === 1 ? 'message' : 'messages'}
             </span>
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-none">
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 font-mono text-xs">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col justify-center space-y-4 p-4 text-xs font-mono">
-                <div className="text-center space-y-1 mb-2">
-                  <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center mx-auto text-[#C6FF3D]">
+              <div className="h-full flex flex-col justify-center space-y-4 p-2 text-xs font-mono text-center">
+                <div className="space-y-1.5">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center mx-auto text-[var(--text)]">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <div className="text-sm font-display font-bold text-[#EDEEF2]">Add Expense via Chat</div>
-                  <p className="text-[11px] text-[#8A8FA3] font-body m-0">
-                    Type expenses naturally. The AI reads payers, amounts, and splits:
+                  <div className="text-sm font-display font-bold text-[var(--text)]">Conversational Bill Entry</div>
+                  <p className="text-xs text-[var(--muted)] font-body max-w-xs mx-auto m-0 leading-relaxed">
+                    Type expenses naturally. The assistant extracts payers, amounts, and splits.
                   </p>
                 </div>
 
                 {/* Example Quick Prompts */}
-                <div className="space-y-2">
-                  <div className="text-[10px] text-[#8A8FA3] uppercase tracking-wider">Tap an example:</div>
+                <div className="space-y-2 pt-2 text-left">
+                  <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider">Tap to paste example:</div>
                   <button
+                    type="button"
                     onClick={() => setInputText(`Paid 120 for dinner split with @${friendFirstName}`)}
-                    className="w-full p-2.5 rounded-xl bg-[#07080D] hover:bg-[#171A23] border border-white/8 text-left text-[11px] text-[#EDEEF2] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-[11px] text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Paid 120 for dinner split with @{friendFirstName}"</span>
-                    <span className="text-[#C6FF3D] text-[10px]">Use</span>
+                    <span className="text-[var(--muted)] text-[10px]">Use</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setInputText(`Fronted 60 for airport taxi split equally`)}
-                    className="w-full p-2.5 rounded-xl bg-[#07080D] hover:bg-[#171A23] border border-white/8 text-left text-[11px] text-[#EDEEF2] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-[11px] text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Fronted 60 for airport taxi split equally"</span>
-                    <span className="text-[#C6FF3D] text-[10px]">Use</span>
+                    <span className="text-[var(--muted)] text-[10px]">Use</span>
                   </button>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[#171A23]/50 border border-white/6 text-[11px] text-[#8A8FA3] flex items-center gap-2">
-                  <Paperclip className="w-3.5 h-3.5 text-[#C6FF3D] shrink-0" />
-                  <span>Tip: Click the clip to upload a bill.</span>
                 </div>
               </div>
             ) : (
@@ -261,15 +274,15 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                 return (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex flex-col ${isSheriff ? 'items-start' : 'items-end'}`}
                   >
                     <div className="flex items-center gap-2 mb-1 px-1">
-                      <span className="text-[11px] font-mono font-semibold text-[#8A8FA3]">
+                      <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
                         {msg.sender_name}
                       </span>
-                      <span className="text-[10px] font-mono text-[#8A8FA3]/60">
+                      <span className="text-[10px] font-mono text-[var(--muted)]/60">
                         {msg.timestamp}
                       </span>
                     </div>
@@ -277,22 +290,21 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     <div
                       className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed border ${
                         isSheriff
-                          ? 'bg-[#171A23] border-white/12 text-[#EDEEF2] shadow-md'
-                          : 'bg-[#C6FF3D]/10 border-[#C6FF3D]/30 text-[#EDEEF2]'
+                          ? 'bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--text)]'
+                          : 'bg-[var(--canvas)] border-white/20 text-[var(--text)]'
                       }`}
                     >
                       {msg.badge && (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase mb-2 bg-[#07080D] text-[#C6FF3D] border border-white/10">
-                          <Sparkles className="w-3 h-3 text-[#C6FF3D]" />
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase mb-2 bg-[var(--canvas)] text-[var(--text)] border border-[var(--border)]">
                           <span>{msg.badge}</span>
                         </div>
                       )}
 
-                      <div className="whitespace-pre-line font-body">{msg.text}</div>
+                      <div className="whitespace-pre-line font-body text-xs">{msg.text}</div>
 
-                      {/* PayPal Settlement Actions */}
+                      {/* PayPal Settlement Actions (Real PayPal touchpoints) */}
                       {msg.buttons && msg.buttons.length > 0 && (
-                        <div className="mt-3 pt-2.5 border-t border-white/10 space-y-2">
+                        <div className="mt-3 pt-2.5 border-t border-[var(--border)] space-y-2">
                           {msg.buttons.map((btn, bIdx) => {
                             const mockUrl = btn.url || `https://www.sandbox.paypal.com/checkoutnow?token=SIM_${btn.payload?.amountCents || 6000}`;
                             const isCopied = copiedLink === `${msg.id}_${bIdx}`;
@@ -316,11 +328,12 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                                 </Button>
 
                                 <button
+                                  type="button"
                                   onClick={() => handleCopyLink(`${msg.id}_${bIdx}`, mockUrl)}
                                   title="Copy PayPal Link"
-                                  className="p-2 rounded-xl bg-[#07080D] hover:bg-white/8 border border-white/10 text-[#8A8FA3] hover:text-[#EDEEF2] transition-colors cursor-pointer"
+                                  className="p-2 rounded-xl bg-[var(--canvas)] hover:bg-white/5 border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
                                 >
-                                  {isCopied ? <Check className="w-3.5 h-3.5 text-[#C6FF3D]" /> : <Copy className="w-3.5 h-3.5 text-[#8A8FA3]" />}
+                                  {isCopied ? <Check className="w-3.5 h-3.5 text-[var(--settled)]" /> : <Copy className="w-3.5 h-3.5 text-[var(--muted)]" />}
                                 </button>
                               </div>
                             );
@@ -335,96 +348,63 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Prompt Composer */}
-          <form onSubmit={handleSubmit} className="p-3 border-t border-white/8 bg-[#07080D]/80 flex items-center gap-2">
+          {/* Prompt Composer: Exactly ONE lime-filled button on screen */}
+          <form onSubmit={handleSubmit} className="p-3 border-t border-[var(--border)] bg-[var(--surface-elevated)] flex items-center gap-2">
             <button
               type="button"
               onClick={onOpenReceiptModal}
               title="Upload Paper Bill"
-              className="p-2.5 rounded-xl bg-[#171A23] hover:bg-white/8 border border-white/10 text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-white/5 border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
               <Paperclip className="w-4 h-4" />
             </button>
             <input
               type="text"
+              placeholder="e.g. Paid 150 for groceries split with Alex and Sarah"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="flex-1 bg-[#0F1117] border border-white/8 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] placeholder-[#8A8FA3] font-body focus:outline-none focus:border-[#C6FF3D]"
+              className="flex-1 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2 text-xs text-[var(--text)] placeholder-[var(--muted)] font-body focus:outline-none focus:border-white/30"
             />
-            <button
+            {/* The single primary lime button on this screen */}
+            <Button
+              variant="primary"
+              size="sm"
               type="submit"
               disabled={!inputText.trim() || isLoading}
-              className="p-2.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] transition-all disabled:opacity-30 cursor-pointer"
+              className="shrink-0 px-3.5 py-2"
             >
               <Send className="w-4 h-4" />
-            </button>
+            </Button>
           </form>
-        </div>
+        </section>
 
-        {/* Right Column: Live Expense Breakdown & Delinquency Radar */}
-        <div className="lg:col-span-7 flex flex-col justify-between gap-6">
-          {/* Top Panel: Interactive Bill Dissection Canvas */}
-          <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-5">
-            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+        {/* RIGHT COLUMN (7 COLS): BILL DISSECTION CANVAS & RECOVERY RADAR */}
+        <section className="lg:col-span-7 space-y-6">
+          {/* Bill Dissection Canvas */}
+          <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-5 sm:p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div>
-                <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
+                <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">
                   Bill Dissection Canvas
                 </h3>
-                <p className="text-xs text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Select members for each item to divide costs.
+                <p className="text-xs text-[var(--muted)] font-body m-0 mt-0.5">
+                  Assign line items across party members to update active debt balances.
                 </p>
               </div>
-              <span className="text-[11px] font-mono text-[#C6FF3D] bg-[#C6FF3D]/10 px-2.5 py-1 rounded-full border border-[#C6FF3D]/30">
-                {interactiveItems.length} Expenses
+              <span className="text-[11px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-1 rounded-md border border-[var(--border)]">
+                {interactiveItems.length} {interactiveItems.length === 1 ? 'bill' : 'bills'}
               </span>
             </div>
 
-            {/* Bill Line Items with Claimant Chips */}
+            {/* Line Items List */}
             <div className="space-y-3">
               {interactiveItems.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-[#07080D] border border-white/6 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-[#C6FF3D]/15 flex items-center justify-center shrink-0">
-                      <Layers className="w-4 h-4 text-[#C6FF3D]" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-[#EDEEF2] font-body">Sample Item Split</div>
-                      <div className="text-[11px] text-[#8A8FA3] font-body mt-0.5">
-                        Upload a bill to split items here, or tap below to test:
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Interactive Sample Bill Item */}
-                  <div className="p-3.5 rounded-xl bg-[#171A23] border border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div>
-                      <div className="font-semibold text-[#EDEEF2] font-body">Sample Bill Item (e.g. Group Dinner Platter)</div>
-                      <div className="font-mono text-xs font-bold text-[#C6FF3D] mt-0.5">
-                        {cur}60.00 <span className="text-[10px] text-[#8A8FA3] font-normal">(Shared equally by selected chips)</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {ledger.members.slice(0, 3).map((m) => (
-                        <span
-                          key={m.user_id}
-                          className="px-2 py-0.5 rounded-lg bg-[#07080D] border border-[#C6FF3D]/40 text-[#C6FF3D] font-mono text-[11px]"
-                        >
-                          {m.name.split(' ')[0]}: {cur}{(60 / Math.min(3, ledger.members.length)).toFixed(2)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] font-mono text-[#8A8FA3]">Ready to parse real bills:</span>
-                    <button
-                      onClick={onOpenReceiptModal}
-                      className="px-3 py-1.5 rounded-xl bg-[#C6FF3D] hover:bg-[#b8f52f] text-[#07080D] font-mono font-bold text-xs transition-colors cursor-pointer"
-                    >
-                      Upload Bill
-                    </button>
-                  </div>
+                <div className="p-6 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-3 text-center">
+                  <Layers className="w-6 h-6 text-[var(--muted)] mx-auto opacity-60" />
+                  <div className="text-xs font-display font-bold text-[var(--text)]">No Bills Active</div>
+                  <p className="text-xs text-[var(--muted)] font-body max-w-sm mx-auto m-0">
+                    Upload a receipt or type an expense in the chat to dissect items among travelers.
+                  </p>
                 </div>
               ) : (
                 interactiveItems.map((item) => {
@@ -434,36 +414,48 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                   return (
                     <div
                       key={item.id}
-                      className="p-4 rounded-2xl bg-[#07080D] border border-white/6 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                     >
-                      <div>
-                        <div className="text-xs font-semibold text-[#EDEEF2] font-body">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[var(--text)] font-body truncate">
                           {item.name}
                         </div>
-                        <div className="text-sm font-mono font-bold text-[#EDEEF2] mt-0.5">
+                        <div className="font-mono text-xs font-bold text-[var(--text)] mt-0.5 tabular-nums">
                           {cur}{(item.priceCents / 100).toFixed(2)}{' '}
-                          <span className="text-[11px] text-[#8A8FA3] font-normal">
-                            ({cur}{(perPersonCents / 100).toFixed(2)} each)
+                          <span className="text-[11px] text-[var(--muted)] font-normal">
+                            ({cur}{(perPersonCents / 100).toFixed(2)} each · {claimantsCount} shares)
                           </span>
                         </div>
                       </div>
 
-                      {/* Member Claim Toggles */}
+                      {/* Member Claim Toggles: cycles 6 tag tokens with initials */}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {ledger.members.map((member) => {
                           const isClaimed = item.claimedBy.includes(member.user_id);
+                          const tag = getMemberTagColor(member.user_id);
+
                           return (
                             <button
                               key={member.user_id}
+                              type="button"
                               onClick={() => toggleClaimant(item.id, member.user_id)}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer ${
                                 isClaimed
-                                  ? 'bg-[#171A23] border border-[#C6FF3D]/60 text-[#C6FF3D]'
-                                  : 'bg-transparent border border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2] opacity-50'
+                                  ? 'bg-[var(--surface-elevated)] border border-white/30 text-[var(--text)]'
+                                  : 'bg-transparent border border-dashed border-[var(--border)] text-[var(--muted)] opacity-50 hover:opacity-100'
                               }`}
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                              <span>{member.name.split(' ')[0]}</span>
+                              <span
+                                style={{
+                                  backgroundColor: tag.bg,
+                                  color: tag.text,
+                                  borderColor: tag.border,
+                                }}
+                                className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                              >
+                                {member.name.slice(0, 2).toUpperCase()}
+                              </span>
+                              <span className="truncate max-w-[70px]">{member.name.split(' ')[0]}</span>
                             </button>
                           );
                         })}
@@ -475,40 +467,59 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             </div>
 
             {/* Calculated Member Totals */}
-            <div className="pt-2 border-t border-white/8">
-              <div className="text-xs font-mono text-[#8A8FA3] mb-2 uppercase">
-                MEMBER TOTALS:
+            <div className="pt-3 border-t border-[var(--border)] space-y-2">
+              <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                Simulated Traveler Totals:
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {liveMemberTotals.map(({ member, totalCents }) => (
-                  <div
-                    key={member.user_id}
-                    className="p-2.5 rounded-xl bg-[#171A23] border border-white/8 flex flex-col"
-                  >
-                    <span className="text-[11px] text-[#8A8FA3] font-body truncate">
-                      {member.name.split(' ')[0]}
-                    </span>
-                    <span className="text-sm font-mono font-bold text-[#EDEEF2] tabular-nums mt-0.5">
-                      {cur}{(totalCents / 100).toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {liveMemberTotals.map(({ member, totalCents }) => {
+                  const tag = getMemberTagColor(member.user_id);
+                  return (
+                    <div
+                      key={member.user_id}
+                      className="p-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] space-y-1"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span
+                          style={{
+                            backgroundColor: tag.bg,
+                            color: tag.text,
+                            borderColor: tag.border,
+                          }}
+                          className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                        >
+                          {member.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="text-[11px] text-[var(--text)] font-body truncate">
+                          {member.name.split(' ')[0]}
+                        </span>
+                      </div>
+                      <div className="text-sm font-mono font-bold text-[var(--text)] tabular-nums">
+                        {cur}{(totalCents / 100).toFixed(2)}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Bottom Panel: Dynamic Escalation Heat Radar & Automated Payment Notice */}
-          <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
-            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+          {/* Automated Escalation Notice & Debt Aging Radar */}
+          <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-[#FF5C7A]" />
-                <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                  Payment Reminders
+                <Bell className="w-4 h-4 text-[var(--muted)]" />
+                <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">
+                  Recovery Escalation Tier
                 </h3>
               </div>
               <span
-                className="text-[11px] font-mono px-2.5 py-0.5 rounded-full font-bold border"
-                style={{ color: currentTier.color, borderColor: `${currentTier.color}40`, backgroundColor: `${currentTier.color}15` }}
+                className="text-[10px] font-mono px-2.5 py-0.5 rounded-md font-semibold border"
+                style={{ 
+                  color: currentTier.tokenColor, 
+                  borderColor: currentTier.tokenColor,
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)' 
+                }}
               >
                 {currentTier.label}
               </span>
@@ -516,43 +527,45 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
             {/* Heat Progress Track */}
             <div className="space-y-1.5 font-mono text-xs">
-              <div className="flex justify-between text-[#8A8FA3]">
-                <span>Escalation Level</span>
-                <span className="font-bold text-[#EDEEF2]">Intensity: {currentTier.heat}%</span>
+              <div className="flex justify-between text-[var(--muted)]">
+                <span>Escalation Intensity</span>
+                <span className="font-bold text-[var(--text)] tabular-nums">{currentTier.heat}%</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-[#07080D] overflow-hidden p-0.5 border border-white/8">
+              <div className="h-2 w-full rounded-full bg-[var(--canvas)] overflow-hidden border border-[var(--border)]">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-all duration-300"
                   style={{
                     width: `${currentTier.heat}%`,
-                    backgroundColor: currentTier.color,
+                    backgroundColor: currentTier.tokenColor,
                   }}
                 />
               </div>
             </div>
 
-            {/* Automated Notice Preview Card */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2">
+            {/* Notice Preview Card */}
+            <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-[#8A8FA3]">
-                  Member: <span className="text-[#EDEEF2] font-semibold">{topDebtor ? topDebtor.name : 'None'}</span>
+                <span className="text-[var(--muted)]">
+                  Primary Debtor: <span className="text-[var(--text)] font-semibold">{topDebtor ? topDebtor.name : 'None'}</span>
                 </span>
                 {topDebtor && (
-                  <span className="text-[#C6FF3D] font-bold">{getNotificationLabel(topDebtor.roast_consent)}</span>
+                  <span className="text-[var(--muted)] text-[10px] font-mono border border-[var(--border)] px-1.5 py-0.2 rounded">
+                    {getNotificationLabel(topDebtor.roast_consent)}
+                  </span>
                 )}
               </div>
-              <p className="text-xs text-[#EDEEF2] font-body leading-relaxed m-0">
+              <p className="text-xs text-[var(--text)] font-body leading-relaxed m-0">
                 {topDebtor ? (
                   ledger.hours_elapsed >= 72
-                    ? `[Urgent] ${topDebtor.name.split(' ')[0]}, balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} is overdue. Settle with PayPal above.`
-                    : `[Reminder] ${topDebtor.name.split(' ')[0]} owes ${cur}${(topDebtorOwedCents / 100).toFixed(2)}. Settle with PayPal above.`
+                    ? `[Overdue Notice] ${topDebtor.name.split(' ')[0]}, balance of ${cur}${(topDebtorOwedCents / 100).toFixed(2)} is overdue by ${ledger.hours_elapsed}h. Settle with PayPal above.`
+                    : `[Payment Reminder] ${topDebtor.name.split(' ')[0]} owes ${cur}${(topDebtorOwedCents / 100).toFixed(2)}. Settle via PayPal above.`
                 ) : (
-                  'All members are settled. Automated reminders appear here when balances are pending.'
+                  'All party members are currently settled. Automated reminders trigger when balances are overdue.'
                 )}
               </p>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

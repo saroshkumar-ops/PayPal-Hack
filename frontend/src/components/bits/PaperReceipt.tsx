@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { getCurrencySymbol } from '../../lib/currency';
 import { getMemberTagColor } from '../ui/Avatar';
@@ -28,6 +28,7 @@ export interface PaperReceiptProps {
   className?: string;
   rotateDeg?: number;
   interactive?: boolean;
+  animatingSplit?: boolean;
 }
 
 export const PaperReceipt: React.FC<PaperReceiptProps> = ({
@@ -48,12 +49,22 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
   className = '',
   rotateDeg = -0.75,
   interactive = true,
+  animatingSplit = false,
 }) => {
   const cur = getCurrencySymbol(currency);
   const subtotalCents = items.reduce((acc, item) => acc + item.priceCents, 0) || totalCents;
 
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  // Guarantee stagger animation never exceeds 1.0s regardless of item count
+  const maxDelay = 0.75;
+  const itemDelay = items.length > 0 ? Math.min(0.04, maxDelay / items.length) : 0.04;
+
   // Derive traveler split shares to display on the receipt
-  const computedSplits: Array<{ user_id: string; name: string; owes_cents: number }> = React.useMemo(() => {
+  const computedSplits: Array<{ user_id: string; name: string; owes_cents: number }> = useMemo(() => {
     if (memberSplits && memberSplits.length > 0) {
       return memberSplits.map((ms) => {
         const mem = members.find((m) => m.user_id === ms.user_id);
@@ -174,7 +185,11 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                   key={item.id || idx}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(idx * 0.07, 0.7), duration: 0.22, ease: 'easeOut' }}
+                  transition={{ 
+                    delay: prefersReducedMotion ? 0 : Math.min(idx * itemDelay, maxDelay), 
+                    duration: prefersReducedMotion ? 0 : 0.18, 
+                    ease: 'easeOut' 
+                  }}
                   draggable={interactive && Boolean(onDragStartItem)}
                   onDragStart={(e: any) => onDragStartItem?.(e, idx, item)}
                   onClick={() => interactive && onTapItem?.(idx, item)}
@@ -268,43 +283,56 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                 <span>{splitType}</span>
               </div>
               <div className="space-y-0.5 pt-0.5">
-                {computedSplits.map((s) => (
-                  <div key={s.user_id} className="flex justify-between text-[11px] font-mono">
+                {computedSplits.map((s, sIdx) => (
+                  <motion.div
+                    key={s.user_id}
+                    animate={
+                      animatingSplit && !prefersReducedMotion
+                        ? { x: [0, -10, 0], scale: [1, 1.03, 1] }
+                        : {}
+                    }
+                    transition={{
+                      delay: prefersReducedMotion ? 0 : sIdx * 0.1,
+                      duration: 0.4,
+                      ease: 'easeInOut',
+                    }}
+                    className="flex justify-between text-[11px] font-mono"
+                  >
                     <span className="opacity-80 truncate max-w-[190px]">{s.name}:</span>
                     <span className="font-bold tabular-nums">{cur}{(s.owes_cents / 100).toFixed(2)}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Barcode Stamp */}
-        <div className="pt-2 text-center space-y-1.5 border-t border-[var(--receipt-ink)]/20">
-          {/* Simulated clean barcode strip */}
-          <div className="flex justify-center items-end gap-[2px] h-6 py-1 opacity-70">
-            {[4, 2, 5, 1, 3, 6, 2, 4, 1, 5, 2, 6, 3, 2, 5, 1, 4, 3, 6, 2, 5, 1, 3, 6, 2, 4].map((h, i) => (
-              <span
+        {/* Footer */}
+        <div className="text-center pt-3 border-t border-[var(--receipt-ink)]/20 space-y-1">
+          <div className="text-[10px] uppercase font-bold tracking-widest opacity-70">
+            THANK YOU • SPLIT WITH TRIPSHERIFF
+          </div>
+          {/* Barcode graphic */}
+          <div className="flex justify-center items-center gap-[2px] h-6 py-1 opacity-70">
+            {[3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 4, 2, 1].map((w, i) => (
+              <div
                 key={i}
-                style={{ height: `${h * 3}px` }}
-                className={`w-[2px] bg-[var(--receipt-ink)] inline-block ${i % 3 === 0 ? 'w-[3px]' : ''}`}
+                style={{ width: `${w}px` }}
+                className="h-full bg-[var(--receipt-ink)]"
               />
             ))}
-          </div>
-          <div className="text-[9px] tracking-wider uppercase opacity-50">
-            THANK YOU • SPLIT WITH TRIPSHERIFF
           </div>
         </div>
       </div>
 
-      {/* Bottom Perforated Torn Edge */}
+      {/* Bottom Jagged Torn Edge */}
       <div className="w-full h-3 overflow-hidden -mb-2.5">
         <svg
           viewBox="0 0 380 12"
           preserveAspectRatio="none"
-          className="w-full h-full fill-[var(--receipt-paper)] rotate-180"
+          className="w-full h-full fill-[var(--receipt-paper)]"
         >
-          <path d="M0,12 L0,4 L10,0 L20,4 L30,0 L40,4 L50,0 L60,4 L70,0 L80,4 L90,0 L100,4 L110,0 L120,4 L130,0 L140,4 L150,0 L160,4 L170,0 L180,4 L190,0 L200,4 L210,0 L220,4 L230,0 L240,4 L250,0 L260,4 L270,0 L280,4 L290,0 L300,4 L310,0 L320,4 L330,0 L340,4 L350,0 L360,4 L370,0 L380,4 L380,12 Z" />
+          <path d="M0,0 L0,8 L10,12 L20,8 L30,12 L40,8 L50,12 L60,8 L70,12 L80,8 L90,12 L100,8 L110,12 L120,8 L130,12 L140,8 L150,12 L160,8 L170,12 L180,8 L190,12 L200,8 L210,12 L220,8 L230,12 L240,8 L250,12 L260,8 L270,12 L280,8 L290,12 L300,8 L310,12 L320,8 L330,12 L340,8 L350,12 L360,8 L370,12 L380,8 L380,0 Z" />
         </svg>
       </div>
     </motion.div>

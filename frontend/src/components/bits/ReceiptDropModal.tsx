@@ -77,6 +77,11 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
   // Compute shares based on item claims or equal distribution
   const computeItemizedShares = (): Record<string, number> => {
     if (!extractedReceipt) return {};
@@ -477,11 +482,11 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   /* Optical Scan Animation with Moving Laser Bar */
                   <div className="py-6 flex flex-col items-center justify-center space-y-6">
                     <div className="relative w-48 sm:w-56 p-4 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-[10px] shadow-2xl overflow-hidden select-none">
-                      {/* Scanning Laser Beam */}
+                      {/* Scanning Laser Beam (respects prefers-reduced-motion) */}
                       <motion.div
                         className="absolute left-0 right-0 h-[2px] bg-[var(--settled)] shadow-[0_0_8px_#C6FF3D]"
-                        animate={{ top: ['0%', '100%', '0%'] }}
-                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                        animate={prefersReducedMotion ? { top: '50%' } : { top: ['0%', '100%', '0%'] }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                       />
 
                       <div className="text-center font-bold tracking-widest uppercase border-b border-[var(--receipt-ink)]/20 pb-1 mb-2 opacity-75">
