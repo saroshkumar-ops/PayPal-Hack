@@ -11,7 +11,9 @@ import {
   Receipt as ReceiptIcon,
   AlertCircle,
   Plus,
-  Trash2
+  Trash2,
+  Edit3,
+  RefreshCw
 } from 'lucide-react';
 import { aiService } from '../../api/services';
 import { Button } from '../ui/Button';
@@ -61,10 +63,25 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<{
+    title: string;
+    message: string;
+    isQuota: boolean;
+    rawDetail?: string;
+  } | null>(null);
   const [splitMode, setSplitMode] = useState<'EQUAL' | 'ITEMIZED'>('EQUAL');
   const [paidByUserId, setPaidByUserId] = useState<string>(() => {
     return currentUserId || activeMembers[0]?.user_id || '';
   });
+
+  // Reset parsing errors on modal close/open
+  useEffect(() => {
+    if (!isOpen) {
+      setParseError(null);
+      setErrorMsg(null);
+      setIsScanning(false);
+    }
+  }, [isOpen]);
 
   // Keyboard accessibility: dismiss on Escape key
   useEffect(() => {
@@ -285,7 +302,13 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       }
 
       if (!totalCents || totalCents <= 0) {
-        setErrorMsg('Could not detect bill total. Please re-scan with a clearer photo.');
+        setParseError({
+          title: 'Bill Total Not Detected',
+          message: 'Could not detect a legible total from this photo. You can enter the amount and items manually or try scanning with a clearer photo.',
+          isQuota: false,
+          rawDetail: 'No valid currency amount was detected in the receipt header or totals.',
+        });
+        setErrorMsg('Could not detect bill total. Please re-scan or enter manually.');
         setExtractedReceipt(null);
         return;
       }
@@ -329,9 +352,78 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       }
     } catch (err: any) {
       console.error('Receipt parse failed:', err);
-      setErrorMsg(err?.message || 'Could not parse receipt image. Please verify image clarity and try again.');
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail || err?.response?.data?.message || err?.message || '';
+
+      const isQuota = status === 429 || /429|resource_exhausted|quota|rate limit/i.test(String(detail));
+      const isUnavailable = status === 503 || /503|unavailable|busy|high demand/i.test(String(detail));
+
+      let title = "The bill couldn't be parsed right now";
+      let message = "We couldn't extract items from this image right now. You can try scanning again or enter your bill details manually.";
+
+      if (isQuota) {
+        title = "AI Vision Quota Reached";
+        message = "The daily AI vision processing quota has been reached. You can enter your bill details manually to split right now, or try scanning again later.";
+      } else if (isUnavailable) {
+        title = "AI Service Temporarily Busy";
+        message = "The AI vision model is currently experiencing high demand. You can enter your bill details manually or try scanning again in a moment.";
+      } else if (err?.code === 'ERR_NETWORK' || !err?.response) {
+        title = "Vision Service Offline";
+        message = "Could not connect to the AI vision service. You can enter your bill details manually to continue splitting with your party.";
+      }
+
+      setParseError({
+        title,
+        message,
+        isQuota,
+        rawDetail: typeof detail === 'string' ? detail : JSON.stringify(detail),
+      });
+      setErrorMsg(message);
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleEnterManually = () => {
+    setParseError(null);
+    setErrorMsg(null);
+    setIsCustomManual(true);
+    setShareInputStrings({});
+    setTotalInputString('');
+    setItemPriceInputs({});
+
+    const initialShares: Record<string, number> = {};
+    activeMembers.forEach((m) => {
+      initialShares[m.user_id] = 0;
+    });
+    setCustomSharesCents(initialShares);
+
+    const manualBill = {
+      merchant: 'Manual Expense',
+      currency: currency,
+      currencySymbol: getCurrencySymbol(currency),
+      totalCents: 0,
+      taxCents: 0,
+      tipCents: 0,
+      roundOffCents: 0,
+      fallbackPriceUsed: false,
+      items: [],
+    };
+
+    setExtractedReceipt(manualBill);
+
+    if (!paidByUserId && activeMembers.length > 0) {
+      setPaidByUserId(currentUserId || activeMembers[0].user_id);
+    }
+  };
+
+  const handleRetryScan = () => {
+    setParseError(null);
+    setErrorMsg(null);
+    setExtractedReceipt(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
     }
   };
 
@@ -735,13 +827,77 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
             className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{ overscrollBehavior: 'contain' }}
           >
-            {errorMsg && (
+            {errorMsg && !parseError && (
               <div className="flex items-center gap-2 text-xs font-mono text-[var(--owes)] bg-[var(--owes)]/10 px-3.5 py-2.5 rounded-xl border border-[var(--owes)]/20 mb-4">
                 <AlertCircle className="w-4 h-4 shrink-0 text-[var(--owes)]" />
                 <span>{errorMsg}</span>
               </div>
             )}
-            {!extractedReceipt ? (
+            {parseError && !extractedReceipt ? (
+              /* State: Dedicated Bill Parse Failure / Quota Screen */
+              <div className="rounded-2xl border border-[var(--owes)]/30 bg-[var(--canvas)] p-6 sm:p-10 text-center space-y-6">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 flex items-center justify-center">
+                  <AlertCircle className="w-7 h-7 text-[var(--owes)]" />
+                </div>
+
+                <div className="space-y-2 max-w-lg mx-auto">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono font-semibold text-[var(--owes)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--owes)] animate-pulse" />
+                    <span>{parseError.isQuota ? 'AI QUOTA REACHED' : 'PARSING UNAVAILABLE'}</span>
+                  </div>
+
+                  <h4 className="text-lg sm:text-xl font-display font-bold text-[var(--text)] m-0">
+                    {parseError.title}
+                  </h4>
+
+                  <p className="text-xs sm:text-sm text-[var(--muted)] font-body leading-relaxed m-0">
+                    {parseError.message}
+                  </p>
+
+                  {parseError.rawDetail && (
+                    <div className="pt-2 text-xs font-mono text-[var(--muted)] bg-[var(--surface)] p-2.5 rounded-lg border border-[var(--border)] max-w-md mx-auto truncate text-left">
+                      <span className="text-[var(--text)] font-semibold">Service note:</span> {parseError.rawDetail}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions: Exactly ONE Primary Button */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleEnterManually}
+                    icon={<Edit3 className="w-4 h-4" />}
+                    className="w-full sm:w-auto px-5"
+                  >
+                    Enter Bill Manually
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={handleRetryScan}
+                    icon={<RefreshCw className="w-4 h-4" />}
+                    className="w-full sm:w-auto px-5"
+                  >
+                    Try Scanning Again
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => {
+                      setParseError(null);
+                      setErrorMsg(null);
+                      onClose();
+                    }}
+                    className="w-full sm:w-auto px-4"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : !extractedReceipt ? (
               /* State 1: Dropzone & Scan State */
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -842,6 +998,21 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         <span>{errorMsg}</span>
                       </div>
                     )}
+
+                    <div className="pt-3 border-t border-[var(--border)] w-full flex items-center justify-center gap-2 text-xs font-mono text-[var(--muted)]">
+                      <span>Prefer not to scan a photo?</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEnterManually();
+                        }}
+                        className="text-[var(--text)] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Enter Bill Manually</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -897,9 +1068,14 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       <div className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold">
                         MERCHANT & BILL TOTAL
                       </div>
-                      <div className="text-sm font-display font-bold text-[var(--text)]">
-                        {extractedReceipt.merchant}
-                      </div>
+                      <input
+                        type="text"
+                        value={extractedReceipt.merchant}
+                        onChange={(e) => setExtractedReceipt((prev) => (prev ? { ...prev, merchant: e.target.value } : null))}
+                        placeholder="e.g. Restaurant, Hotel, Cab"
+                        aria-label="Merchant or bill title"
+                        className="text-sm font-display font-bold text-[var(--text)] bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-white/40 focus:outline-none transition-colors w-full sm:w-auto mt-0.5"
+                      />
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -1287,6 +1463,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
             <button
               type="button"
               onClick={() => {
+                setParseError(null);
                 setExtractedReceipt(null);
                 setErrorMsg(null);
                 setCustomSharesCents({});
@@ -1298,7 +1475,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
               className="flex items-center gap-1.5 text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>{extractedReceipt ? 'Scan Another' : 'Cancel'}</span>
+              <span>{extractedReceipt || parseError ? 'Start Over' : 'Cancel'}</span>
             </button>
 
             {extractedReceipt ? (
@@ -1309,6 +1486,15 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 onClick={handleConfirm}
               >
                 <span>{isSubmitting ? 'Splitting & Saving...' : 'Confirm & Split Bill'}</span>
+              </Button>
+            ) : parseError ? (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleEnterManually}
+                icon={<Edit3 className="w-4 h-4" />}
+              >
+                <span>Enter Manually</span>
               </Button>
             ) : (
               <Button

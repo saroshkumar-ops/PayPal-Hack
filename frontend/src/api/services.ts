@@ -583,78 +583,20 @@ export const aiService = {
 
   /** Parse receipt photo via base64 OCR (POST /ai/receipt/parse) */
   parseReceipt: async (req: ReceiptParseRequest): Promise<ReceiptParseResponse> => {
-    try {
-      const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_PARSE, req, { timeout: 60000 });
-      return res.data;
-    } catch (err: any) {
-      console.error('[aiService.parseReceipt] Failed:', err);
-      if (err?.code !== 'ERR_NETWORK' && err?.code !== 'ECONNABORTED' && err?.response) {
-        throw err;
-      }
-      return {
-        status: 'SUCCESS',
-        merchant: 'Aman Dhaba (Karnal NH-44)',
-        date: '2026-02-06',
-        currency: 'INR',
-        currency_symbol: '₹',
-        subtotal_cents: 142900,
-        printed_subtotal_cents: 142900,
-        round_off_cents: 24,
-        subtotal_mismatch: false,
-        tax_cents: 6876,
-        tip_cents: 0,
-        total_cents: 149800,
-        items: [
-          { index: 0, name: 'Malai Chap Gravy', qty: 2, quantity: 2, unit_price_cents: 31900, line_total_cents: 63800, price_cents: 63800 },
-          { index: 1, name: 'Green Salad', qty: 2, quantity: 2, unit_price_cents: 7000, line_total_cents: 14000, price_cents: 14000 },
-          { index: 2, name: 'Butter Naan', qty: 4, quantity: 4, unit_price_cents: 9000, line_total_cents: 36000, price_cents: 36000 },
-          { index: 3, name: 'Lacha Parantha', qty: 3, quantity: 3, unit_price_cents: 7900, line_total_cents: 23700, price_cents: 23700 },
-          { index: 4, name: 'Mineral Water', qty: 2, quantity: 2, unit_price_cents: 2700, line_total_cents: 5400, price_cents: 5400 },
-        ],
-        suggested_reply: 'Extracted receipt from Aman Dhaba (₹1,498.00). Found 5 items. Tap buttons below to claim what you ordered!',
-      };
-    }
+    const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_PARSE, req, { timeout: 60000 });
+    return res.data;
   },
 
   /** Upload receipt file directly (POST /ai/receipt/upload) */
   uploadReceipt: async (file: File, currency: string = 'INR'): Promise<ReceiptParseResponse> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('currency', currency);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('currency', currency);
 
-      const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_UPLOAD, formData, {
-        timeout: 60000,
-      });
-      return res.data;
-    } catch (err: any) {
-      console.error('[aiService.uploadReceipt] Failed:', err);
-      if (err?.code !== 'ERR_NETWORK' && err?.code !== 'ECONNABORTED' && err?.response) {
-        throw err;
-      }
-      return {
-        status: 'SUCCESS',
-        merchant: 'Aman Dhaba (Karnal NH-44)',
-        date: '2026-02-06',
-        currency: 'INR',
-        currency_symbol: '₹',
-        subtotal_cents: 142900,
-        printed_subtotal_cents: 142900,
-        round_off_cents: 24,
-        subtotal_mismatch: false,
-        tax_cents: 6876,
-        tip_cents: 0,
-        total_cents: 149800,
-        items: [
-          { index: 0, name: 'Malai Chap Gravy', qty: 2, quantity: 2, unit_price_cents: 31900, line_total_cents: 63800, price_cents: 63800 },
-          { index: 1, name: 'Green Salad', qty: 2, quantity: 2, unit_price_cents: 7000, line_total_cents: 14000, price_cents: 14000 },
-          { index: 2, name: 'Butter Naan', qty: 4, quantity: 4, unit_price_cents: 9000, line_total_cents: 36000, price_cents: 36000 },
-          { index: 3, name: 'Lacha Parantha', qty: 3, quantity: 3, unit_price_cents: 7900, line_total_cents: 23700, price_cents: 23700 },
-          { index: 4, name: 'Mineral Water', qty: 2, quantity: 2, unit_price_cents: 2700, line_total_cents: 5400, price_cents: 5400 },
-        ],
-        suggested_reply: 'Extracted receipt from Aman Dhaba (₹1,498.00). Found 5 items. Tap buttons below to claim what you ordered!',
-      };
-    }
+    const res = await aiClient.post<ReceiptParseResponse>(ENDPOINTS.AI.RECEIPT_UPLOAD, formData, {
+      timeout: 60000,
+    });
+    return res.data;
   },
 
   /** Proportional tax and tip receipt itemizer (POST /ai/receipt/split) */

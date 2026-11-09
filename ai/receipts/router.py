@@ -21,7 +21,13 @@ async def parse_receipt_base64(request: ReceiptParseRequest):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        err_msg = str(e)
+        if '429' in err_msg or 'RESOURCE_EXHAUSTED' in err_msg or 'quota' in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail='AI Vision quota reached. The daily request limit has been reached for the vision model.'
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
 
 
 @router.post("/upload", response_model=ReceiptParseResponse)
@@ -39,7 +45,13 @@ async def upload_and_parse_receipt(
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        err_msg = str(e)
+        if '429' in err_msg or 'RESOURCE_EXHAUSTED' in err_msg or 'quota' in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail='AI Vision quota reached. The daily request limit has been reached for the vision model.'
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
 
 
 @router.post("/split", response_model=ItemizerSplitResponse)
