@@ -10,7 +10,7 @@ const AI_MICROSERVICE_URL = import.meta.env.VITE_AI_URL || 'http://localhost:800
  */
 export const backendClient: AxiosInstance = axios.create({
   baseURL: JAVA_BACKEND_URL,
-  timeout: 5000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

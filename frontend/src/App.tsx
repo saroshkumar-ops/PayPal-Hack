@@ -242,7 +242,14 @@ export function App() {
     if (!currentTripId) return;
     setIsLoading(true);
     try {
-      await chatService.sendMessage(currentTripId, text, organizerId, ledger.members);
+      const result = await chatService.sendMessage(currentTripId, text, organizerId, ledger.members);
+      if (result?.userMessage) {
+        setMessages((prev) => [
+          ...prev, 
+          result.userMessage, 
+          ...(result.botReply ? [result.botReply] : [])
+        ]);
+      }
       await loadData(currentTripId);
     } catch (err) {
       console.error('Failed to send message:', err);

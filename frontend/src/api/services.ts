@@ -701,19 +701,14 @@ export const aiService = {
 export const chatService = {
   getMessages: async (tripId: string): Promise<ChatMessage[]> => {
     try {
-      const res = await backendClient.get<ChatMessage[]>(ENDPOINTS.CHAT.HISTORY(tripId));
-      return res.data;
-    } catch {
-      try {
-        const raw = localStorage.getItem(`chat_history_${tripId}`);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          mockChat = parsed;
-          return parsed;
-        }
-      } catch {}
-      return JSON.parse(JSON.stringify(mockChat));
-    }
+      const raw = localStorage.getItem(`chat_history_${tripId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        mockChat = parsed;
+        return parsed;
+      }
+    } catch {}
+    return JSON.parse(JSON.stringify(mockChat));
   },
 
   sendMessage: async (
