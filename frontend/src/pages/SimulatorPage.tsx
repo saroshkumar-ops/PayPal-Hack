@@ -121,12 +121,12 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
     setTimeout(() => setCopiedLink(null), 2000);
   };
 
-  // Calculate current escalation tier (Strict Section 3 Palette: NO orange #FF9B42)
+  // Calculate current escalation tier (Neutral scale: --muted -> --text -> --owes only for final overdue tier)
   const getEscalationTier = (hours: number): { tier: EscalationTier; label: string; heat: number; tokenColor: string } => {
     if (hours < 24) return { tier: 'POLITE_CONCIERGE', label: 'Polite Concierge', heat: 20, tokenColor: 'var(--muted)' };
-    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Follow-Up Notice', heat: 45, tokenColor: 'var(--paypal)' };
-    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Firm Reminder', heat: 68, tokenColor: 'var(--tag-sand)' };
-    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Urgent Notice', heat: 88, tokenColor: 'var(--owes)' };
+    if (hours < 48) return { tier: 'PASSIVE_AGGRESSIVE', label: 'Follow-Up Notice', heat: 45, tokenColor: 'var(--muted)' };
+    if (hours < 72) return { tier: 'DISAPPOINTED_PARENT', label: 'Firm Reminder', heat: 68, tokenColor: 'var(--text)' };
+    if (hours < 96) return { tier: 'PUBLIC_ROAST', label: 'Urgent Notice', heat: 88, tokenColor: 'var(--text)' };
     return { tier: 'ITINERARY_EMBARGO', label: 'Itinerary Embargo', heat: 100, tokenColor: 'var(--owes)' };
   };
 
@@ -195,11 +195,11 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
             {topDebtor ? (
               <Button
-                variant="paypal"
+                variant="secondary"
                 size="md"
                 onClick={() => onPayDebt(topDebtor.user_id, topDebtorOwedCents)}
                 disabled={isLoading}
-                icon={<CreditCard className="w-4 h-4" />}
+                icon={<CreditCard className="w-4 h-4 text-[var(--muted)]" />}
               >
                 <span>Settle {topDebtor.name.split(' ')[0]} ({cur}{(topDebtorOwedCents / 100).toFixed(2)})</span>
               </Button>

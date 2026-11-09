@@ -43,7 +43,11 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div 
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        >
           {/* Glass backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -60,25 +64,25 @@ export const Modal: React.FC<ModalProps> = ({
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              'relative w-full rounded-2xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9)] overflow-hidden z-10',
+              'relative w-full rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9)] overflow-hidden z-10',
               maxWidthClasses[maxWidth],
               className
             )}
           >
             {/* Header bar */}
-            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-white/8 bg-[#171A23]/40">
+            <div className="flex items-start justify-between p-5 sm:p-6 border-b border-[var(--border)] bg-[var(--surface-elevated)]/40">
               <div>
-                <h3 className="text-base sm:text-lg font-display font-semibold text-[#EDEEF2] tracking-tight m-0">
+                <h3 className="text-base sm:text-lg font-display font-semibold text-[var(--text)] tracking-tight m-0">
                   {title}
                 </h3>
                 {subtitle && (
-                  <p className="text-xs text-[#8A8FA3] font-body mt-1 m-0">{subtitle}</p>
+                  <p className="text-xs text-[var(--muted)] font-body mt-1 m-0">{subtitle}</p>
                 )}
               </div>
 
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/6 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/6 transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />

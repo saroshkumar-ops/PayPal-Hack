@@ -40,7 +40,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-[var(--surface-elevated)] text-[var(--text)] border border-[var(--border)] hover:border-white/20 hover:bg-white/5 active:scale-[0.98]',
       // Dedicated PayPal Gold (#FFC439) strictly for PayPal checkouts and payouts
       paypal:
-        'bg-[var(--paypal)] text-[#07080D] font-body font-bold hover:brightness-105 active:scale-[0.98] border border-[var(--paypal)]',
+        'bg-[var(--paypal)] text-[var(--canvas)] font-body font-bold hover:brightness-105 active:scale-[0.98] border border-[var(--paypal)]',
       // Destructive confirmation button inside dialogs only
       owes:
         'bg-[var(--owes)] text-white font-body font-bold hover:brightness-105 active:scale-[0.98] border border-[var(--owes)]',

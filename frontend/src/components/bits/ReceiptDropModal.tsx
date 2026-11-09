@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -59,6 +59,18 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const [paidByUserId, setPaidByUserId] = useState<string>(() => {
     return currentUserId || activeMembers[0]?.user_id || '';
   });
+
+  // Keyboard accessibility: dismiss on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // Explicit user-typed custom amounts per traveler
   const [customSharesCents, setCustomSharesCents] = useState<Record<string, number>>({});
@@ -484,7 +496,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     <div className="relative w-48 sm:w-56 p-4 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-[10px] shadow-2xl overflow-hidden select-none">
                       {/* Scanning Laser Beam (respects prefers-reduced-motion) */}
                       <motion.div
-                        className="absolute left-0 right-0 h-[2px] bg-[var(--settled)] shadow-[0_0_8px_#C6FF3D]"
+                        className="absolute left-0 right-0 h-[2px] bg-[var(--settled)] shadow-[0_0_8px_var(--settled)]"
                         animate={prefersReducedMotion ? { top: '50%' } : { top: ['0%', '100%', '0%'] }}
                         transition={prefersReducedMotion ? { duration: 0 } : { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                       />

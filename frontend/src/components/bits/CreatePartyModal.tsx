@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, ArrowRight, DollarSign, IndianRupee, Plus, UserPlus } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -29,6 +29,18 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
   const [friendEmail, setFriendEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Keyboard accessibility: dismiss on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleAddFriend = () => {
     const trimmedName = friendName.trim();
@@ -78,7 +90,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
       setFriendName('');
       setFriendEmail('');
       onClose();
-    } catch (err: any) {
+    } catch {
       setErrorMsg('Failed to create trip. Please try again.');
     } finally {
       setIsLoading(false);
@@ -89,25 +101,30 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-trip-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-lg rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-6"
+          className="relative w-full max-w-lg rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-6"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-white/8 bg-[#07080D]/50">
+          <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#171A23] border border-white/10 flex items-center justify-center">
-                <Users className="w-4 h-4 text-[#C6FF3D]" />
+              <div className="w-8 h-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
+                <Users className="w-4 h-4 text-[var(--muted)]" />
               </div>
               <div>
-                <h3 className="text-base font-display font-bold text-[#EDEEF2] m-0">
+                <h3 id="create-trip-title" className="text-base font-display font-bold text-[var(--text)] m-0">
                   New Trip
                 </h3>
-                <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
+                <p className="text-[11px] text-[var(--muted)] font-body m-0 mt-0.5">
                   Create a trip and add friends to split expenses
                 </p>
               </div>
@@ -115,7 +132,8 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/6 transition-colors cursor-pointer"
+              aria-label="Close dialog"
+              className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/6 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -123,19 +141,20 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-[#FF5C7A]/10 border border-[#FF5C7A]/30 text-xs font-mono text-[#FF5C7A]">
+              <div className="p-3 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)]">
                 {errorMsg}
               </div>
             )}
 
             {/* Trip Name */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body">Trip Name</label>
+              <label className="text-xs text-[var(--muted)] font-body">Trip Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#07080D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D] transition-colors"
+                placeholder="e.g. Goa Trip 2026, Tokyo Food Tour"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
                 autoFocus
                 required
               />
@@ -143,15 +162,15 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             {/* Currency Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#8A8FA3] font-body">Currency</label>
+              <label className="text-xs text-[var(--muted)] font-body">Currency</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setCurrency('INR')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
                     currency === 'INR'
-                      ? 'bg-[#171A23] border-[#C6FF3D] text-[#C6FF3D]'
-                      : 'bg-[#07080D] border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                      ? 'bg-[var(--surface-elevated)] border-white/30 text-[var(--text)] font-semibold'
+                      : 'bg-[var(--canvas)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
                   }`}
                 >
                   <IndianRupee className="w-3.5 h-3.5" />
@@ -162,8 +181,8 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                   onClick={() => setCurrency('USD')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
                     currency === 'USD'
-                      ? 'bg-[#171A23] border-[#C6FF3D] text-[#C6FF3D]'
-                      : 'bg-[#07080D] border-white/8 text-[#8A8FA3] hover:text-[#EDEEF2]'
+                      ? 'bg-[var(--surface-elevated)] border-white/30 text-[var(--text)] font-semibold'
+                      : 'bg-[var(--canvas)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
                   }`}
                 >
                   <DollarSign className="w-3.5 h-3.5" />
@@ -173,13 +192,13 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
             </div>
 
             {/* Trip Members / Add Friends Section */}
-            <div className="space-y-2 pt-1 border-t border-white/8">
+            <div className="space-y-2 pt-1 border-t border-[var(--border)]">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[#EDEEF2] font-body flex items-center gap-1.5">
-                  <UserPlus className="w-3.5 h-3.5 text-[#C6FF3D]" />
+                <label className="text-xs font-semibold text-[var(--text)] font-body flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-[var(--muted)]" />
                   <span>Add Friends to Trip</span>
                 </label>
-                <span className="text-[10px] font-mono text-[#8A8FA3]">
+                <span className="text-[10px] font-mono text-[var(--muted)]">
                   {members.length + 1} Total {members.length === 0 ? 'Member' : 'Members'}
                 </span>
               </div>
@@ -196,7 +215,8 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                       handleAddFriend();
                     }
                   }}
-                  className="flex-1 bg-[#07080D] border border-white/10 rounded-xl px-3 py-2 text-xs text-[#EDEEF2] font-body focus:outline-none focus:border-[#C6FF3D]"
+                  placeholder="Friend's Name"
+                  className="flex-1 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30"
                 />
                 <input
                   type="text"
@@ -208,24 +228,25 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                       handleAddFriend();
                     }
                   }}
-                  className="w-full sm:w-40 bg-[#07080D] border border-white/10 rounded-xl px-3 py-2 text-xs text-[#EDEEF2] font-mono focus:outline-none focus:border-[#C6FF3D]"
+                  placeholder="PayPal Email or @handle"
+                  className="w-full sm:w-44 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30"
                 />
                 <button
                   type="button"
                   onClick={handleAddFriend}
                   disabled={!friendName.trim()}
-                  className="px-3.5 py-2 rounded-xl bg-[#171A23] hover:bg-[#C6FF3D]/10 border border-white/10 hover:border-[#C6FF3D]/30 text-xs font-mono font-medium text-[#C6FF3D] transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shrink-0"
+                  className="px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono font-medium text-[var(--text)] transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shrink-0"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 text-[var(--muted)]" />
                   <span>Add</span>
                 </button>
               </div>
 
               {/* Added Members Chips List */}
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {/* Current User (Organizer) Chip */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#171A23] border border-[#C6FF3D]/30 text-xs font-mono text-[#C6FF3D]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
+                {/* Current User (Organizer) Chip: neutral off-white marker */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
                   <span>{organizerName} (Organizer)</span>
                 </div>
 
@@ -233,17 +254,18 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                 {members.map((m, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#07080D] border border-white/10 text-xs font-mono text-[#EDEEF2]"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--canvas)] border border-[var(--border)] text-xs font-mono text-[var(--text)]"
                   >
                     <span>{m.name}</span>
                     {m.handle && (
-                      <span className="text-[10px] text-[#8A8FA3]">{m.handle}</span>
+                      <span className="text-[10px] text-[var(--muted)]">{m.handle}</span>
                     )}
                     <button
                       type="button"
                       onClick={() => handleRemoveFriend(idx)}
-                      className="text-[#8A8FA3] hover:text-[#FF5C7A] ml-0.5 cursor-pointer"
+                      className="text-[var(--muted)] hover:text-[var(--text)] ml-0.5 cursor-pointer"
                       title="Remove"
+                      aria-label={`Remove ${m.name}`}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -252,8 +274,8 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/8">
+            {/* Modal Actions: ONE Lime-filled button for primary submit */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border)]">
               <Button variant="ghost" size="md" onClick={onClose} type="button">
                 Cancel
               </Button>

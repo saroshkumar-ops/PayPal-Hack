@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { Link } from 'react-router-dom';
@@ -29,6 +29,21 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (deleteConfirm) {
+          setDeleteConfirm(null);
+        } else if (selectedExpenseId) {
+          setSelectedExpenseId(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [deleteConfirm, selectedExpenseId]);
 
   const totalSpendCents = useMemo(() => {
     return ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
@@ -484,7 +499,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
                   }
                 }}
                 disabled={isDeleting}
-                className="px-3.5 py-2 rounded-xl bg-[var(--owes)] hover:bg-[#e04865] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40"
+                className="px-3.5 py-2 rounded-xl bg-[var(--owes)] hover:brightness-110 text-white text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Bill'}
               </button>

@@ -119,7 +119,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                   onPayout();
                 }}
                 disabled={balanceCents <= 0}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--paypal)] hover:brightness-105 disabled:opacity-30 disabled:cursor-not-allowed text-[#07080D] text-xs font-body font-bold transition-all cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--paypal)] hover:brightness-105 disabled:opacity-30 disabled:cursor-not-allowed text-[var(--canvas)] text-xs font-body font-bold transition-all cursor-pointer shrink-0"
               >
                 <span>Payout</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
               </div>
               <div className="flex justify-between text-[var(--muted)]">
                 <span>Status:</span>
-                <span className={balanceCents > 0 ? 'text-[var(--paypal)]' : 'text-[var(--settled)]'}>
+                <span className={balanceCents > 0 ? 'text-[var(--text)] font-semibold' : 'text-[var(--settled)]'}>
                   {balanceCents > 0 ? 'Awaiting Payout' : 'All Settled'}
                 </span>
               </div>

@@ -424,7 +424,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   onClick={onOpenReceiptModal}
                   className="w-full max-w-[320px] p-6 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-center space-y-3 cursor-pointer shadow-[0_16px_32px_rgba(0,0,0,0.6)] rotate-[-0.75deg] hover:rotate-0 transition-transform"
                 >
-                  <div className="text-[10px] uppercase tracking-widest opacity-60">--- TRIP TICKET #001 ---</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-60">
+                    --- {ledger.trip_name || ledger.name ? `${formatPartyName(ledger.trip_name || ledger.name).toUpperCase()} [SAMPLE PREVIEW]` : 'TRIP RECEIPT [SAMPLE PREVIEW]'} ---
+                  </div>
                   <div className="font-display font-black text-sm uppercase text-[var(--receipt-ink)]">
                     No Bills Recorded
                   </div>

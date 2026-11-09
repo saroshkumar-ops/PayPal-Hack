@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check, ArrowUpRight } from 'lucide-react';
 import type { Member } from '../../types';
@@ -25,6 +25,18 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
   isLoading,
 }) => {
   const [copied, setCopied] = useState(false);
+
+  // Keyboard accessibility: dismiss on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

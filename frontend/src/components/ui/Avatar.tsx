@@ -12,12 +12,12 @@ export interface AvatarProps {
 
 // 6 deterministic member tag tokens (cycled in order, no orange)
 export const MEMBER_TAG_PALETTE = [
-  { token: 'cyan', bg: 'rgba(56, 225, 255, 0.12)', text: '#38E1FF', border: 'rgba(56, 225, 255, 0.35)' },
-  { token: 'blue', bg: 'rgba(91, 140, 255, 0.12)', text: '#5B8CFF', border: 'rgba(91, 140, 255, 0.35)' },
-  { token: 'purple', bg: 'rgba(162, 123, 255, 0.12)', text: '#A27BFF', border: 'rgba(162, 123, 255, 0.35)' },
-  { token: 'pink', bg: 'rgba(244, 114, 208, 0.12)', text: '#F472D0', border: 'rgba(244, 114, 208, 0.35)' },
-  { token: 'sand', bg: 'rgba(232, 213, 163, 0.12)', text: '#E8D5A3', border: 'rgba(232, 213, 163, 0.35)' },
-  { token: 'teal', bg: 'rgba(45, 212, 191, 0.12)', text: '#2DD4BF', border: 'rgba(45, 212, 191, 0.35)' },
+  { token: 'cyan', bg: 'rgba(56, 225, 255, 0.12)', text: 'var(--tag-cyan)', border: 'rgba(56, 225, 255, 0.35)' },
+  { token: 'blue', bg: 'rgba(91, 140, 255, 0.12)', text: 'var(--tag-blue)', border: 'rgba(91, 140, 255, 0.35)' },
+  { token: 'purple', bg: 'rgba(162, 123, 255, 0.12)', text: 'var(--tag-purple)', border: 'rgba(162, 123, 255, 0.35)' },
+  { token: 'pink', bg: 'rgba(244, 114, 208, 0.12)', text: 'var(--tag-pink)', border: 'rgba(244, 114, 208, 0.35)' },
+  { token: 'sand', bg: 'rgba(232, 213, 163, 0.12)', text: 'var(--tag-sand)', border: 'rgba(232, 213, 163, 0.35)' },
+  { token: 'teal', bg: 'rgba(45, 212, 191, 0.12)', text: 'var(--tag-teal)', border: 'rgba(45, 212, 191, 0.35)' },
 ];
 
 export function getMemberTagColor(identifier: string) {

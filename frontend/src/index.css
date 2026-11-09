@@ -130,6 +130,12 @@
     font-feature-settings: 'tnum' on, 'zero' on;
     font-variant-numeric: tabular-nums;
   }
+
+  /* Universal accessible focus outline for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.4) !important;
+    outline-offset: 2px !important;
+  }
 }
 
 /* ==========================================================================
@@ -158,7 +164,7 @@
   --ag-background-color: var(--canvas) !important;
   --ag-header-background-color: var(--surface) !important;
   --ag-odd-row-background-color: var(--canvas) !important;
-  --ag-even-row-background-color: #0A0C12 !important;
+  --ag-even-row-background-color: var(--surface) !important;
   --ag-border-color: var(--border) !important;
   --ag-secondary-border-color: rgba(255, 255, 255, 0.04) !important;
   --ag-row-border-color: rgba(255, 255, 255, 0.04) !important;

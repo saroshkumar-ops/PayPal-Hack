@@ -514,8 +514,8 @@ export function App() {
   // 1. Loading screen while validating initial JWT session
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-[#07080D] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#C6FF3D] border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-[var(--canvas)] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/60 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -533,12 +533,12 @@ export function App() {
   if (!ledger.trip_id || ledger.members.length === 0) {
     return (
       <LenisProvider>
-        <div className="min-h-screen bg-[#07080D] flex flex-col items-center justify-center relative font-body text-[#EDEEF2]">
+        <div className="min-h-screen bg-[var(--canvas)] flex flex-col items-center justify-center relative font-body text-[var(--text)]">
           <div className="z-10 flex flex-col items-center space-y-4">
-            <div className="w-10 h-10 rounded-2xl bg-[#171A23] border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
               <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             </div>
-            <div className="text-xs font-mono text-[#8A8FA3]">Loading trip...</div>
+            <div className="text-xs font-mono text-[var(--muted)]">Loading trip...</div>
           </div>
         </div>
       </LenisProvider>
@@ -549,7 +549,7 @@ export function App() {
   return (
     <LenisProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
+        <div className="min-h-screen bg-[var(--canvas)] text-[var(--text)] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
           {/* Top Navbar */}
           <Navbar
             tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}

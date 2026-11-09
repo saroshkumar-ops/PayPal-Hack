@@ -13,7 +13,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div className="w-full space-y-1.5">
         <div className="relative flex items-center w-full">
           {icon && (
-            <div className="absolute left-3.5 text-[#8A8FA3] pointer-events-none flex items-center justify-center">
+            <div className="absolute left-3.5 text-[var(--muted)] pointer-events-none flex items-center justify-center">
               {icon}
             </div>
           )}
@@ -22,12 +22,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             ref={ref}
             className={cn(
-              'w-full bg-[#07080D] border border-white/8 rounded-xl py-2.5 px-3.5 text-xs sm:text-sm text-[#EDEEF2] placeholder-[#8A8FA3] font-body transition-all duration-150',
+              'w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl py-2.5 px-3.5 text-xs sm:text-sm text-[var(--text)] placeholder-[var(--muted)] font-body transition-all duration-150',
               'hover:border-white/16',
-              'focus:outline-none focus:border-[#C6FF3D]',
+              'focus:outline-none focus:border-white/35 focus:ring-1 focus:ring-white/20',
               icon && 'pl-10',
               rightElement && 'pr-11',
-              error && 'border-[#FF5C7A] focus:border-[#FF5C7A]',
+              error && 'border-[var(--owes)] focus:border-[var(--owes)] focus:ring-[var(--owes)]/20',
               className
             )}
             {...props}
@@ -40,7 +40,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {error && <p className="text-[11px] text-[#FF5C7A] font-mono mt-1">{error}</p>}
+        {error && <p className="text-[11px] text-[var(--owes)] font-mono mt-1">{error}</p>}
       </div>
     );
   }

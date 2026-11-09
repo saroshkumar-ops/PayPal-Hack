@@ -20,7 +20,7 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
   onChange,
 }) => {
   return (
-    <div className="flex items-center p-1 rounded-xl bg-zinc-900/90 border border-white/[0.08] backdrop-blur-xl shadow-inner">
+    <div className="flex items-center p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] backdrop-blur-xl shadow-inner">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -28,13 +28,13 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`relative flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-              isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+              isActive ? 'text-[var(--text)] font-semibold' : 'text-[var(--muted)] hover:text-[var(--text)]'
             }`}
           >
             {isActive && (
               <motion.div
                 layoutId="activeTabPill"
-                className="absolute inset-0 rounded-lg bg-[#171A23] border border-white/12"
+                className="absolute inset-0 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)]"
                 transition={{ type: 'spring', stiffness: 450, damping: 35 }}
               />
             )}
@@ -42,7 +42,7 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
               {tab.icon}
               {tab.label}
               {tab.badge && (
-                <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-white/20 text-white">
+                <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-white/10 text-[var(--text)]">
                   {tab.badge}
                 </span>
               )}
