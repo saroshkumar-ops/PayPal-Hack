@@ -20,7 +20,7 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
   onChange,
 }) => {
   return (
-    <div className="flex items-center p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] backdrop-blur-xl shadow-inner">
+    <div className="flex items-center p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-inner">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (

@@ -368,7 +368,7 @@ export function App() {
     tipCents?: number,
     paidByUserId?: string,
     customSplits?: Array<{ user_id: string; owes_cents: number }>
-  ) => {
+  ): Promise<void> => {
     if (!currentTripId) return;
     setIsLoading(true);
     try {
@@ -378,89 +378,75 @@ export function App() {
         : [payerId];
 
       if (splitType === 'ITEMIZED') {
-        if (items && items.length > 0) {
-          const formattedItems: ItemClaimDto[] = items.map((it) => ({
-            name: it.name,
-            price_cents: it.priceCents,
-            claimed_by_user_ids: it.claimedByUserIds && it.claimedByUserIds.length > 0 
-              ? it.claimedByUserIds 
-              : allMemberIds,
-          }));
-
-          // Compute exact custom splits if needed:
-          const exactSplits: CustomSplitDto[] = customSplits && customSplits.length > 0
-            ? customSplits
-            : (() => {
-                const shares: Record<string, number> = {};
-                allMemberIds.forEach((id) => { shares[id] = 0; });
-                let sub = 0;
-                items.forEach((it) => {
-                  sub += it.priceCents;
-                  const c = it.claimedByUserIds?.length ? it.claimedByUserIds : allMemberIds;
-                  const base = Math.floor(it.priceCents / c.length);
-                  const rem = it.priceCents % c.length;
-                  c.forEach((uid, i) => { shares[uid] = (shares[uid] || 0) + base + (i < rem ? 1 : 0); });
-                });
-                const diff = amountCents - sub;
-                if (diff !== 0 && sub > 0) {
-                  let dist = 0;
-                  allMemberIds.forEach((uid, idx) => {
-                    if (idx === allMemberIds.length - 1) {
-                      shares[uid] = Math.max(0, (shares[uid] || 0) + (diff - dist));
-                    } else {
-                      const extra = Math.round(((shares[uid] || 0) * diff) / sub);
-                      shares[uid] = Math.max(0, (shares[uid] || 0) + extra);
-                      dist += extra;
-                    }
-                  });
-                }
-                return allMemberIds.map((uid) => ({ user_id: uid, owes_cents: shares[uid] || 0 }));
-              })();
-
-          try {
-            await expenseService.createExpense(currentTripId, {
-              paid_by: payerId,
-              amount_cents: amountCents,
-              description: description,
-              category: 'FOOD',
-              split_type: 'ITEMIZED',
-              items: formattedItems,
-              tax_cents: taxCents || 0,
-              tip_cents: tipCents || 0,
-            });
-          } catch (itemErr) {
-            console.warn('Itemized split rejected by backend (likely tax/tip discrepancy). Falling back to EXACT custom split to preserve member shares:', itemErr);
-            // FALLBACK TO EXACT CUSTOM SPLIT TO PRESERVE USER ASSIGNMENTS!
-            await expenseService.createExpense(currentTripId, {
-              paid_by: payerId,
-              amount_cents: amountCents,
-              description: description,
-              category: 'FOOD',
-              split_type: 'EXACT',
-              custom_splits: exactSplits,
+        // Derive exact splits from customSplits passed by modal
+        let exactSplits: CustomSplitDto[] = [];
+        if (customSplits && customSplits.length > 0) {
+          exactSplits = customSplits;
+        } else if (items && items.length > 0) {
+          const shares: Record<string, number> = {};
+          allMemberIds.forEach((id) => { shares[id] = 0; });
+          let sub = 0;
+          items.forEach((it) => {
+            sub += it.priceCents;
+            const c = it.claimedByUserIds?.length ? it.claimedByUserIds : allMemberIds;
+            const base = Math.floor(it.priceCents / c.length);
+            const rem = it.priceCents % c.length;
+            c.forEach((uid, i) => { shares[uid] = (shares[uid] || 0) + base + (i < rem ? 1 : 0); });
+          });
+          const diff = amountCents - sub;
+          if (diff !== 0 && sub > 0) {
+            let dist = 0;
+            allMemberIds.forEach((uid, idx) => {
+              if (idx === allMemberIds.length - 1) {
+                shares[uid] = Math.max(0, (shares[uid] || 0) + (diff - dist));
+              } else {
+                const extra = Math.round(((shares[uid] || 0) * diff) / sub);
+                shares[uid] = Math.max(0, (shares[uid] || 0) + extra);
+                dist += extra;
+              }
             });
           }
-        } else if (customSplits && customSplits.length > 0) {
-          // Custom split without individual line items -> save directly as EXACT split!
-          await expenseService.createExpense(currentTripId, {
-            paid_by: payerId,
-            amount_cents: amountCents,
-            description: description,
-            category: 'FOOD',
-            split_type: 'EXACT',
-            custom_splits: customSplits,
-          });
+          exactSplits = allMemberIds.map((uid) => ({ user_id: uid, owes_cents: shares[uid] || 0 }));
         } else {
-          // Fallback equal split
-          await expenseService.createExpense(currentTripId, {
-            paid_by: payerId,
-            amount_cents: amountCents,
-            description: description,
-            category: 'FOOD',
-            split_type: 'EQUAL',
-            split_with_user_ids: allMemberIds,
-          });
+          const count = Math.max(1, allMemberIds.length);
+          const base = Math.floor(amountCents / count);
+          const rem = amountCents % count;
+          exactSplits = allMemberIds.map((uid, idx) => ({
+            user_id: uid,
+            owes_cents: base + (idx < rem ? 1 : 0),
+          }));
         }
+
+        // Before sending, verify the sum equals amountCents and throw a clear error if not:
+        const sumSplits = exactSplits.reduce((acc, s) => acc + s.owes_cents, 0);
+        if (sumSplits !== amountCents) {
+          throw new Error(
+            `Split sum (${(sumSplits / 100).toFixed(2)}) does not match bill total (${(amountCents / 100).toFixed(2)})`
+          );
+        }
+
+        const formattedItems: ItemClaimDto[] | undefined = items && items.length > 0
+          ? items.map((it) => ({
+              name: it.name,
+              price_cents: it.priceCents,
+              claimed_by_user_ids: it.claimedByUserIds && it.claimedByUserIds.length > 0 
+                ? it.claimedByUserIds 
+                : allMemberIds,
+            }))
+          : undefined;
+
+        // Send split_type "EXACT" with custom_splits
+        await expenseService.createExpense(currentTripId, {
+          paid_by: payerId,
+          amount_cents: amountCents,
+          description: description,
+          category: 'FOOD',
+          split_type: 'EXACT',
+          custom_splits: exactSplits,
+          items: formattedItems,
+          tax_cents: taxCents || 0,
+          tip_cents: tipCents || 0,
+        });
       } else {
         // Equal split across all party members
         await expenseService.createExpense(currentTripId, {
@@ -478,6 +464,7 @@ export function App() {
       triggerCelebrationConfetti();
     } catch (err) {
       console.error('Failed to commit scanned expense:', err);
+      throw err;
     } finally {
       setIsLoading(false);
     }

@@ -193,8 +193,17 @@ export const expenseService = {
     try {
       const res = await backendClient.post<Expense>(ENDPOINTS.TRIPS.EXPENSES(tripId), payload);
       return res.data;
-    } catch (err) {
-      console.warn('Backend expense creation failed, using client-side fallback:', err);
+    } catch (err: any) {
+      if (err?.response) {
+        const backendMessage =
+          err.response.data?.message ||
+          err.response.data?.detail ||
+          err.response.data?.error ||
+          err.message ||
+          'Backend rejected expense creation';
+        throw new Error(backendMessage);
+      }
+      console.warn('Backend expense creation failed (network error or backend down), using client-side fallback:', err);
       const splitUsers = (payload.split_with_user_ids && payload.split_with_user_ids.length > 0)
         ? payload.split_with_user_ids 
         : (mockLedger.members.length > 0 ? mockLedger.members.map(m => m.user_id) : [payload.paid_by || 'organizer']);
@@ -213,13 +222,21 @@ export const expenseService = {
         category: payload.category || 'FOOD',
         timestamp: new Date().toISOString(),
         split_type: payload.split_type || 'EQUAL',
-        splits: splitUsers.map(uid => ({
-          user_id: uid,
-          owes_cents: splitAmount,
-          paid_status: (uid === payer.user_id ? 'SETTLED' : 'PENDING'),
-          paypal_order_id: uid !== payer.user_id ? `SIM_ORD_${Date.now().toString().slice(-6)}` : undefined,
-          payment_url: uid !== payer.user_id ? `https://www.sandbox.paypal.com/checkoutnow?token=SIM_${Date.now()}` : undefined,
-        })),
+        splits: (payload.custom_splits && payload.custom_splits.length > 0)
+          ? payload.custom_splits.map(cs => ({
+              user_id: cs.user_id,
+              owes_cents: cs.owes_cents,
+              paid_status: (cs.user_id === payer.user_id ? 'SETTLED' : 'PENDING'),
+              paypal_order_id: cs.user_id !== payer.user_id ? `SIM_ORD_${Date.now().toString().slice(-6)}` : undefined,
+              payment_url: cs.user_id !== payer.user_id ? `https://www.sandbox.paypal.com/checkoutnow?token=SIM_${Date.now()}` : undefined,
+            }))
+          : splitUsers.map(uid => ({
+              user_id: uid,
+              owes_cents: splitAmount,
+              paid_status: (uid === payer.user_id ? 'SETTLED' : 'PENDING'),
+              paypal_order_id: uid !== payer.user_id ? `SIM_ORD_${Date.now().toString().slice(-6)}` : undefined,
+              payment_url: uid !== payer.user_id ? `https://www.sandbox.paypal.com/checkoutnow?token=SIM_${Date.now()}` : undefined,
+            })),
       };
 
       mockLedger.expenses.unshift(newExpense);

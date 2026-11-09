@@ -72,7 +72,7 @@ export const PayPalCheckoutDrawer: React.FC<PayPalCheckoutDrawerProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="paypal-checkout-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}

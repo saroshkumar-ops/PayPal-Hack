@@ -105,7 +105,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-trip-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 overflow-y-auto"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 12 }}

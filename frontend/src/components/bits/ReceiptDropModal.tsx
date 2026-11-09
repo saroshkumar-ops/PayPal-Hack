@@ -38,7 +38,7 @@ interface ReceiptDropModalProps {
     tipCents?: number,
     paidByUserId?: string,
     customSplits?: Array<{ user_id: string; owes_cents: number }>
-  ) => void;
+  ) => Promise<void> | void;
 }
 
 export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
@@ -53,6 +53,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const allUserIds = activeMembers.map((m) => m.user_id);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState<'EQUAL' | 'ITEMIZED'>('EQUAL');
@@ -159,14 +160,32 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       const res = await aiService.uploadReceipt(file, currency);
       const symbol = res.currency_symbol || getCurrencySymbol(currency);
       
+      const taxCents = res.tax_cents || 0;
+      const tipCents = res.tip_cents || 0;
+      const itemsList = res.items || [];
+
+      let totalCents = res.total_cents;
+      if (!totalCents || totalCents <= 0) {
+        if (itemsList.length > 0) {
+          const itemsSum = itemsList.reduce((acc, it) => acc + (it.price_cents || 0), 0);
+          totalCents = itemsSum + taxCents + tipCents;
+        }
+      }
+
+      if (!totalCents || totalCents <= 0) {
+        setErrorMsg('Could not detect bill total. Please re-scan with a clearer photo.');
+        setExtractedReceipt(null);
+        return;
+      }
+
       const parsed = {
         merchant: res.merchant || 'Scanned Bill',
         currency: res.currency || currency,
         currencySymbol: symbol,
-        totalCents: res.total_cents || 10000,
-        taxCents: res.tax_cents || 0,
-        tipCents: res.tip_cents || 0,
-        items: (res.items || []).map((item) => ({
+        totalCents: totalCents,
+        taxCents: taxCents,
+        tipCents: tipCents,
+        items: itemsList.map((item) => ({
           name: item.name,
           priceCents: item.price_cents,
           claimedByUserIds: [...allUserIds],
@@ -191,9 +210,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       if (!paidByUserId && activeMembers.length > 0) {
         setPaidByUserId(currentUserId || activeMembers[0].user_id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Receipt parse failed:', err);
-      setErrorMsg('Could not parse receipt image. Please verify image clarity and try again.');
+      setErrorMsg(err?.message || 'Could not parse receipt image. Please verify image clarity and try again.');
     } finally {
       setIsScanning(false);
     }
@@ -258,7 +277,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     const cents = isNaN(parsedAmount) ? 0 : Math.max(0, Math.round(parsedAmount * 100));
 
     setCustomSharesCents((prev) => {
-      const baseShares = isCustomManual ? { ...prev } : computeItemizedShares();
+      const baseShares = Object.keys(prev).length > 0 ? { ...prev } : computeItemizedShares();
       return {
         ...baseShares,
         [userId]: cents,
@@ -268,13 +287,14 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   // Format input string on blur
   const handleCustomShareInputBlur = (userId: string) => {
-    const currentCents = isCustomManual 
-      ? (customSharesCents[userId] || 0) 
-      : (computeItemizedShares()[userId] || 0);
-    setShareInputStrings((prev) => ({
-      ...prev,
-      [userId]: (currentCents / 100).toFixed(2),
-    }));
+    setCustomSharesCents((prev) => {
+      const currentCents = prev[userId] ?? 0;
+      setShareInputStrings((prevStrings) => ({
+        ...prevStrings,
+        [userId]: (currentCents / 100).toFixed(2),
+      }));
+      return prev;
+    });
   };
 
   // Exclude or zero out a traveler
@@ -282,7 +302,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     setIsCustomManual(true);
     setShareInputStrings((prev) => ({ ...prev, [userId]: '0.00' }));
     setCustomSharesCents((prev) => {
-      const baseShares = isCustomManual ? { ...prev } : computeItemizedShares();
+      const baseShares = Object.keys(prev).length > 0 ? { ...prev } : computeItemizedShares();
       return { ...baseShares, [userId]: 0 };
     });
   };
@@ -290,7 +310,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   // Assign remaining discrepancy directly to a specific traveler
   const handleAssignRemainderToTraveler = (userId: string) => {
     if (!extractedReceipt) return;
-    const currentShares = isCustomManual ? { ...customSharesCents } : computeItemizedShares();
+    const currentShares = Object.keys(customSharesCents).length > 0 ? { ...customSharesCents } : computeItemizedShares();
     const allocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
     const remaining = extractedReceipt.totalCents - allocated;
 
@@ -311,7 +331,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   // Auto-balance remaining cents across other participating travelers
   const handleAutoBalanceRemainder = () => {
     if (!extractedReceipt) return;
-    const currentShares = isCustomManual ? { ...customSharesCents } : computeItemizedShares();
+    const currentShares = Object.keys(customSharesCents).length > 0 ? { ...customSharesCents } : computeItemizedShares();
     const allocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
     const remaining = extractedReceipt.totalCents - allocated;
 
@@ -328,6 +348,13 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       const extra = baseExtra + (idx < rem ? 1 : 0);
       currentShares[m.user_id] = Math.max(0, (currentShares[m.user_id] || 0) + extra);
     });
+
+    // Absorb any integer division residue into first target
+    const finalAllocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
+    const finalDiff = extractedReceipt.totalCents - finalAllocated;
+    if (finalDiff !== 0 && targets.length > 0) {
+      currentShares[targets[0].user_id] = Math.max(0, (currentShares[targets[0].user_id] || 0) + finalDiff);
+    }
 
     setCustomSharesCents(currentShares);
     setIsCustomManual(true);
@@ -369,13 +396,23 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const totalDueCents = extractedReceipt?.totalCents || 0;
   const discrepancyCents = totalDueCents - totalAllocatedCents;
 
-  const handleConfirm = () => {
-    if (!extractedReceipt) return;
+  const handleConfirm = async () => {
+    if (!extractedReceipt || isSubmitting) return;
+
+    if (splitMode === 'ITEMIZED' && isCustomManual && discrepancyCents !== 0) {
+      setErrorMsg(
+        discrepancyCents > 0
+          ? `Please allocate the remaining ${curSymbol}${(discrepancyCents / 100).toFixed(2)} before confirming.`
+          : `Allocated shares exceed bill total by ${curSymbol}${(Math.abs(discrepancyCents) / 100).toFixed(2)}.`
+      );
+      return;
+    }
+
     const selectedPayer = paidByUserId || currentUserId || activeMembers[0]?.user_id;
 
-    // Absorb any tiny integer rounding discrepancy (if manual) into highest share
+    // In non-manual mode, absorb any tiny integer rounding discrepancy into highest share
     const finalShares = { ...activeShares };
-    if (discrepancyCents !== 0) {
+    if (!isCustomManual && discrepancyCents !== 0) {
       const sorted = [...activeMembers].sort((a, b) => (finalShares[b.user_id] || 0) - (finalShares[a.user_id] || 0));
       const primaryTarget = sorted[0]?.user_id || selectedPayer;
       finalShares[primaryTarget] = Math.max(0, (finalShares[primaryTarget] || 0) + discrepancyCents);
@@ -386,20 +423,40 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       owes_cents: finalShares[m.user_id] || 0,
     }));
 
-    onConfirmExpense(
-      extractedReceipt.merchant,
-      extractedReceipt.totalCents,
-      splitMode,
-      splitMode === 'ITEMIZED' && extractedReceipt.items.length > 0 && !isCustomManual 
-        ? extractedReceipt.items 
-        : undefined,
-      extractedReceipt.taxCents,
-      extractedReceipt.tipCents,
-      selectedPayer,
-      splitMode === 'ITEMIZED' ? customSplits : undefined
-    );
-    onClose();
+    setIsSubmitting(true);
+    setErrorMsg(null);
+    try {
+      await onConfirmExpense(
+        extractedReceipt.merchant,
+        extractedReceipt.totalCents,
+        splitMode,
+        splitMode === 'ITEMIZED' && extractedReceipt.items.length > 0 && !isCustomManual 
+          ? extractedReceipt.items 
+          : undefined,
+        extractedReceipt.taxCents,
+        extractedReceipt.tipCents,
+        selectedPayer,
+        splitMode === 'ITEMIZED' ? customSplits : undefined
+      );
+
+      // On success: clear state and close
+      setExtractedReceipt(null);
+      setErrorMsg(null);
+      setCustomSharesCents({});
+      setShareInputStrings({});
+      setIsCustomManual(false);
+      onClose();
+    } catch (err: any) {
+      // On failure: KEEP the modal open with all claims and typed amounts intact!
+      console.error('Failed to commit expense:', err);
+      const message = err?.message || 'Failed to split and save bill. Please check values and try again.';
+      setErrorMsg(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const isConfirmDisabled = isSubmitting || (splitMode === 'ITEMIZED' && isCustomManual && discrepancyCents !== 0);
 
   if (!isOpen) return null;
 
@@ -458,6 +515,12 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
             className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{ overscrollBehavior: 'contain' }}
           >
+            {errorMsg && (
+              <div className="flex items-center gap-2 text-xs font-mono text-[var(--owes)] bg-[var(--owes)]/10 px-3.5 py-2.5 rounded-xl border border-[var(--owes)]/20 mb-4">
+                <AlertCircle className="w-4 h-4 shrink-0 text-[var(--owes)]" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
             {!extractedReceipt ? (
               /* State 1: Dropzone & Scan State */
               <div
@@ -949,9 +1012,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
               <Button
                 variant="primary"
                 size="md"
+                disabled={isConfirmDisabled}
                 onClick={handleConfirm}
               >
-                <span>Confirm & Split Bill</span>
+                <span>{isSubmitting ? 'Splitting & Saving...' : 'Confirm & Split Bill'}</span>
               </Button>
             ) : (
               <Button
