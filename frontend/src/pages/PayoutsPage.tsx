@@ -11,6 +11,7 @@ import type { TripLedger, PayPalEventLog } from '../types';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
+import { formatReferenceId } from '../lib/formatters';
 
 interface PayoutsPageProps {
   ledger: TripLedger;
@@ -274,7 +275,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-[#8A8FA3] pt-2 border-t border-white/6">
-                      <span className="truncate max-w-[220px]">Ref: {log.reference_id || log.id}</span>
+                      <span className="truncate max-w-[220px]">Ref: {formatReferenceId(log.reference_id || log.id)}</span>
                       <span className="font-bold text-[#EDEEF2] tabular-nums">{log.amount}</span>
                     </div>
                   </div>

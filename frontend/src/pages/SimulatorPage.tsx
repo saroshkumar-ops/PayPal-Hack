@@ -535,10 +535,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
             <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-[#8A8FA3]">
-                  TARGET: {topDebtor ? topDebtor.name.toUpperCase() : 'NONE'}
+                  Member: <span className="text-[#EDEEF2] font-semibold">{topDebtor ? topDebtor.name : 'None'}</span>
                 </span>
                 {topDebtor && (
-                  <span className="text-[#C6FF3D] font-bold">NOTIFICATIONS: {getNotificationLabel(topDebtor.roast_consent)}</span>
+                  <span className="text-[#C6FF3D] font-bold">{getNotificationLabel(topDebtor.roast_consent)}</span>
                 )}
               </div>
               <p className="text-xs text-[#EDEEF2] font-body leading-relaxed m-0">

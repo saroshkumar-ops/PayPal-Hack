@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
+import { formatPartyName } from '../../lib/formatters';
 import type { AuthResponseDto } from '../../types';
 
 interface NavbarProps {
@@ -68,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {tripName && (
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F1117] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF3D]" />
-              <span className="font-semibold truncate max-w-[160px]">{tripName}</span>
+              <span className="font-semibold truncate max-w-[160px]">{formatPartyName(tripName)}</span>
             </div>
           )}
         </div>

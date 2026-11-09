@@ -116,4 +116,15 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with id: " + expenseId));
         return ExpenseResponse.fromEntity(expense);
     }
+
+    @Transactional
+    public void deleteExpense(String tripId, String expenseId) {
+        tripService.findTripEntityForUpdate(tripId);
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Expense not found with id: " + expenseId));
+        if (!expense.getTripId().equals(tripId)) {
+            throw new ResourceNotFoundException("Expense " + expenseId + " does not belong to trip " + tripId);
+        }
+        expenseRepository.delete(expense);
+    }
 }

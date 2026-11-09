@@ -35,4 +35,13 @@ public class ExpenseController {
     public ResponseEntity<List<ExpenseResponse>> getExpenses(@PathVariable String tripId) {
         return ResponseEntity.ok(expenseService.getExpensesByTrip(tripId));
     }
+
+    @Operation(summary = "Delete an expense", description = "Deletes an expense and its splits from the trip ledger")
+    @DeleteMapping("/{expenseId}")
+    public ResponseEntity<Void> deleteExpense(
+            @PathVariable String tripId,
+            @PathVariable String expenseId) {
+        expenseService.deleteExpense(tripId, expenseId);
+        return ResponseEntity.noContent().build();
+    }
 }

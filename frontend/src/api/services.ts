@@ -237,6 +237,17 @@ export const expenseService = {
       return mockLedger.expenses;
     }
   },
+
+  /** Delete an expense from trip (DELETE /api/trips/{tripId}/expenses/{expenseId}) */
+  deleteExpense: async (tripId: string, expenseId: string): Promise<void> => {
+    try {
+      await backendClient.delete(`${ENDPOINTS.TRIPS.EXPENSES(tripId)}/${expenseId}`);
+    } catch (err) {
+      console.warn('Backend deleteExpense failed, updating client state:', err);
+    }
+    mockLedger.expenses = mockLedger.expenses.filter((e) => e.expense_id !== expenseId);
+    recalcBalances();
+  },
 };
 
 /**

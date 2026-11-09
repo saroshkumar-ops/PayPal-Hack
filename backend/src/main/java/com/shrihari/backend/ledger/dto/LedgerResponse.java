@@ -17,6 +17,14 @@ public class LedgerResponse {
     @JsonProperty("trip_id")
     private String tripId;
 
+    @JsonProperty("trip_name")
+    private String tripName;
+
+    @JsonProperty("name")
+    public String getName() {
+        return tripName;
+    }
+
     private String currency;
 
     private List<MemberResponse> members;

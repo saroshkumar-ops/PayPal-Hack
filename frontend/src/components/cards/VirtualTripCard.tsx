@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { RefreshCw, Wallet, CheckCircle } from 'lucide-react';
 import { getCurrencySymbol } from '../../lib/currency';
+import { formatPartyName } from '../../lib/formatters';
 
 interface VirtualTripCardProps {
   balanceCents: number;
@@ -127,7 +128,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                   <Wallet className="w-3.5 h-3.5 text-[#C6FF3D]" />
                 </div>
                 <span className="text-xs font-display font-bold tracking-tight text-[#EDEEF2] truncate max-w-[180px]">
-                  {tripName}
+                  {formatPartyName(tripName)}
                 </span>
               </div>
 

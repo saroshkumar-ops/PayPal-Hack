@@ -68,6 +68,7 @@ public class LedgerEngine {
 
         return LedgerResponse.builder()
                 .tripId(trip.getId())
+                .tripName(trip.getName())
                 .currency(trip.getCurrency())
                 .members(members)
                 .expenses(expenseResponses)

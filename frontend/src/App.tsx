@@ -395,6 +395,20 @@ export function App() {
     }
   };
 
+  // Delete an expense
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!currentTripId) return;
+    setIsLoading(true);
+    try {
+      await expenseService.deleteExpense(currentTripId, expenseId);
+      await loadData(currentTripId);
+    } catch (err) {
+      console.error('Failed to delete expense:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 1. Loading screen while validating initial JWT session
   if (isAuthChecking) {
     return (
@@ -475,6 +489,7 @@ export function App() {
                 element={
                   <LedgerPage
                     ledger={ledger}
+                    onDeleteExpense={handleDeleteExpense}
                   />
                 }
               />

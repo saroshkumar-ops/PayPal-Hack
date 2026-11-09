@@ -20,6 +20,7 @@ import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
 import { getNotificationLabel } from '../lib/notifications';
+import { formatPartyName } from '../lib/formatters';
 
 interface OverviewPageProps {
   ledger: TripLedger;
@@ -253,7 +254,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#171A23] border border-white/10 text-[11px] font-mono text-[#C6FF3D] mb-3">
-                  <span>{ledger.trip_name || ledger.name || 'Trip'}</span>
+                  <span>{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-[#EDEEF2] tracking-tight leading-[1.08] m-0">
                   Trip Expenses
@@ -454,7 +455,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-5 sm:p-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)]">
             <VirtualTripCard
               balanceCents={organizerOwedCents}
-              tripName={ledger.trip_name || ledger.name || ledger.trip_id}
+              tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}
               organizerName={organizer.name}
               organizerEmail={organizer.paypal_email}
               currency={ledger.currency}

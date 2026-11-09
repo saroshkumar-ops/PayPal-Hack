@@ -5,17 +5,24 @@ import { Link } from 'react-router-dom';
 import type { TripLedger } from '../types';
 import { 
   Search, 
-  Receipt
+  Receipt,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { StatusPill } from '../components/ui/StatusPill';
+import { Button } from '../components/ui/Button';
 import { getCurrencySymbol } from '../lib/currency';
+import { formatExpenseId, formatCategoryName } from '../lib/formatters';
 
 interface LedgerPageProps {
   ledger: TripLedger;
+  onDeleteExpense?: (expenseId: string) => Promise<void>;
 }
 
-export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
+export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense }) => {
   const [quickFilterText, setQuickFilterText] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ expenseId: string; description: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
 
   const totalSpendCents = useMemo(() => {
@@ -76,12 +83,12 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
       {
         field: 'category',
         headerName: 'Category',
-        width: 120,
+        width: 130,
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
           <span className="px-2 py-0.5 rounded-lg bg-[#171A23] border border-white/8 text-[11px] font-mono text-[#EDEEF2]">
-            {params.value}
+            {formatCategoryName(params.value)}
           </span>
         ),
       },
@@ -93,7 +100,12 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="font-body text-xs font-semibold text-[#EDEEF2]">{params.value}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-body text-xs font-semibold text-[#EDEEF2]">{params.value}</span>
+            <span className="text-[10px] font-mono text-[#8A8FA3] bg-[#171A23] px-1.5 py-0.5 rounded border border-white/6">
+              {formatExpenseId(params.data.expense_id)}
+            </span>
+          </div>
         ),
       },
       {
@@ -138,6 +150,24 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
         minWidth: 240,
         cellRenderer: (params: ICellRendererParams) => (
           <span className="font-mono text-[11px] text-[#8A8FA3] truncate">{params.value}</span>
+        ),
+      },
+      {
+        headerName: '',
+        width: 55,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: ICellRendererParams) => (
+          <button
+            onClick={() => setDeleteConfirm({ 
+              expenseId: params.data.expense_id, 
+              description: params.data.description 
+            })}
+            title="Delete Bill"
+            className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#FF5C7A] hover:bg-[#FF5C7A]/15 transition-colors cursor-pointer flex items-center justify-center"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         ),
       },
     ];
@@ -290,6 +320,54 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger }) => {
           </div>
         )}
       </div>
+
+      {/* Delete Expense Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-[#0F1117] border border-white/12 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5C7A]/15 border border-[#FF5C7A]/30 flex items-center justify-center text-[#FF5C7A]">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">Delete Bill</h3>
+                <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">Remove this bill and recalculate balances</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#EDEEF2] font-body bg-[#07080D] p-3 rounded-xl border border-white/6 m-0">
+              Are you sure you want to delete <span className="font-semibold text-[#FF5C7A]">{deleteConfirm.description}</span> ({formatExpenseId(deleteConfirm.expenseId)})?
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <button
+                onClick={async () => {
+                  if (!onDeleteExpense) return;
+                  setIsDeleting(true);
+                  try {
+                    await onDeleteExpense(deleteConfirm.expenseId);
+                    setDeleteConfirm(null);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+                className="px-3.5 py-2 rounded-xl bg-[#FF5C7A] hover:bg-[#e04865] text-white text-xs font-semibold transition-all cursor-pointer disabled:opacity-40"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
