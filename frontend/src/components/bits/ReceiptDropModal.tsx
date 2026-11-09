@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -61,6 +61,9 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     return currentUserId || activeMembers[0]?.user_id || '';
   });
 
+  // For custom splits when receipt has no itemized line items
+  const [participatingMemberIds, setParticipatingMemberIds] = useState<string[]>(allUserIds);
+
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
     currency: string;
@@ -72,6 +75,27 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   }>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Prevent background scrolling while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const origBodyOverflow = document.body.style.overflow;
+      const origHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = origBodyOverflow;
+        document.documentElement.style.overflow = origHtmlOverflow;
+      };
+    }
+  }, [isOpen]);
+
+  // Keep participatingMemberIds synced when activeMembers change
+  useEffect(() => {
+    if (activeMembers.length > 0 && participatingMemberIds.length === 0) {
+      setParticipatingMemberIds(allUserIds);
+    }
+  }, [activeMembers]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,6 +121,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
           claimedByUserIds: [...allUserIds],
         })),
       });
+
+      setParticipatingMemberIds(allUserIds);
 
       if (!paidByUserId && activeMembers.length > 0) {
         setPaidByUserId(currentUserId || activeMembers[0].user_id);
@@ -166,52 +192,72 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     });
   };
 
+  // Toggle a member in or out of participating custom split when no line items exist
+  const toggleParticipatingMember = (userId: string) => {
+    setParticipatingMemberIds((prev) => {
+      if (prev.includes(userId)) {
+        if (prev.length <= 1) return prev; // Keep at least one
+        return prev.filter((id) => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
   // Dynamically compute each traveler's owed cents in Itemized / Custom split mode:
   const computeItemizedShares = (): Record<string, number> => {
-    if (!extractedReceipt || !extractedReceipt.items) return {};
+    if (!extractedReceipt) return {};
     const shares: Record<string, number> = {};
     activeMembers.forEach((m) => { shares[m.user_id] = 0; });
 
-    let itemsSubtotal = 0;
-    extractedReceipt.items.forEach((item) => {
-      itemsSubtotal += item.priceCents;
-      const claimants = item.claimedByUserIds && item.claimedByUserIds.length > 0 
-        ? item.claimedByUserIds 
-        : allUserIds;
-      const claimCount = Math.max(1, claimants.length);
-      const baseShare = Math.floor(item.priceCents / claimCount);
-      const rem = item.priceCents % claimCount;
-      claimants.forEach((uid, i) => {
-        const itemShare = baseShare + (i < rem ? 1 : 0);
-        shares[uid] = (shares[uid] || 0) + itemShare;
+    // If receipt has line items, compute from item claims
+    if (extractedReceipt.items && extractedReceipt.items.length > 0) {
+      let itemsSubtotal = 0;
+      extractedReceipt.items.forEach((item) => {
+        itemsSubtotal += item.priceCents;
+        const claimants = item.claimedByUserIds && item.claimedByUserIds.length > 0 
+          ? item.claimedByUserIds 
+          : allUserIds;
+        const claimCount = Math.max(1, claimants.length);
+        const baseShare = Math.floor(item.priceCents / claimCount);
+        const rem = item.priceCents % claimCount;
+        claimants.forEach((uid, i) => {
+          const itemShare = baseShare + (i < rem ? 1 : 0);
+          shares[uid] = (shares[uid] || 0) + itemShare;
+        });
       });
-    });
 
-    // If receipt has no line items, distribute the total equally across all active travelers
-    if (itemsSubtotal === 0 && activeMembers.length > 0) {
-      const base = Math.floor(extractedReceipt.totalCents / activeMembers.length);
-      const rem = extractedReceipt.totalCents % activeMembers.length;
-      activeMembers.forEach((m, i) => {
-        shares[m.user_id] = base + (i < rem ? 1 : 0);
-      });
+      // Proportionally distribute taxes, tips, or unallocated difference to match totalCents exactly
+      const unallocatedCents = extractedReceipt.totalCents - itemsSubtotal;
+      if (unallocatedCents !== 0 && itemsSubtotal > 0) {
+        let distributedExtra = 0;
+        activeMembers.forEach((m, idx) => {
+          if (idx === activeMembers.length - 1) {
+            shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + (unallocatedCents - distributedExtra));
+          } else {
+            const userDirect = shares[m.user_id] || 0;
+            const extra = Math.round((userDirect * unallocatedCents) / itemsSubtotal);
+            shares[m.user_id] = Math.max(0, userDirect + extra);
+            distributedExtra += extra;
+          }
+        });
+      }
       return shares;
     }
 
-    // Proportionally distribute taxes, tips, or unallocated difference to match totalCents exactly
-    const unallocatedCents = extractedReceipt.totalCents - itemsSubtotal;
-    if (unallocatedCents !== 0 && itemsSubtotal > 0) {
-      let distributedExtra = 0;
-      activeMembers.forEach((m, idx) => {
-        if (idx === activeMembers.length - 1) {
-          shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + (unallocatedCents - distributedExtra));
-        } else {
-          const userDirect = shares[m.user_id] || 0;
-          const extra = Math.round((userDirect * unallocatedCents) / itemsSubtotal);
-          shares[m.user_id] = Math.max(0, userDirect + extra);
-          distributedExtra += extra;
-        }
-      });
-    }
+    // If receipt has no line items, distribute total among participating travelers
+    const participants = participatingMemberIds.length > 0 ? participatingMemberIds : allUserIds;
+    const count = Math.max(1, participants.length);
+    const base = Math.floor(extractedReceipt.totalCents / count);
+    const rem = extractedReceipt.totalCents % count;
+    activeMembers.forEach((m) => {
+      if (participants.includes(m.user_id)) {
+        const idx = participants.indexOf(m.user_id);
+        shares[m.user_id] = base + (idx < rem ? 1 : 0);
+      } else {
+        shares[m.user_id] = 0;
+      }
+    });
 
     return shares;
   };
@@ -229,7 +275,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       extractedReceipt.merchant,
       extractedReceipt.totalCents,
       splitMode,
-      splitMode === 'ITEMIZED' ? extractedReceipt.items : undefined,
+      splitMode === 'ITEMIZED' && extractedReceipt.items.length > 0 ? extractedReceipt.items : undefined,
       extractedReceipt.taxCents,
       extractedReceipt.tipCents,
       selectedPayer,
@@ -249,16 +295,21 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 overflow-y-auto select-none">
+      <div 
+        data-modal-open="true"
+        data-lenis-prevent="true"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 overflow-hidden select-none"
+      >
         <motion.div
+          data-lenis-prevent="true"
           initial={{ opacity: 0, scale: 0.96, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
-          className="relative w-full max-w-4xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden my-4"
+          className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
+          <div className="shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[var(--canvas)] border border-[var(--border)] flex items-center justify-center">
                 <ReceiptIcon className="w-4 h-4 text-[var(--text)]" />
@@ -269,7 +320,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 </h3>
                 <p className="text-[11px] text-[var(--muted)] font-mono m-0 mt-0.5">
                   {extractedReceipt 
-                    ? `${activeMembers.length} party members · Itemized extraction complete` 
+                    ? `${activeMembers.length} party members · Split configuration ready` 
                     : 'Auto-scan paper bills, extract line items, and assign shares'}
                 </p>
               </div>
@@ -283,7 +334,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
             </button>
           </div>
 
-          <div className="p-4 sm:p-6">
+          <div data-lenis-prevent="true" className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {!extractedReceipt ? (
               /* State 1: Dropzone & Scan State */
               <div
@@ -411,6 +462,14 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     tipCents={extractedReceipt.tipCents}
                     totalCents={extractedReceipt.totalCents}
                     members={activeMembers}
+                    memberSplits={activeMembers.map((m) => ({
+                      user_id: m.user_id,
+                      name: m.name,
+                      owes_cents: splitMode === 'EQUAL' 
+                        ? perPersonEqualCents 
+                        : (itemizedShares[m.user_id] || 0),
+                    }))}
+                    splitType={splitMode === 'EQUAL' ? 'EQUAL' : 'CUSTOM'}
                     rotateDeg={-0.6}
                     interactive={false}
                   />
@@ -426,39 +485,40 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {activeMembers.map((m) => {
-                        const isPayer = (paidByUserId || currentUserId) === m.user_id;
-                        const tagColor = getMemberTagColor(m.user_id);
+                        const isSelected = paidByUserId === m.user_id;
+                        const isSelf = m.user_id === currentUserId;
+                        const tag = getMemberTagColor(m.user_id);
                         return (
                           <button
                             key={m.user_id}
                             type="button"
                             onClick={() => setPaidByUserId(m.user_id)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
-                              isPayer
-                                ? 'bg-[var(--surface-elevated)] border border-white/40 text-[var(--text)] font-semibold shadow-sm'
-                                : 'bg-transparent border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
+                              isSelected
+                                ? 'bg-[var(--surface-elevated)] border border-white/30 text-[var(--text)] font-semibold shadow-sm'
+                                : 'bg-[var(--canvas)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
                             }`}
                           >
                             <span
                               style={{
-                                backgroundColor: tagColor.bg,
-                                color: tagColor.text,
-                                borderColor: tagColor.border,
+                                backgroundColor: tag.bg,
+                                color: tag.text,
+                                borderColor: tag.border,
                               }}
                               className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
                             >
                               {m.name.slice(0, 2).toUpperCase()}
                             </span>
-                            <span>{m.name}</span>
-                            {m.user_id === currentUserId && <span className="text-[10px] text-[var(--muted)]">(You)</span>}
-                            {isPayer && <Check className="w-3 h-3 text-[var(--text)] ml-0.5" />}
+                            <span className="truncate max-w-[120px]">{m.name}</span>
+                            {isSelf && <span className="text-[10px] text-[var(--muted)] font-normal">(You)</span>}
+                            {isSelected && <Check className="w-3 h-3 text-[var(--text)] shrink-0" />}
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Split Method Toggle (Equal vs Itemized) */}
+                  {/* Split Method Toggle */}
                   <div className="space-y-1.5">
                     <div className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider">
                       Split Method
@@ -487,7 +547,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         }`}
                       >
                         <ListFilter className="w-3.5 h-3.5" />
-                        <span>Itemized Claim</span>
+                        <span>Custom Split</span>
                       </button>
                     </div>
                   </div>
@@ -581,105 +641,145 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs font-mono pt-1">
-                        <span className="text-[var(--muted)] uppercase">ASSIGN ITEMS TO TRAVELERS:</span>
-                        {extractedReceipt.items.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={splitAllWithEveryone}
-                            className="text-[11px] text-[var(--text)] hover:underline cursor-pointer font-mono"
+                      {/* Items or Custom Allocation Selector */}
+                      {extractedReceipt.items.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between text-xs font-mono pt-1">
+                            <span className="text-[var(--muted)] uppercase">ASSIGN ITEMS TO TRAVELERS:</span>
+                            <button
+                              type="button"
+                              onClick={splitAllWithEveryone}
+                              className="text-[11px] text-[var(--text)] hover:underline cursor-pointer font-mono"
+                            >
+                              Reset All to Everyone
+                            </button>
+                          </div>
+
+                          <div 
+                            data-lenis-prevent="true"
+                            onWheel={(e) => e.stopPropagation()}
+                            className="space-y-2 max-h-[260px] overflow-y-auto overscroll-contain pr-1.5"
+                            style={{ overscrollBehavior: 'contain' }}
                           >
-                            Reset All to Everyone
-                          </button>
-                        )}
-                      </div>
+                            {extractedReceipt.items.map((item, idx) => {
+                              const isSplitWithAll = item.claimedByUserIds.length === activeMembers.length;
+                              const splitCount = Math.max(1, item.claimedByUserIds.length);
+                              const perPersonItemCents = Math.round(item.priceCents / splitCount);
 
-                      {extractedReceipt.items.length === 0 ? (
-                        <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center text-xs text-[var(--muted)] font-mono">
-                          No itemized line items detected. Switch to Split Equally to divide the total evenly across travelers.
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
-                          {extractedReceipt.items.map((item, idx) => {
-                            const isSplitWithAll = item.claimedByUserIds.length === activeMembers.length;
-                            const splitCount = Math.max(1, item.claimedByUserIds.length);
-                            const perPersonItemCents = Math.round(item.priceCents / splitCount);
+                              return (
+                                <div
+                                  key={idx}
+                                  className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2 text-xs"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="min-w-0 pr-2">
+                                      <div className="font-semibold text-[var(--text)] font-body truncate">
+                                        {item.name}
+                                      </div>
+                                      <div className="font-mono text-xs text-[var(--text)] tabular-nums mt-0.5">
+                                        {curSymbol}{(item.priceCents / 100).toFixed(2)}
+                                        {splitCount > 1 && (
+                                          <span className="text-[11px] font-normal text-[var(--muted)] ml-1.5">
+                                            ({curSymbol}{(perPersonItemCents / 100).toFixed(2)} each · {splitCount} people)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
 
-                            return (
-                              <div
-                                key={idx}
-                                className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2 text-xs"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="min-w-0 pr-2">
-                                    <div className="font-semibold text-[var(--text)] font-body truncate">
-                                      {item.name}
-                                    </div>
-                                    <div className="font-mono text-xs text-[var(--text)] tabular-nums mt-0.5">
-                                      {curSymbol}{(item.priceCents / 100).toFixed(2)}
-                                      {splitCount > 1 && (
-                                        <span className="text-[11px] font-normal text-[var(--muted)] ml-1.5">
-                                          ({curSymbol}{(perPersonItemCents / 100).toFixed(2)} each · {splitCount} people)
-                                        </span>
-                                      )}
-                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setItemToEveryone(idx)}
+                                      className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors shrink-0 cursor-pointer ${
+                                        isSplitWithAll
+                                          ? 'bg-white/10 border border-white/20 text-[var(--text)] font-semibold'
+                                          : 'bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
+                                      }`}
+                                    >
+                                      Everyone
+                                    </button>
                                   </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => setItemToEveryone(idx)}
-                                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors shrink-0 cursor-pointer ${
-                                      isSplitWithAll
-                                        ? 'bg-white/10 border border-white/20 text-[var(--text)] font-semibold'
-                                        : 'bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
-                                    }`}
-                                  >
-                                    Everyone
-                                  </button>
-                                </div>
-
-                                {/* Member Toggle Chips */}
-                                <div className="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-[var(--border)]">
-                                  {activeMembers.map((m) => {
-                                    const isClaimed = item.claimedByUserIds.includes(m.user_id);
-                                    const tag = getMemberTagColor(m.user_id);
-                                    return (
-                                      <button
-                                        key={m.user_id}
-                                        type="button"
-                                        onClick={() => toggleItemMember(idx, m.user_id)}
-                                        className={`px-2 py-0.5 rounded text-xs font-mono transition-colors cursor-pointer flex items-center gap-1 ${
-                                          isClaimed
-                                            ? 'bg-[var(--surface-elevated)] border border-white/30 text-[var(--text)] font-medium'
-                                            : 'bg-transparent border border-dashed border-[var(--border)] text-[var(--muted)] opacity-60 hover:opacity-100'
-                                        }`}
-                                      >
-                                        <span
-                                          style={{
-                                            backgroundColor: tag.bg,
-                                            color: tag.text,
-                                            borderColor: tag.border,
-                                          }}
-                                          className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                                  {/* Member Toggle Chips */}
+                                  <div className="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-[var(--border)]">
+                                    {activeMembers.map((m) => {
+                                      const isClaimed = item.claimedByUserIds.includes(m.user_id);
+                                      const tag = getMemberTagColor(m.user_id);
+                                      return (
+                                        <button
+                                          key={m.user_id}
+                                          type="button"
+                                          onClick={() => toggleItemMember(idx, m.user_id)}
+                                          className={`px-2 py-0.5 rounded text-xs font-mono transition-colors cursor-pointer flex items-center gap-1 ${
+                                            isClaimed
+                                              ? 'bg-[var(--surface-elevated)] border border-white/30 text-[var(--text)] font-medium'
+                                              : 'bg-transparent border border-dashed border-[var(--border)] text-[var(--muted)] opacity-60 hover:opacity-100'
+                                          }`}
                                         >
-                                          {m.name.slice(0, 2).toUpperCase()}
-                                        </span>
-                                        <span>{m.name.split(' ')[0]}</span>
-                                        {isClaimed && <Check className="w-2.5 h-2.5 text-[var(--text)]" />}
-                                      </button>
-                                    );
-                                  })}
+                                          <span
+                                            style={{
+                                              backgroundColor: tag.bg,
+                                              color: tag.text,
+                                              borderColor: tag.border,
+                                            }}
+                                            className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                                          >
+                                            {m.name.slice(0, 2).toUpperCase()}
+                                          </span>
+                                          <span>{m.name.split(' ')[0]}</span>
+                                          {isClaimed && <Check className="w-2.5 h-2.5 text-[var(--text)]" />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                        </>
+                      ) : (
+                        /* When no individual items are detected: Allow choosing participating members for custom split */
+                        <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-3">
+                          <div className="text-xs font-mono text-[var(--muted)]">
+                            SELECT PARTICIPATING TRAVELERS FOR THIS BILL:
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {activeMembers.map((m) => {
+                              const isParticipating = participatingMemberIds.includes(m.user_id);
+                              const tag = getMemberTagColor(m.user_id);
+                              return (
+                                <button
+                                  key={m.user_id}
+                                  type="button"
+                                  onClick={() => toggleParticipatingMember(m.user_id)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer flex items-center gap-2 ${
+                                    isParticipating
+                                      ? 'bg-[var(--surface-elevated)] border border-white/30 text-[var(--text)] font-medium'
+                                      : 'bg-transparent border border-dashed border-[var(--border)] text-[var(--muted)] opacity-60 hover:opacity-100'
+                                  }`}
+                                >
+                                  <span
+                                    style={{
+                                      backgroundColor: tag.bg,
+                                      color: tag.text,
+                                      borderColor: tag.border,
+                                    }}
+                                    className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                                  >
+                                    {m.name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                  <span>{m.name}</span>
+                                  {isParticipating && <Check className="w-3 h-3 text-[var(--text)]" />}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Actions Footer: Single Lime Button for Primary Action */}
-                  <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+                  <div className="shrink-0 flex items-center justify-between pt-3 border-t border-[var(--border)]">
                     <Button 
                       variant="ghost" 
                       size="md" 

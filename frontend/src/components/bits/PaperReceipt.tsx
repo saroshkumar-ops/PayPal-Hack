@@ -20,6 +20,8 @@ export interface PaperReceiptProps {
   tipCents?: number;
   totalCents: number;
   members?: Array<{ user_id: string; name: string }>;
+  memberSplits?: Array<{ user_id: string; owes_cents: number; name?: string }>;
+  splitType?: string;
   selectedItemId?: string | null;
   onTapItem?: (index: number, item: ReceiptItemData) => void;
   onDragStartItem?: (e: React.DragEvent, index: number, item: ReceiptItemData) => void;
@@ -38,6 +40,8 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
   tipCents = 0,
   totalCents,
   members = [],
+  memberSplits,
+  splitType = 'EQUAL',
   selectedItemId,
   onTapItem,
   onDragStartItem,
@@ -47,6 +51,71 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
 }) => {
   const cur = getCurrencySymbol(currency);
   const subtotalCents = items.reduce((acc, item) => acc + item.priceCents, 0) || totalCents;
+
+  // Derive traveler split shares to display on the receipt
+  const computedSplits: Array<{ user_id: string; name: string; owes_cents: number }> = React.useMemo(() => {
+    if (memberSplits && memberSplits.length > 0) {
+      return memberSplits.map((ms) => {
+        const mem = members.find((m) => m.user_id === ms.user_id);
+        return {
+          user_id: ms.user_id,
+          name: ms.name || mem?.name || ms.user_id,
+          owes_cents: ms.owes_cents,
+        };
+      });
+    }
+
+    if (members.length === 0) return [];
+
+    // If items have claimed members, compute each member's share
+    if (items.length > 0) {
+      const shares: Record<string, number> = {};
+      members.forEach((m) => { shares[m.user_id] = 0; });
+      let itemSub = 0;
+
+      items.forEach((it) => {
+        itemSub += it.priceCents;
+        const claimants = it.claimedByUserIds && it.claimedByUserIds.length > 0
+          ? it.claimedByUserIds
+          : members.map((m) => m.user_id);
+        const count = Math.max(1, claimants.length);
+        const base = Math.floor(it.priceCents / count);
+        const rem = it.priceCents % count;
+        claimants.forEach((uid, i) => {
+          shares[uid] = (shares[uid] || 0) + base + (i < rem ? 1 : 0);
+        });
+      });
+
+      const diff = totalCents - itemSub;
+      if (diff !== 0 && itemSub > 0) {
+        let dist = 0;
+        members.forEach((m, idx) => {
+          if (idx === members.length - 1) {
+            shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + (diff - dist));
+          } else {
+            const extra = Math.round(((shares[m.user_id] || 0) * diff) / itemSub);
+            shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + extra);
+            dist += extra;
+          }
+        });
+      }
+
+      return members.map((m) => ({
+        user_id: m.user_id,
+        name: m.name,
+        owes_cents: shares[m.user_id] || 0,
+      }));
+    }
+
+    // Default even split if no items
+    const evenShare = Math.floor(totalCents / members.length);
+    const rem = totalCents % members.length;
+    return members.map((m, i) => ({
+      user_id: m.user_id,
+      name: m.name,
+      owes_cents: evenShare + (i < rem ? 1 : 0),
+    }));
+  }, [memberSplits, members, items, totalCents]);
 
   return (
     <motion.div
@@ -190,6 +259,24 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
             <span>TOTAL DUE</span>
             <span className="tabular-nums">{cur}{(totalCents / 100).toFixed(2)}</span>
           </div>
+
+          {/* Traveler Allocation Printed on Receipt */}
+          {computedSplits.length > 0 && (
+            <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1">
+              <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider opacity-60">
+                <span>TRAVELER SHARES</span>
+                <span>{splitType}</span>
+              </div>
+              <div className="space-y-0.5 pt-0.5">
+                {computedSplits.map((s) => (
+                  <div key={s.user_id} className="flex justify-between text-[11px] font-mono">
+                    <span className="opacity-80 truncate max-w-[190px]">{s.name}:</span>
+                    <span className="font-bold tabular-nums">{cur}{(s.owes_cents / 100).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Barcode Stamp */}

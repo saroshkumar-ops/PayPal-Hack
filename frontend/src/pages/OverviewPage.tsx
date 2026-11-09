@@ -72,8 +72,19 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
   // Derive most recent expense for the signature physical receipt
   const latestExpense = ledger.expenses.length > 0 
-    ? ledger.expenses[ledger.expenses.length - 1] 
+    ? [...ledger.expenses].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
     : null;
+
+  const memberSplits = latestExpense 
+    ? latestExpense.splits.map((s) => {
+        const m = ledger.members.find((mem) => mem.user_id === s.user_id);
+        return {
+          user_id: s.user_id,
+          name: m ? m.name : s.user_id,
+          owes_cents: s.owes_cents,
+        };
+      })
+    : [];
 
   const receiptItems = latestExpense 
     ? latestExpense.splits.map((s) => {
@@ -361,6 +372,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   items={receiptItems}
                   totalCents={latestExpense.amount_cents}
                   members={ledger.members}
+                  memberSplits={memberSplits}
+                  splitType={latestExpense.split_type === 'EQUAL' ? 'EQUAL' : 'CUSTOM'}
                   rotateDeg={-0.8}
                   interactive={false}
                 />
