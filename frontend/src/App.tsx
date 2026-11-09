@@ -498,7 +498,7 @@ export function App() {
         <div className="min-h-screen bg-[#07080D] text-[#EDEEF2] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
           {/* Top Navbar */}
           <Navbar
-            tripName={ledger.trip_name || ledger.name}
+            tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
             onNewParty={() => setIsCreatePartyModalOpen(true)}
             currentUser={currentUser}

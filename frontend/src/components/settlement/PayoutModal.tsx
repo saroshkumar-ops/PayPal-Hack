@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, X } from 'lucide-react';
+import { X, Copy, Check, ArrowUpRight } from 'lucide-react';
 import type { Member } from '../../types';
 import { Button } from '../ui/Button';
 import { getCurrencySymbol } from '../../lib/currency';
@@ -24,69 +24,105 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
   currency = 'INR',
   isLoading,
 }) => {
+  const [copied, setCopied] = useState(false);
+
   if (!isOpen) return null;
 
   const cur = getCurrencySymbol(currency);
   const formattedAmount = (amountCents / 100).toFixed(2);
+  const paypalAccount = organizer.paypal_email || 'Not configured';
+
+  const handleCopyEmail = () => {
+    if (!organizer.paypal_email) return;
+    navigator.clipboard.writeText(organizer.paypal_email);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 select-none">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-md rounded-3xl bg-[#0F1117] border border-white/12 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.96 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="relative w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/8 bg-[#07080D]/50">
+          <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FFC439]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--paypal)]" />
               <div>
-                <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                  Send Payout
+                <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">
+                  Transfer Trip Payout
                 </h3>
-                <p className="text-[11px] text-[#8A8FA3] font-body m-0 mt-0.5">
-                  Transfer collected funds to organizer
+                <p className="text-[11px] text-[var(--muted)] font-mono m-0 mt-0.5">
+                  PayPal Payouts API v1
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#8A8FA3] hover:text-[#EDEEF2] hover:bg-white/6 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="p-5 sm:p-6 space-y-5">
-            {/* Beneficiary Breakdown */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-2.5 text-xs font-mono">
-              <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>To:</span>
-                <span className="text-[#EDEEF2] font-body font-semibold">{organizer.name} ({organizer.handle})</span>
+          <div className="p-5 sm:p-6 space-y-4">
+            {/* Amount Banner */}
+            <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-1">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
+                PAYOUT AMOUNT
               </div>
-              <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>PayPal Account:</span>
-                <span className="text-[#C6FF3D] truncate max-w-[180px]">{organizer.paypal_email}</span>
+              <div className="text-3xl font-display font-extrabold text-[var(--text)] tabular-nums font-mono">
+                {cur}{formattedAmount}
               </div>
-              <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>Amount:</span>
-                <span className="text-base font-bold text-[#EDEEF2] tabular-nums">
-                  {cur}{formattedAmount}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-[#8A8FA3]">
-                <span>Fee:</span>
-                <span className="text-[#C6FF3D]">{cur}0.00</span>
+              <div className="text-[11px] text-[var(--muted)] font-mono">
+                Fee: {cur}0.00 · Instant Transfer
               </div>
             </div>
 
-            <p className="text-xs text-[#8A8FA3] font-body leading-relaxed m-0">
-              Transfers collected trip funds directly to {organizer.name}'s PayPal account.
+            {/* Recipient Details & PayPal Reveal */}
+            <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2.5 text-xs font-mono">
+              <div className="flex justify-between items-center text-[var(--muted)]">
+                <span>Beneficiary:</span>
+                <span className="text-[var(--text)] font-body font-semibold">
+                  {organizer.name} ({organizer.handle})
+                </span>
+              </div>
+
+              {/* PayPal Reveal with Copy Micro-Interaction */}
+              <div className="flex justify-between items-center text-[var(--muted)] pt-1 border-t border-[var(--border)]">
+                <span>PayPal Account:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[var(--text)] font-semibold truncate max-w-[190px]">
+                    {paypalAccount}
+                  </span>
+                  {organizer.paypal_email && (
+                    <button
+                      type="button"
+                      onClick={handleCopyEmail}
+                      title="Copy PayPal Email"
+                      className="p-1 rounded bg-[var(--surface-elevated)] hover:bg-white/10 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+                    >
+                      {copied ? (
+                        <Check className="w-3.5 h-3.5 text-[var(--settled)]" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--muted)] font-body leading-relaxed m-0">
+              Transfers all collected trip shares from member settlements directly to {organizer.name}'s PayPal account.
             </p>
 
+            {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
               <Button variant="ghost" size="md" onClick={onClose} className="flex-1">
                 Cancel
@@ -96,10 +132,10 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
                 size="md"
                 onClick={onConfirm}
                 disabled={isLoading}
-                icon={<ShieldCheck className="w-4 h-4" />}
-                className="flex-1 text-xs sm:text-sm font-display font-bold"
+                icon={<ArrowUpRight className="w-4 h-4" />}
+                className="flex-1 font-body font-bold"
               >
-                {isLoading ? 'Sending...' : 'Send Payout'}
+                {isLoading ? 'Processing...' : 'Confirm Transfer'}
               </Button>
             </div>
           </div>

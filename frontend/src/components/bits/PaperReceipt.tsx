@@ -101,10 +101,13 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
               const perPersonCents = claimedCount > 0 ? Math.round(item.priceCents / claimedCount) : item.priceCents;
 
               return (
-                <div
+                <motion.div
                   key={item.id || idx}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(idx * 0.07, 0.7), duration: 0.22, ease: 'easeOut' }}
                   draggable={interactive && Boolean(onDragStartItem)}
-                  onDragStart={(e) => onDragStartItem?.(e, idx, item)}
+                  onDragStart={(e: any) => onDragStartItem?.(e, idx, item)}
                   onClick={() => interactive && onTapItem?.(idx, item)}
                   className={`p-1.5 rounded transition-all ${
                     interactive ? 'cursor-pointer hover:bg-black/5 active:bg-black/10' : ''
@@ -152,7 +155,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                       })}
                     </div>
                   )}
-                </div>
+                </motion.div>
               );
             })
           )}

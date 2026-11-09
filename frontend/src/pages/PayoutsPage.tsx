@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { 
-  ShieldCheck, 
   Radio, 
   Wallet, 
   HelpCircle, 
-  CreditCard,
-  Zap
+  Copy, 
+  Check, 
+  ArrowUpRight,
+  X,
+  CreditCard
 } from 'lucide-react';
 import type { TripLedger, PayPalEventLog } from '../types';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
-import { formatReferenceId } from '../lib/formatters';
+import { formatPartyName, formatReferenceId } from '../lib/formatters';
 
 interface PayoutsPageProps {
   ledger: TripLedger;
@@ -25,12 +27,13 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
   onOpenPayoutModal,
 }) => {
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
-  const [showArchGuide, setShowArchGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
   const cur = getCurrencySymbol(ledger.currency);
 
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || {
     user_id: 'organizer',
-    name: 'Party Organizer',
+    name: 'Trip Organizer',
     handle: '@organizer',
     role: 'organizer' as const,
     paypal_email: '',
@@ -47,236 +50,254 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
     });
   });
 
+  const handleCopyEmail = () => {
+    if (!organizer.paypal_email) return;
+    navigator.clipboard.writeText(organizer.paypal_email);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
       {/* ================================================================ */}
-      {/* 1. TOP VAULT STATUS                                              */}
+      {/* 1. EDITORIAL HEADER & ACTION                                     */}
       {/* ================================================================ */}
-      <div className="rounded-3xl bg-[#0F1117] border border-white/8 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-[0_16px_48px_rgba(0,0,0,0.8)]">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FFC439] animate-pulse" />
-            <span className="text-xs font-mono font-bold text-[#FFC439] uppercase">
-              PAYPAL PAYOUTS
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-[#EDEEF2] m-0">
-            Payouts & Activity
-          </h1>
-          <p className="text-xs sm:text-sm text-[#8A8FA3] font-body mt-1 max-w-xl m-0">
-            Collected member payments are held safely until paid out to the trip organizer.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <button
-            onClick={() => setShowArchGuide(!showArchGuide)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#171A23] hover:bg-white/6 border border-white/10 text-xs font-mono text-[#8A8FA3] hover:text-[#C6FF3D] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-[#C6FF3D]" />
-            <span>{showArchGuide ? 'Hide' : 'How It Works'}</span>
-          </button>
-
-          <Button
-            variant="paypal"
-            size="lg"
-            onClick={onOpenPayoutModal}
-            disabled={organizerOwedCents <= 0}
-            icon={<ShieldCheck className="w-4 h-4" />}
-            className="w-full sm:w-auto text-xs sm:text-sm"
-          >
-            Send Payout
-          </Button>
-        </div>
-      </div>
-
-      {/* ================================================================ */}
-      {/* 2. VISUAL ARCHITECTURE GUIDE (PAYPAL ESCROW + PAYOUT LIFECYCLE) */}
-      {/* ================================================================ */}
-      {showArchGuide && (
-        <div className="p-6 rounded-3xl bg-[#0F1117] border border-[#FFC439]/30 shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-5">
-          <div className="flex items-center justify-between border-b border-white/8 pb-3">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[#FFC439]" />
-              <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                How Payouts Work
-              </h3>
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            {/* Header Eyebrow (No pulsing gold dot or fake escrow claim) */}
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+              <span className="w-1.5 h-1.5 bg-white/70 rounded-full" />
+              <span className="font-semibold text-[var(--text)]">{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
+              <span className="text-[var(--muted)]">·</span>
+              <span className="font-semibold uppercase tracking-wider">PayPal Settlement</span>
+              <span className="text-[var(--muted)]">·</span>
+              <span className="text-[var(--muted)]">{paypalLogs.length} logged events</span>
             </div>
-            <span className="text-[10px] font-mono text-[#8A8FA3]">PayPal Orders v2 + Payouts API v1</span>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-[var(--text)] tracking-tight leading-none m-0">
+              Payouts & Activity
+            </h1>
+
+            <p className="text-xs sm:text-sm text-[var(--muted)] font-body leading-relaxed m-0">
+              Collected member shares pooled for trip organizer withdrawal via PayPal.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono">
-            {/* Step 1 */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="flex items-center justify-between text-[#8A8FA3]">
-                <span className="text-[10px] uppercase font-bold text-[#FFC439]">Step 1</span>
-                <CreditCard className="w-3.5 h-3.5 text-[#FFC439]" />
-              </div>
-              <div className="font-semibold text-[#EDEEF2] font-body">Member Pays</div>
-              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Members click PayPal to pay their share directly.
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowGuide(!showGuide)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>{showGuide ? 'Close Info' : 'How Payouts Work'}</span>
+            </button>
 
-            {/* Step 2 */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="flex items-center justify-between text-[#8A8FA3]">
-                <span className="text-[10px] uppercase font-bold text-[#C6FF3D]">Step 2</span>
-                <Radio className="w-3.5 h-3.5 text-[#C6FF3D]" />
-              </div>
-              <div className="font-semibold text-[#EDEEF2] font-body">Instant Confirmation</div>
-              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
-                PayPal confirms payment in real time and updates balances.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="flex items-center justify-between text-[#8A8FA3]">
-                <span className="text-[10px] uppercase font-bold text-[#38E1FF]">Step 3</span>
-                <Wallet className="w-3.5 h-3.5 text-[#38E1FF]" />
-              </div>
-              <div className="font-semibold text-[#EDEEF2] font-body">Funds Pooled</div>
-              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
-                Money pools safely until the trip ends.
-              </p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/6 space-y-2">
-              <div className="flex items-center justify-between text-[#8A8FA3]">
-                <span className="text-[10px] uppercase font-bold text-[#C6FF3D]">Step 4</span>
-                <ShieldCheck className="w-3.5 h-3.5 text-[#C6FF3D]" />
-              </div>
-              <div className="font-semibold text-[#EDEEF2] font-body">Organizer Payout</div>
-              <p className="text-[11px] text-[#8A8FA3] font-body m-0 leading-relaxed">
-                The organizer receives all collected money with 1 click.
-              </p>
-            </div>
+            {/* Dedicated PayPal Gold Button */}
+            <Button
+              variant="paypal"
+              size="md"
+              onClick={onOpenPayoutModal}
+              disabled={organizerOwedCents <= 0}
+              icon={<ArrowUpRight className="w-4 h-4" />}
+            >
+              Send Payout
+            </Button>
           </div>
         </div>
-      )}
 
-      {/* ================================================================ */}
-      {/* 3. GRID: BENEFICIARY RAIL (5) & WEBHOOK RADAR (7)                */}
-      {/* ================================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left Column: Beneficiary Details */}
-        <div className="lg:col-span-5 rounded-3xl bg-[#0F1117] border border-white/8 p-6 flex flex-col justify-between shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-white/8 pb-3">
-              <span className="text-xs font-mono font-semibold text-[#EDEEF2]">
-                ORGANIZER PAYOUT
+        {/* Informational Guide (Clean dry prose, no 4-card generic steps) */}
+        {showGuide && (
+          <div className="mt-6 pt-5 border-t border-[var(--border)] space-y-3">
+            <div className="flex items-center justify-between text-xs font-mono text-[var(--muted)]">
+              <span className="font-semibold text-[var(--text)] uppercase tracking-wider">
+                Payout Workflow
               </span>
-              <StatusPill status="paid" label="Verified" />
+              <button 
+                onClick={() => setShowGuide(false)}
+                className="text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] uppercase text-[var(--muted)]">1. Member Payment</span>
+                <p className="font-body text-[var(--text)] m-0 leading-relaxed">
+                  Travelers click their individualized PayPal order link to capture their owed share.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] uppercase text-[var(--muted)]">2. Ledger Settlement</span>
+                <p className="font-body text-[var(--text)] m-0 leading-relaxed">
+                  Payment confirmation marks the split settled and credits the organizer balance.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] uppercase text-[var(--muted)]">3. Instant Payout</span>
+                <p className="font-body text-[var(--text)] m-0 leading-relaxed">
+                  The organizer clicks Send Payout to dispatch batch payouts directly to their PayPal account.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ================================================================ */}
+      {/* 2. ASYMMETRIC WORKSPACE: BENEFICIARY & LIVE ACTIVITY             */}
+      {/* ================================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Beneficiary Details & PayPal Reveal (5 cols) */}
+        <div className="lg:col-span-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-[var(--muted)]" />
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                Organizer Beneficiary
+              </span>
+            </div>
+            <StatusPill 
+              status={organizerOwedCents > 0 ? 'paid' : 'pending'} 
+              label={organizerOwedCents > 0 ? 'Ready for Payout' : 'All Settled'} 
+            />
+          </div>
+
+          {/* Balance Callout */}
+          <div className="p-5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-1">
+            <div className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
+              AVAILABLE TO PAYOUT
+            </div>
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-[var(--text)] tabular-nums font-mono">
+              {cur}{(organizerOwedCents / 100).toFixed(2)}
+            </div>
+            <div className="text-[11px] text-[var(--muted)] font-mono">
+              Total Settled: {cur}{(settledCents / 100).toFixed(2)}
+            </div>
+          </div>
+
+          {/* Beneficiary Details with PayPal Reveal Micro-Interaction */}
+          <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2.5 text-xs font-mono">
+            <div className="flex justify-between items-center text-[var(--muted)]">
+              <span>Organizer:</span>
+              <span className="text-[var(--text)] font-body font-semibold">
+                {organizer.name} ({organizer.handle})
+              </span>
             </div>
 
-            {/* Beneficiary Card */}
-            <div className="p-4 rounded-2xl bg-[#07080D] border border-white/8 space-y-3 font-mono text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-[#8A8FA3]">Organizer:</span>
-                <span className="text-[#EDEEF2] font-body font-semibold">{organizer.name}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[#8A8FA3]">PayPal Email:</span>
-                <span className="text-[#C6FF3D] truncate max-w-[200px]">
+            {/* The PayPal Reveal */}
+            <div className="flex justify-between items-center text-[var(--muted)] pt-2 border-t border-[var(--border)]">
+              <span>PayPal Account:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[var(--text)] font-semibold truncate max-w-[190px]">
                   {organizer.paypal_email || 'Not configured'}
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[#8A8FA3]">Total Collected:</span>
-                <span className="text-[#EDEEF2] tabular-nums font-semibold">
-                  {cur}{(settledCents / 100).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-white/8">
-                <span className="text-[#8A8FA3]">Available to Payout:</span>
-                <span className="text-base font-bold text-[#C6FF3D] tabular-nums">
-                  {cur}{(organizerOwedCents / 100).toFixed(2)}
-                </span>
+                {organizer.paypal_email && (
+                  <button
+                    type="button"
+                    onClick={handleCopyEmail}
+                    title="Copy PayPal Email"
+                    className="p-1 rounded bg-[var(--surface-elevated)] hover:bg-white/10 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+                  >
+                    {copiedEmail ? (
+                      <Check className="w-3.5 h-3.5 text-[var(--settled)]" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#07080D]/60 border border-white/6 space-y-2">
-              <div className="text-xs font-semibold text-[#EDEEF2] flex items-center gap-2">
-                <Wallet className="w-3.5 h-3.5 text-[#C6FF3D]" />
-                <span>Payout Status</span>
-              </div>
-              <p className="text-xs text-[#8A8FA3] font-body m-0 leading-relaxed">
-                {organizerOwedCents > 0
-                  ? `${cur}${(organizerOwedCents / 100).toFixed(2)} is ready to payout to ${organizer.paypal_email || organizer.name}.`
-                  : 'All collected funds have been paid out.'}
-              </p>
+            <div className="flex justify-between items-center text-[var(--muted)] pt-1 border-t border-[var(--border)]">
+              <span>Payout Method:</span>
+              <span className="text-[var(--text)]">Direct PayPal Balance</span>
             </div>
+          </div>
+
+          {/* Transfer Action Block */}
+          <div className="pt-2">
+            <Button
+              variant="paypal"
+              size="md"
+              onClick={onOpenPayoutModal}
+              disabled={organizerOwedCents <= 0}
+              icon={<ArrowUpRight className="w-4 h-4" />}
+              className="w-full font-body font-bold"
+            >
+              Send {cur}{(organizerOwedCents / 100).toFixed(2)} via PayPal
+            </Button>
           </div>
         </div>
 
-        {/* Right Column: Real-Time PayPal SSE Webhook Radar (7 cols) */}
-        <div className="lg:col-span-7 rounded-3xl bg-[#0F1117] border border-white/8 p-6 flex flex-col justify-between shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-4">
-          <div className="flex items-center justify-between border-b border-white/8 pb-3">
+        {/* Right Column: Real-Time Activity Log (7 cols) */}
+        <div className="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
             <div className="flex items-center gap-2">
-              <Radio className="w-4 h-4 text-[#C6FF3D] animate-pulse" />
-              <h3 className="text-sm font-display font-bold text-[#EDEEF2] m-0">
-                Activity Log
-              </h3>
+              <Radio className="w-4 h-4 text-[var(--muted)]" />
+              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                Transaction Activity
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-[#8A8FA3] bg-[#171A23] px-2.5 py-0.5 rounded">
+            <span className="text-[10px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-0.5 rounded">
               {paypalLogs.length} Events
             </span>
           </div>
 
-          {/* Webhook Log Event Stream */}
-          <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1 scrollbar-none">
+          {/* Activity Event Stream */}
+          <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
             {paypalLogs.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-[#07080D] border border-white/6 text-center space-y-3">
-                <Radio className="w-8 h-8 text-[#8A8FA3]/50 mx-auto" />
-                <div className="text-xs font-mono text-[#EDEEF2] font-semibold">
-                  No Activity Yet
+              <div className="p-8 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-2">
+                <CreditCard className="w-6 h-6 text-[var(--muted)]/50 mx-auto" />
+                <div className="text-xs font-mono text-[var(--text)] font-semibold">
+                  No Transactions Recorded
                 </div>
-                <p className="text-xs text-[#8A8FA3] font-body max-w-sm mx-auto m-0">
-                  Payments and payouts will appear here in real time.
+                <p className="text-xs text-[var(--muted)] font-body max-w-sm mx-auto m-0">
+                  Completed member split payments and organizer payouts will appear here in real time.
                 </p>
               </div>
             ) : (
               paypalLogs.map((log) => {
                 const isPayout = log.event_type.includes('PAYOUT');
-                const isCapture = log.event_type.includes('CAPTURE');
                 const isSelected = selectedLogId === log.id;
 
                 return (
                   <div
                     key={log.id}
                     onClick={() => setSelectedLogId(isSelected ? null : log.id)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer font-mono text-xs ${
+                    className={`p-4 rounded-xl border transition-all cursor-pointer font-mono text-xs ${
                       isSelected
-                        ? 'bg-[#171A23] border-[#C6FF3D]'
-                        : 'bg-[#07080D] border-white/8 hover:border-white/16'
+                        ? 'bg-[var(--surface-elevated)] border-white/30'
+                        : 'bg-[var(--canvas)] border-[var(--border)] hover:border-white/20'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1.5">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                           isPayout
-                            ? 'bg-[#FFC439]/15 text-[#FFC439] border border-[#FFC439]/30'
-                            : isCapture
-                            ? 'bg-[#C6FF3D]/15 text-[#C6FF3D] border border-[#C6FF3D]/30'
-                            : 'bg-white/10 text-[#EDEEF2]'
+                            ? 'bg-[var(--paypal)]/15 text-[var(--paypal)] border border-[var(--paypal)]/30'
+                            : 'bg-white/10 text-[var(--text)] border border-white/15'
                         }`}
                       >
                         {log.event_type}
                       </span>
-                      <span className="text-[11px] text-[#8A8FA3]">
+                      <span className="text-[11px] text-[var(--muted)]">
                         {log.timestamp}
                       </span>
                     </div>
 
-                    <div className="text-xs font-body text-[#EDEEF2] leading-relaxed mb-2">
+                    <div className="text-xs font-body text-[var(--text)] leading-relaxed mb-2">
                       {log.summary}
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-[#8A8FA3] pt-2 border-t border-white/6">
-                      <span className="truncate max-w-[220px]">Ref: {formatReferenceId(log.reference_id || log.id)}</span>
-                      <span className="font-bold text-[#EDEEF2] tabular-nums">{log.amount}</span>
+                    <div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-2 border-t border-[var(--border)]">
+                      <span className="truncate max-w-[220px]">
+                        Ref: {formatReferenceId(log.reference_id || log.id)}
+                      </span>
+                      <span className="font-bold text-[var(--text)] tabular-nums">
+                        {log.amount}
+                      </span>
                     </div>
                   </div>
                 );
