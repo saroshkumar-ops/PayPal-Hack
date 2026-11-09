@@ -53,23 +53,23 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 select-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 select-none overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.96 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="relative w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
+          className="relative w-full max-w-md max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
+          <div className="shrink-0 flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-[var(--paypal)]" />
               <div>
                 <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">
                   Transfer Trip Payout
                 </h3>
-                <p className="text-[11px] text-[var(--muted)] font-mono m-0 mt-0.5">
+                <p className="text-xs text-[var(--muted)] font-mono m-0 mt-0.5">
                   PayPal Payouts API v1
                 </p>
               </div>
@@ -82,16 +82,16 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({
             </button>
           </div>
 
-          <div className="p-5 sm:p-6 space-y-4">
+          <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
             {/* Amount Banner */}
             <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-1">
-              <div className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
+              <div className="text-xs uppercase font-mono tracking-wider text-[var(--muted)] font-semibold">
                 PAYOUT AMOUNT
               </div>
               <div className="text-3xl font-display font-extrabold text-[var(--text)] tabular-nums font-mono">
                 {cur}{formattedAmount}
               </div>
-              <div className="text-[11px] text-[var(--muted)] font-mono">
+              <div className="text-xs text-[var(--muted)] font-mono">
                 Fee: {cur}0.00 · Instant Transfer
               </div>
             </div>

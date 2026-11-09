@@ -712,7 +712,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 <h3 className="text-sm sm:text-base font-display font-bold text-[var(--text)] m-0">
                   {extractedReceipt ? 'Review & Split Scanned Bill' : 'Upload Receipt'}
                 </h3>
-                <p className="text-[11px] text-[var(--muted)] font-mono m-0 mt-0.5">
+                <p className="text-xs text-[var(--muted)] font-mono m-0 mt-0.5">
                   {extractedReceipt 
                     ? `${activeMembers.length} party members • Custom split configuration` 
                     : 'Auto-scan paper bills, extract line items, and assign shares'}
@@ -776,7 +776,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 {isScanning ? (
                   /* Optical Scan Animation with Moving Laser Bar */
                   <div className="py-6 flex flex-col items-center justify-center space-y-6">
-                    <div className="relative w-48 sm:w-56 p-4 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-[10px] shadow-2xl overflow-hidden select-none">
+                    <div className="relative w-48 sm:w-56 p-4 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-xs shadow-2xl overflow-hidden select-none">
                       {/* Scanning Laser Beam (respects prefers-reduced-motion) */}
                       <motion.div
                         className="absolute left-0 right-0 h-[2px] bg-[var(--settled)] shadow-[0_0_8px_var(--settled)]"
@@ -832,7 +832,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                       </p>
                     </div>
 
-                    <div className="text-[11px] font-mono text-[var(--muted)] pt-2">
+                    <div className="text-xs font-mono text-[var(--muted)] pt-2">
                       Target Currency: <span className="text-[var(--text)] font-semibold">{currency}</span>
                     </div>
 
@@ -884,7 +884,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         <div className="font-semibold leading-relaxed">
                           Items and tax add up to {curSymbol}{(itemsPlusTaxTipCents / 100).toFixed(2)}, but the bill total is {curSymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}. {curSymbol}{(Math.abs(mismatchCents) / 100).toFixed(2)} is not matched to any item.
                         </div>
-                        <div className="text-[11px] text-[var(--muted)]">
+                        <div className="text-xs text-[var(--muted)]">
                           You can edit the bill total or individual line items below to reconcile before confirming.
                         </div>
                       </div>
@@ -894,7 +894,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                   {/* Bill Overview & Editable Total Header */}
                   <div className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                      <div className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold">
                         MERCHANT & BILL TOTAL
                       </div>
                       <div className="text-sm font-display font-bold text-[var(--text)]">
@@ -922,7 +922,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                   {/* Who Paid Section */}
                   <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2">
-                    <div className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-[var(--text)]" />
                       <span>Who Paid The Bill?</span>
                     </div>
@@ -948,12 +948,12 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                 color: tag.text,
                                 borderColor: tag.border,
                               }}
-                              className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                              className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                             >
                               {m.name.slice(0, 2).toUpperCase()}
                             </span>
                             <span className="truncate max-w-[120px]">{m.name}</span>
-                            {isSelf && <span className="text-[10px] text-[var(--muted)] font-normal">(You)</span>}
+                            {isSelf && <span className="text-xs text-[var(--muted)] font-normal">(You)</span>}
                             {isSelected && <Check className="w-3 h-3 text-[var(--text)] shrink-0" />}
                           </button>
                         );
@@ -963,7 +963,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                   {/* Split Method Toggle */}
                   <div className="space-y-1.5">
-                    <div className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                    <div className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold">
                       Split Method
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1032,7 +1032,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                             <span className="text-xs font-mono text-[var(--text)] font-semibold uppercase tracking-wider">
                               Per-Traveler Share
                             </span>
-                            <span className="text-[10px] text-[var(--muted)]">
+                            <span className="text-xs text-[var(--muted)]">
                               (Type exact amounts below)
                             </span>
                           </div>
@@ -1060,7 +1060,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                       color: tag.text,
                                       borderColor: tag.border,
                                     }}
-                                    className="w-5 h-5 rounded-md text-[9px] font-bold border flex items-center justify-center shrink-0"
+                                    className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                                   >
                                     {m.name.slice(0, 2).toUpperCase()}
                                   </span>
@@ -1070,7 +1070,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => handleZeroOutTraveler(m.user_id)}
-                                        className="text-[9px] font-mono text-[var(--muted)] hover:text-[var(--owes)] cursor-pointer underline"
+                                        className="text-xs font-mono text-[var(--muted)] hover:text-[var(--owes)] cursor-pointer underline font-medium"
                                       >
                                         Zero
                                       </button>
@@ -1078,7 +1078,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                         <button
                                           type="button"
                                           onClick={() => handleAssignRemainderToTraveler(m.user_id)}
-                                          className="text-[9px] font-mono text-[var(--settled)] hover:underline cursor-pointer"
+                                          className="text-xs font-mono text-[var(--settled)] hover:underline cursor-pointer font-medium"
                                         >
                                           +Rem
                                         </button>
@@ -1088,7 +1088,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                 </div>
 
                                 <div className="flex items-center gap-1 shrink-0">
-                                  <span className="text-[11px] text-[var(--muted)] font-mono">{curSymbol}</span>
+                                  <span className="text-xs text-[var(--muted)] font-mono font-medium">{curSymbol}</span>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -1105,7 +1105,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         </div>
 
                         {/* Allocation Math Status Bar */}
-                        <div className="pt-2 border-t border-[var(--border)] flex flex-wrap items-center justify-between text-[11px] font-mono gap-2">
+                        <div className="pt-2 border-t border-[var(--border)] flex flex-wrap items-center justify-between text-xs font-mono gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-[var(--muted)]">Allocated:</span>
                             <span className="font-bold tabular-nums text-[var(--text)]">
@@ -1154,7 +1154,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                           <button
                             type="button"
                             onClick={splitAllWithEveryone}
-                            className="text-[11px] text-[var(--text)] hover:underline cursor-pointer font-mono"
+                            className="text-xs text-[var(--text)] hover:underline cursor-pointer font-mono font-medium"
                           >
                             Reset All to Everyone
                           </button>
@@ -1184,7 +1184,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                         className="w-full bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-white/40 text-xs font-mono text-[var(--text)] py-0.5 focus:outline-none font-medium truncate"
                                       />
                                       {(item.quantity || item.qty || 1) > 1 && item.unitPriceCents ? (
-                                        <div className="text-[10px] text-[var(--muted)] font-mono">
+                                        <div className="text-xs text-[var(--muted)] font-mono font-medium">
                                           {(item.quantity || item.qty)} x @ {curSymbol}{(item.unitPriceCents / 100).toFixed(2)} = {curSymbol}{(item.priceCents / 100).toFixed(2)}
                                         </div>
                                       ) : null}
@@ -1223,7 +1223,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                           key={m.user_id}
                                           type="button"
                                           onClick={() => toggleItemMember(itemIdx, m.user_id)}
-                                          className={`px-2 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+                                          className={`px-2 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
                                             isClaimed
                                               ? 'bg-[var(--surface-elevated)] border border-white/20 text-[var(--text)]'
                                               : 'bg-transparent border border-dashed border-[var(--border)] text-[var(--muted)] opacity-60 hover:opacity-100'
@@ -1235,7 +1235,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                               color: tag.text,
                                               borderColor: tag.border,
                                             }}
-                                            className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                                            className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                                           >
                                             {m.name.slice(0, 2).toUpperCase()}
                                           </span>
@@ -1265,7 +1265,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                             <Plus className="w-3.5 h-3.5" />
                             <span>Add Line Item</span>
                           </button>
-                          <div className="text-[11px] font-mono text-[var(--muted)]">
+                          <div className="text-xs font-mono text-[var(--muted)]">
                             Items: {curSymbol}{(itemsSubtotalCents / 100).toFixed(2)}
                             {extractedReceipt.taxCents > 0 && ` • Tax: ${curSymbol}${(extractedReceipt.taxCents / 100).toFixed(2)}`}
                             {extractedReceipt.tipCents > 0 && ` • Tip: ${curSymbol}${(extractedReceipt.tipCents / 100).toFixed(2)}`}

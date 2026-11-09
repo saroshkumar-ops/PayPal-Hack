@@ -203,7 +203,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                   Settlement Directives
                 </span>
-                <span className="text-[10px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2 py-0.5 rounded">
+                <span className="text-xs font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-0.5 rounded">
                   {settlements.length} {settlements.length === 1 ? 'payment needed' : 'payments needed'}
                 </span>
               </div>
@@ -249,7 +249,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                   Traveler Balances
                 </span>
-                <span className="text-[10px] font-mono text-[var(--muted)]">
+                <span className="text-xs font-mono text-[var(--muted)]">
                   Tap to inspect
                 </span>
               </div>
@@ -306,7 +306,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           <span className="text-xs font-body font-semibold text-[var(--text)] truncate">
                             {member.name}
                           </span>
-                          <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded border border-[var(--border)] text-[var(--muted)]">
+                          <span className="text-xs font-mono font-medium uppercase px-2 py-0.5 rounded border border-[var(--border)] text-[var(--muted)]">
                             {member.role}
                           </span>
                           <AnimatePresence>
@@ -315,14 +315,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                                 initial={{ opacity: 0, x: 6 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0 }}
-                                className="text-[9px] font-mono text-[var(--owes)] bg-[var(--owes)]/10 px-1.5 py-0.2 rounded border border-[var(--owes)]/20 font-bold"
+                                className="text-xs font-mono text-[var(--owes)] bg-[var(--owes)]/10 px-2 py-0.5 rounded border border-[var(--owes)]/20 font-bold"
                               >
                                 Assigned
                               </motion.span>
                             )}
                           </AnimatePresence>
                         </div>
-                        <div className="text-[11px] font-mono text-[var(--muted)] truncate">
+                        <div className="text-xs font-mono text-[var(--muted)] truncate">
                           {member.handle}
                         </div>
                       </div>
@@ -344,7 +344,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           ? `-${cur}${(Math.abs(netCents) / 100).toFixed(2)}`
                           : `${cur}0.00`}
                       </div>
-                      <div className="text-[10px] text-[var(--muted)]">
+                      <div className="text-xs text-[var(--muted)]">
                         {isCreditor ? 'is owed' : isDebtor ? 'owes' : 'settled'}
                       </div>
                     </div>
@@ -357,27 +357,27 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           {/* Horizontal Financial Tally Strip (No identical 3-card grid) */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 grid grid-cols-3 divide-x divide-[var(--border)] font-mono text-center">
             <div className="px-3 space-y-1">
-              <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Total Bills</div>
+              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Total Bills</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--text)] tabular-nums">
                 {cur}{(totalSpendCents / 100).toFixed(2)}
               </div>
-              <div className="text-[10px] text-[var(--muted)]">{ledger.expenses.length} logged</div>
+              <div className="text-xs text-[var(--muted)] font-medium">{ledger.expenses.length} logged</div>
             </div>
 
             <div className="px-3 space-y-1">
-              <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Settled</div>
+              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Settled</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--settled)] tabular-nums">
                 {settledPercentage}%
               </div>
-              <div className="text-[10px] text-[var(--muted)]">{cur}{(settledCents / 100).toFixed(2)} paid</div>
+              <div className="text-xs text-[var(--muted)] font-medium">{cur}{(settledCents / 100).toFixed(2)} paid</div>
             </div>
 
             <div className="px-3 space-y-1">
-              <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Outstanding</div>
+              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Outstanding</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--owes)] tabular-nums">
                 {cur}{(pendingCents / 100).toFixed(2)}
               </div>
-              <div className="text-[10px] text-[var(--muted)]">pending shares</div>
+              <div className="text-xs text-[var(--muted)] font-medium">pending shares</div>
             </div>
           </div>
         </section>
@@ -393,7 +393,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   Latest Scanned Bill
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-[var(--muted)]">
+              <span className="text-xs font-mono text-[var(--muted)]">
                 {latestExpense ? 'Physical Receipt' : 'No Bills Yet'}
               </span>
             </div>
@@ -424,16 +424,16 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   onClick={onOpenReceiptModal}
                   className="w-full max-w-[320px] p-6 rounded-xl bg-[var(--receipt-paper)] text-[var(--receipt-ink)] font-mono text-center space-y-3 cursor-pointer shadow-[0_16px_32px_rgba(0,0,0,0.6)] rotate-[-0.75deg] hover:rotate-0 transition-transform"
                 >
-                  <div className="text-[10px] uppercase tracking-widest opacity-60">
+                  <div className="text-xs uppercase tracking-wider opacity-80 font-bold">
                     --- {ledger.trip_name || ledger.name ? `${formatPartyName(ledger.trip_name || ledger.name).toUpperCase()} [SAMPLE PREVIEW]` : 'TRIP RECEIPT [SAMPLE PREVIEW]'} ---
                   </div>
                   <div className="font-display font-black text-sm uppercase text-[var(--receipt-ink)]">
                     No Bills Recorded
                   </div>
-                  <p className="text-[11px] opacity-75 leading-relaxed m-0">
+                  <p className="text-xs opacity-85 leading-relaxed m-0 font-medium">
                     Tap here to upload a restaurant receipt, hotel bill, or cab receipt.
                   </p>
-                  <div className="pt-2 border-t border-dashed border-[var(--receipt-ink)]/30 text-[10px] uppercase font-bold tracking-wider">
+                  <div className="pt-2 border-t border-dashed border-[var(--receipt-ink)]/30 text-xs uppercase font-bold tracking-wider">
                     [ + Scan Paper Bill ]
                   </div>
                 </div>
@@ -443,7 +443,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             {/* If there is a recorded expense, display the traveler split roster explicitly */}
             {latestExpense && (
               <div className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] font-mono">
+                <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
                     <span className="text-[var(--text)] font-semibold uppercase tracking-wider">
@@ -473,7 +473,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                               color: tag.text,
                               borderColor: tag.border,
                             }}
-                            className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                            className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                           >
                             {name.slice(0, 2).toUpperCase()}
                           </span>
@@ -509,7 +509,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 <Avatar userId={activeFocusMember.user_id} name={activeFocusMember.name} size="sm" />
                 <div>
                   <div className="font-body font-semibold text-[var(--text)]">{activeFocusMember.name}</div>
-                  <div className="text-[10px] text-[var(--muted)]">{activeFocusMember.handle}</div>
+                  <div className="text-xs text-[var(--muted)] font-mono">{activeFocusMember.handle}</div>
                 </div>
               </div>
               <StatusPill
@@ -518,7 +518,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               />
             </div>
 
-            <div className="space-y-1.5 text-[11px]">
+            <div className="space-y-2 text-xs font-mono">
               <div className="flex justify-between text-[var(--muted)]">
                 <span>Net Balance:</span>
                 <span className="font-bold text-[var(--text)] tabular-nums">

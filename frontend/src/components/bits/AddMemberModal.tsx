@@ -64,17 +64,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-member-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-md rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden"
+          className="relative w-full max-w-md max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
+          <div className="shrink-0 flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
                 <UserPlus className="w-4 h-4 text-[var(--muted)]" />
@@ -83,7 +83,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 <h3 id="add-member-title" className="text-base font-display font-bold text-[var(--text)] m-0">
                   Add Member
                 </h3>
-                <p className="text-[11px] text-[var(--muted)] font-body m-0 mt-0.5">
+                <p className="text-xs text-[var(--muted)] font-body m-0 mt-0.5">
                   Add a friend to {formatPartyName(tripName) || 'this trip'}
                 </p>
               </div>
@@ -98,7 +98,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
             {errorMsg && (
               <div className="p-3 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)]">
                 {errorMsg}

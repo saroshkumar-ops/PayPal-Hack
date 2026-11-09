@@ -76,7 +76,7 @@ export const Logo: React.FC<LogoProps> = ({
           <div className={`font-display font-bold tracking-tight text-[var(--text)] flex items-center gap-1.5 leading-tight ${currentSize.text}`}>
             <span>TripSheriff</span>
           </div>
-          <div className="text-[10px] text-[var(--muted)] font-mono tracking-wider uppercase">
+          <div className="text-xs text-[var(--muted)] font-mono tracking-wider uppercase font-medium">
             Travel Expenses
           </div>
         </div>

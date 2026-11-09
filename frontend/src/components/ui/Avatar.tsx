@@ -50,11 +50,11 @@ export const Avatar: React.FC<AvatarProps> = ({
     .join('') || name.slice(0, 1).toUpperCase() || 'U';
 
   const sizeClasses = {
-    xs: 'w-6 h-6 text-[10px]',
-    sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-xs sm:text-sm',
-    lg: 'w-12 h-12 text-sm sm:text-base',
-    xl: 'w-16 h-16 text-lg',
+    xs: 'w-6 h-6 text-xs font-bold',
+    sm: 'w-8 h-8 text-xs font-bold',
+    md: 'w-10 h-10 text-xs sm:text-sm font-bold',
+    lg: 'w-12 h-12 text-sm sm:text-base font-bold',
+    xl: 'w-16 h-16 text-lg font-bold',
   };
 
   const statusDotColors = {

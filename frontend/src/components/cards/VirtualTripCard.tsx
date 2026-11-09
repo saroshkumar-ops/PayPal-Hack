@@ -37,7 +37,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
       <div className="w-full flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
-          <span className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider">
+          <span className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold">
             ORGANIZER TREASURY
           </span>
         </div>
@@ -78,14 +78,14 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                 </span>
               </div>
 
-              <span className="text-[11px] font-mono font-bold tracking-tight text-[var(--paypal)]">
+              <span className="text-xs font-mono font-bold tracking-tight text-[var(--paypal)]">
                 PayPal
               </span>
             </div>
 
             {/* Core: Collected Payout Balance */}
             <div className="my-1">
-              <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] font-mono">
+              <div className="text-xs uppercase tracking-wider text-[var(--muted)] font-mono font-medium">
                 Available to Payout
               </div>
               <div className="text-3xl font-display font-extrabold text-[var(--text)] tracking-tight flex items-baseline gap-1 mt-1">
@@ -98,14 +98,14 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
             {/* Footer: Organizer Receiver & Action */}
             <div className="flex items-end justify-between pt-3 border-t border-[var(--border)]">
               <div className="min-w-0 pr-2">
-                <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] font-mono">
+                <div className="text-xs uppercase tracking-wider text-[var(--muted)] font-mono font-medium">
                   Receiver
                 </div>
                 <div className="text-xs font-body font-semibold text-[var(--text)] truncate max-w-[170px]">
                   {organizerName}
                 </div>
                 {organizerEmail && (
-                  <div className="text-[10px] text-[var(--muted)] font-mono truncate max-w-[170px]">
+                  <div className="text-xs text-[var(--muted)] font-mono truncate max-w-[170px]">
                     {organizerEmail}
                   </div>
                 )}
@@ -137,7 +137,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
               <span className="text-xs font-display font-bold text-[var(--text)]">
                 Payout Details
               </span>
-              <span className="text-[10px] font-mono text-[var(--muted)]">API v1</span>
+              <span className="text-xs font-mono text-[var(--muted)]">API v1</span>
             </div>
 
             <div className="space-y-2 text-xs font-mono">
@@ -157,7 +157,7 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
               </div>
             </div>
 
-            <div className="text-[11px] font-body text-[var(--muted)] pt-2 border-t border-[var(--border)] leading-relaxed">
+            <div className="text-xs font-body text-[var(--muted)] pt-2 border-t border-[var(--border)] leading-relaxed">
               When members pay their split, funds pool here until transferred to the organizer's PayPal account.
             </div>
           </div>

@@ -105,17 +105,17 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-trip-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-lg rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-6"
+          className="relative w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
+          <div className="shrink-0 flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface-elevated)]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center">
                 <Users className="w-4 h-4 text-[var(--muted)]" />
@@ -124,7 +124,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                 <h3 id="create-trip-title" className="text-base font-display font-bold text-[var(--text)] m-0">
                   New Trip
                 </h3>
-                <p className="text-[11px] text-[var(--muted)] font-body m-0 mt-0.5">
+                <p className="text-xs text-[var(--muted)] font-body m-0 mt-0.5">
                   Create a trip and add friends to split expenses
                 </p>
               </div>
@@ -139,7 +139,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 overflow-y-auto">
             {errorMsg && (
               <div className="p-3 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)]">
                 {errorMsg}
@@ -198,7 +198,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                   <UserPlus className="w-3.5 h-3.5 text-[var(--muted)]" />
                   <span>Add Friends to Trip</span>
                 </label>
-                <span className="text-[10px] font-mono text-[var(--muted)]">
+                <span className="text-xs font-mono text-[var(--muted)]">
                   {members.length + 1} Total {members.length === 0 ? 'Member' : 'Members'}
                 </span>
               </div>
@@ -258,7 +258,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                   >
                     <span>{m.name}</span>
                     {m.handle && (
-                      <span className="text-[10px] text-[var(--muted)]">{m.handle}</span>
+                      <span className="text-xs text-[var(--muted)] font-mono">{m.handle}</span>
                     )}
                     <button
                       type="button"

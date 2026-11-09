@@ -123,19 +123,19 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
               <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
-                <span className="text-[10px] uppercase text-[var(--muted)]">1. Member Payment</span>
+                <span className="text-xs uppercase text-[var(--muted)] font-semibold">1. Member Payment</span>
                 <p className="font-body text-[var(--text)] m-0 leading-relaxed">
                   Travelers click their individualized PayPal order link to capture their owed share.
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
-                <span className="text-[10px] uppercase text-[var(--muted)]">2. Ledger Settlement</span>
+                <span className="text-xs uppercase text-[var(--muted)] font-semibold">2. Ledger Settlement</span>
                 <p className="font-body text-[var(--text)] m-0 leading-relaxed">
                   Payment confirmation marks the split settled and credits the organizer balance.
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-1">
-                <span className="text-[10px] uppercase text-[var(--muted)]">3. Instant Payout</span>
+                <span className="text-xs uppercase text-[var(--muted)] font-semibold">3. Instant Payout</span>
                 <p className="font-body text-[var(--text)] m-0 leading-relaxed">
                   The organizer clicks Send Payout to dispatch batch payouts directly to their PayPal account.
                 </p>
@@ -166,13 +166,13 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
 
           {/* Balance Callout */}
           <div className="p-5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-1">
-            <div className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
+            <div className="text-xs uppercase font-mono tracking-wider text-[var(--muted)] font-semibold">
               AVAILABLE TO PAYOUT
             </div>
             <div className="text-3xl sm:text-4xl font-display font-extrabold text-[var(--text)] tabular-nums font-mono">
               {cur}{(organizerOwedCents / 100).toFixed(2)}
             </div>
-            <div className="text-[11px] text-[var(--muted)] font-mono">
+            <div className="text-xs text-[var(--muted)] font-mono font-medium">
               Total Settled: {cur}{(settledCents / 100).toFixed(2)}
             </div>
           </div>
@@ -240,7 +240,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                 Transaction Activity
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-0.5 rounded">
+            <span className="text-xs font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-0.5 rounded">
               {paypalLogs.length} Events
             </span>
           </div>
@@ -274,7 +274,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-2.5 py-1 rounded text-xs font-bold ${
                           isPayout
                             ? 'bg-[var(--paypal)]/15 text-[var(--paypal)] border border-[var(--paypal)]/30'
                             : 'bg-white/10 text-[var(--text)] border border-white/15'
@@ -282,7 +282,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                       >
                         {log.event_type}
                       </span>
-                      <span className="text-[11px] text-[var(--muted)]">
+                      <span className="text-xs text-[var(--muted)] font-medium">
                         {log.timestamp}
                       </span>
                     </div>
@@ -291,7 +291,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                       {log.summary}
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-2 border-t border-[var(--border)]">
+                    <div className="flex items-center justify-between text-xs text-[var(--muted)] pt-2 border-t border-[var(--border)] font-medium">
                       <span className="truncate max-w-[220px]">
                         Ref: {formatReferenceId(log.reference_id || log.id)}
                       </span>

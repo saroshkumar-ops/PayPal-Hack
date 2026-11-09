@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </NavLink>
 
           {tripName && (
-            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-[11px] font-mono text-[var(--text)]">
+            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
               <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
               <span className="font-semibold truncate max-w-[160px]">{formatPartyName(tripName)}</span>
             </div>
@@ -95,16 +95,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Actions & Utilities */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* New Trip Action Button */}
           {onNewParty && (
             <button
               onClick={onNewParty}
               title="Create a new trip"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 text-[var(--muted)]" />
-              <span>New Trip</span>
+              <span className="hidden sm:inline">New Trip</span>
             </button>
           )}
 
@@ -114,14 +114,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             size="sm"
             onClick={onOpenReceiptModal}
             icon={<ReceiptText className="w-3.5 h-3.5" />}
+            className="px-2.5 sm:px-3"
           >
-            Upload Bill
+            <span className="hidden sm:inline">Upload Bill</span>
+            <span className="sm:hidden inline">Upload</span>
           </Button>
 
           {/* Authentication Status / Sign In */}
           {currentUser ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[11px] sm:text-xs font-mono text-[var(--text)]">
-              <div className="w-4 h-4 rounded-full bg-[var(--surface-elevated)] border border-white/20 flex items-center justify-center text-[10px] text-[var(--text)] font-bold">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+              <div className="w-5 h-5 rounded-full bg-[var(--surface-elevated)] border border-white/20 flex items-center justify-center text-xs text-[var(--text)] font-bold">
                 {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <span className="truncate max-w-[90px] font-medium hidden sm:inline">

@@ -156,13 +156,13 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
       <div className="px-5 pt-3 pb-4 space-y-3">
         {/* Header */}
         <div className="text-center space-y-1 border-b border-[var(--receipt-ink)]/20 pb-3">
-          <div className="text-[10px] tracking-widest uppercase opacity-60">
+          <div className="text-xs font-semibold tracking-wider uppercase opacity-80">
             --- OFFICIAL TRIP RECEIPT ---
           </div>
           <h3 className="font-display font-black text-base uppercase tracking-tight text-[var(--receipt-ink)] m-0">
             {merchantName}
           </h3>
-          <div className="flex items-center justify-between text-[11px] opacity-75 pt-1">
+          <div className="flex items-center justify-between text-xs opacity-85 font-medium pt-1">
             <span>{receiptNumber}</span>
             <span>{date}</span>
           </div>
@@ -170,13 +170,13 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
 
         {/* Line Items List */}
         <div className="space-y-1.5 py-1">
-          <div className="flex justify-between text-[10px] uppercase tracking-wider opacity-50 border-b border-dashed border-[var(--receipt-ink)]/20 pb-1">
+          <div className="flex justify-between text-xs font-bold uppercase tracking-wider opacity-75 border-b border-dashed border-[var(--receipt-ink)]/20 pb-1">
             <span>Item</span>
             <span>Amount</span>
           </div>
 
           {items.length === 0 ? (
-            <div className="py-6 text-center text-[11px] opacity-60 italic">
+            <div className="py-6 text-center text-xs opacity-75 italic">
               No individual items listed.
             </div>
           ) : (
@@ -212,11 +212,11 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                         )}
                       </div>
                       {claimedCount === 1 ? (
-                        <div className="text-[10px] opacity-65 font-body">
+                        <div className="text-xs opacity-80 font-body">
                           Claimed by {members.find(m => m.user_id === item.claimedByUserIds?.[0])?.name.split(' ')[0] || '1 traveler'}
                         </div>
                       ) : claimedCount > 1 ? (
-                        <div className="text-[10px] opacity-65 tabular-nums">
+                        <div className="text-xs opacity-80 tabular-nums">
                           {cur}{(perPersonCents / 100).toFixed(2)} each ({claimedCount} shares)
                         </div>
                       ) : null}
@@ -243,7 +243,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                               borderColor: color.border,
                               color: color.text,
                             }}
-                            className="inline-flex items-center px-1 py-0.2 rounded text-[9px] font-bold border"
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold border"
                             title={name}
                           >
                             {initial}
@@ -260,27 +260,27 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
 
         {/* Calculations / Subtotal / Tax / Total */}
         <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1 text-xs">
-          <div className="flex justify-between text-[11px] opacity-75">
+          <div className="flex justify-between text-xs font-medium opacity-85">
             <span>SUBTOTAL</span>
             <span className="tabular-nums">{cur}{(subtotalCents / 100).toFixed(2)}</span>
           </div>
 
           {taxCents > 0 && (
-            <div className="flex justify-between text-[11px] opacity-75">
+            <div className="flex justify-between text-xs font-medium opacity-85">
               <span>TAX</span>
               <span className="tabular-nums">{cur}{(taxCents / 100).toFixed(2)}</span>
             </div>
           )}
 
           {tipCents > 0 && (
-            <div className="flex justify-between text-[11px] opacity-75">
+            <div className="flex justify-between text-xs font-medium opacity-85">
               <span>TIP</span>
               <span className="tabular-nums">{cur}{(tipCents / 100).toFixed(2)}</span>
             </div>
           )}
 
           {roundOffCents !== undefined && roundOffCents !== 0 && (
-            <div className="flex justify-between text-[11px] opacity-75">
+            <div className="flex justify-between text-xs font-medium opacity-85">
               <span>ROUND-OFF</span>
               <span className="tabular-nums">
                 {roundOffCents > 0 ? '+' : '-'}{cur}{(Math.abs(roundOffCents) / 100).toFixed(2)}
@@ -296,7 +296,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
           {/* Traveler Allocation Printed on Receipt */}
           {computedSplits.length > 0 && (
             <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1">
-              <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider opacity-60">
+              <div className="flex justify-between text-xs font-bold uppercase tracking-wider opacity-75">
                 <span>TRAVELER SHARES</span>
                 <span>{splitType}</span>
               </div>
@@ -314,7 +314,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                       duration: 0.4,
                       ease: 'easeInOut',
                     }}
-                    className="flex justify-between text-[11px] font-mono"
+                    className="flex justify-between text-xs font-mono"
                   >
                     <span className="opacity-80 truncate max-w-[190px]">{s.name}:</span>
                     <span className="font-bold tabular-nums">{cur}{(s.owes_cents / 100).toFixed(2)}</span>
@@ -327,7 +327,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
 
         {/* Footer */}
         <div className="text-center pt-3 border-t border-[var(--receipt-ink)]/20 space-y-1">
-          <div className="text-[10px] uppercase font-bold tracking-widest opacity-70">
+          <div className="text-xs uppercase font-bold tracking-wider opacity-85">
             THANK YOU • SPLIT WITH TRIPSHERIFF
           </div>
           {/* Barcode graphic */}

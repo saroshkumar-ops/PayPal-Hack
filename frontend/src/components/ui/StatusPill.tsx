@@ -72,7 +72,7 @@ export const StatusPill: React.FC<StatusPillProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono border select-none',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-medium border select-none',
         current.bg,
         current.text,
         current.border,

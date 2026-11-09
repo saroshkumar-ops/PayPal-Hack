@@ -117,7 +117,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
         sortable: true,
         filter: true,
         cellRenderer: (params: ICellRendererParams) => (
-          <span className="px-2 py-0.5 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-[11px] font-mono text-[var(--text)]">
+          <span className="px-2 py-0.5 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
             {formatCategoryName(params.value)}
           </span>
         ),
@@ -136,7 +136,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
             title="Click to inspect receipt breakdown"
           >
             <span className="font-body text-xs font-semibold text-[var(--text)]">{params.value}</span>
-            <span className="text-[10px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-1.5 py-0.2 rounded border border-[var(--border)]">
+            <span className="text-xs font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-1.5 py-0.2 rounded border border-[var(--border)]">
               {formatExpenseId(params.data.expense_id)}
             </span>
           </div>
@@ -171,7 +171,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
                   color: tag.text,
                   borderColor: tag.border,
                 }}
-                className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
               >
                 {String(params.value).slice(0, 2).toUpperCase()}
               </span>
@@ -201,7 +201,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
         cellRenderer: (params: ICellRendererParams) => (
           <span 
             onClick={() => setSelectedExpenseId(params.data.expense_id)}
-            className="font-mono text-[11px] text-[var(--muted)] hover:text-[var(--text)] truncate block cursor-pointer"
+            className="font-mono text-xs text-[var(--muted)] hover:text-[var(--text)] truncate block cursor-pointer"
             title="Click to view full split ticket"
           >
             {params.value}
@@ -269,27 +269,27 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
         {/* Asymmetric Financial Tally Strip */}
         <div className="pt-4 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border)] font-mono text-center gap-3 sm:gap-0">
           <div className="px-4 py-2 space-y-1 sm:text-left">
-            <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Total Bills Logged</div>
+            <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Total Bills Logged</div>
             <div className="text-2xl font-display font-extrabold text-[var(--text)] tabular-nums">
               {cur}{(totalSpendCents / 100).toFixed(2)}
             </div>
-            <div className="text-[11px] text-[var(--muted)]">{ledger.expenses.length} total receipts</div>
+            <div className="text-xs text-[var(--muted)] font-medium">{ledger.expenses.length} total receipts</div>
           </div>
 
           <div className="px-4 py-2 space-y-1 sm:text-left">
-            <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Settled Volume</div>
+            <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Settled Volume</div>
             <div className="text-2xl font-display font-extrabold text-[var(--settled)] tabular-nums">
               {cur}{(settledCents / 100).toFixed(2)}
             </div>
-            <div className="text-[11px] text-[var(--settled)]">{settledPercentage}% settled</div>
+            <div className="text-xs text-[var(--settled)] font-medium">{settledPercentage}% settled</div>
           </div>
 
           <div className="px-4 py-2 space-y-1 sm:text-left">
-            <div className="text-[10px] uppercase text-[var(--muted)] tracking-wider">Outstanding Volume</div>
+            <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Outstanding Volume</div>
             <div className="text-2xl font-display font-extrabold text-[var(--owes)] tabular-nums">
               {cur}{(pendingCents / 100).toFixed(2)}
             </div>
-            <div className="text-[11px] text-[var(--muted)]">pending shares</div>
+            <div className="text-xs text-[var(--muted)] font-medium">pending shares</div>
           </div>
         </div>
       </section>
@@ -303,7 +303,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
             <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
               Direct Peer Settlements Required
             </span>
-            <span className="text-[10px] font-mono text-[var(--muted)]">
+            <span className="text-xs font-mono text-[var(--muted)] font-medium">
               {settlements.length} {settlements.length === 1 ? 'payment' : 'payments'}
             </span>
           </div>
@@ -322,7 +322,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
                     <div className="font-semibold text-[var(--owes)]">
                       {fromMember?.name || s.from_user_id}
                     </div>
-                    <div className="text-[10px] text-[var(--muted)]">
+                    <div className="text-xs text-[var(--muted)] font-mono">
                       owes {toMember?.name || s.to_user_id}
                     </div>
                   </div>
@@ -392,8 +392,8 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
       {/* 4. EXPENSE INSPECT MODAL (PHYSICAL TICKET VIEW)                   */}
       {/* ================================================================ */}
       {inspectedExpense && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 overflow-hidden select-none">
-          <div className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto select-none">
+          <div className="w-full max-w-md max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-4 sm:p-6 shadow-2xl space-y-4 my-auto overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4 text-[var(--text)]" />
@@ -468,7 +468,7 @@ export const LedgerPage: React.FC<LedgerPageProps> = ({ ledger, onDeleteExpense 
               </div>
               <div>
                 <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">Delete Bill</h3>
-                <p className="text-[11px] text-[var(--muted)] font-body m-0 mt-0.5">Remove this bill and recalculate balances</p>
+                <p className="text-xs text-[var(--muted)] font-body m-0 mt-0.5">Remove this bill and recalculate balances</p>
               </div>
             </div>
 

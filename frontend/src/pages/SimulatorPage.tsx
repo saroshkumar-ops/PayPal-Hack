@@ -218,7 +218,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
       {/* ================================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN (5 COLS): NATURAL CONVERSATIONAL ASSISTANT */}
-        <section className="lg:col-span-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex flex-col justify-between shadow-sm overflow-hidden h-[760px]">
+        <section className="lg:col-span-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex flex-col justify-between shadow-sm overflow-hidden h-[540px] sm:h-[640px] lg:h-[760px]">
           {/* Header */}
           <div className="p-4 border-b border-[var(--border)] bg-[var(--surface-elevated)] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -227,7 +227,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                 Chat Assistant
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[var(--muted)]">
+            <span className="text-xs font-mono text-[var(--muted)]">
               {messages.length} {messages.length === 1 ? 'message' : 'messages'}
             </span>
           </div>
@@ -248,22 +248,22 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
                 {/* Example Quick Prompts */}
                 <div className="space-y-2 pt-2 text-left">
-                  <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider">Tap to paste example:</div>
+                  <div className="text-xs text-[var(--muted)] uppercase tracking-wider font-semibold">Tap to paste example:</div>
                   <button
                     type="button"
                     onClick={() => setInputText(`Paid 120 for dinner split with @${friendFirstName}`)}
-                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-[11px] text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-xs text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Paid 120 for dinner split with @{friendFirstName}"</span>
-                    <span className="text-[var(--muted)] text-[10px]">Use</span>
+                    <span className="text-[var(--muted)] text-xs font-mono font-medium">Use</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setInputText(`Fronted 60 for airport taxi split equally`)}
-                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-[11px] text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-xs text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Fronted 60 for airport taxi split equally"</span>
-                    <span className="text-[var(--muted)] text-[10px]">Use</span>
+                    <span className="text-[var(--muted)] text-xs font-mono font-medium">Use</span>
                   </button>
                 </div>
               </div>
@@ -279,10 +279,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     className={`flex flex-col ${isSheriff ? 'items-start' : 'items-end'}`}
                   >
                     <div className="flex items-center gap-2 mb-1 px-1">
-                      <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
+                      <span className="text-xs font-mono font-semibold text-[var(--muted)]">
                         {msg.sender_name}
                       </span>
-                      <span className="text-[10px] font-mono text-[var(--muted)]/60">
+                      <span className="text-xs font-mono text-[var(--muted)]">
                         {msg.timestamp}
                       </span>
                     </div>
@@ -295,7 +295,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                       }`}
                     >
                       {msg.badge && (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase mb-2 bg-[var(--canvas)] text-[var(--text)] border border-[var(--border)]">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-semibold uppercase mb-2 bg-[var(--canvas)] text-[var(--text)] border border-[var(--border)]">
                           <span>{msg.badge}</span>
                         </div>
                       )}
@@ -391,7 +391,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                   Assign line items across party members to update active debt balances.
                 </p>
               </div>
-              <span className="text-[11px] font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-1 rounded-md border border-[var(--border)]">
+              <span className="text-xs font-mono text-[var(--muted)] bg-[var(--surface-elevated)] px-2.5 py-1 rounded-md border border-[var(--border)]">
                 {interactiveItems.length} {interactiveItems.length === 1 ? 'bill' : 'bills'}
               </span>
             </div>
@@ -422,7 +422,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                         </div>
                         <div className="font-mono text-xs font-bold text-[var(--text)] mt-0.5 tabular-nums">
                           {cur}{(item.priceCents / 100).toFixed(2)}{' '}
-                          <span className="text-[11px] text-[var(--muted)] font-normal">
+                          <span className="text-xs text-[var(--muted)] font-normal">
                             ({cur}{(perPersonCents / 100).toFixed(2)} each · {claimantsCount} shares)
                           </span>
                         </div>
@@ -451,7 +451,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                                   color: tag.text,
                                   borderColor: tag.border,
                                 }}
-                                className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                                className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                               >
                                 {member.name.slice(0, 2).toUpperCase()}
                               </span>
@@ -468,7 +468,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
 
             {/* Calculated Member Totals */}
             <div className="pt-3 border-t border-[var(--border)] space-y-2">
-              <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+              <div className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider font-semibold">
                 Simulated Traveler Totals:
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -486,11 +486,11 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                             color: tag.text,
                             borderColor: tag.border,
                           }}
-                          className="w-3.5 h-3.5 rounded text-[8px] font-bold border flex items-center justify-center shrink-0"
+                          className="w-5 h-5 rounded-md text-xs font-bold border flex items-center justify-center shrink-0"
                         >
                           {member.name.slice(0, 2).toUpperCase()}
                         </span>
-                        <span className="text-[11px] text-[var(--text)] font-body truncate">
+                        <span className="text-xs text-[var(--text)] font-body truncate font-medium">
                           {member.name.split(' ')[0]}
                         </span>
                       </div>
@@ -514,7 +514,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                 </h3>
               </div>
               <span
-                className="text-[10px] font-mono px-2.5 py-0.5 rounded-md font-semibold border"
+                className="text-xs font-mono px-2.5 py-0.5 rounded-md font-semibold border"
                 style={{ 
                   color: currentTier.tokenColor, 
                   borderColor: currentTier.tokenColor,
@@ -549,7 +549,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                   Primary Debtor: <span className="text-[var(--text)] font-semibold">{topDebtor ? topDebtor.name : 'None'}</span>
                 </span>
                 {topDebtor && (
-                  <span className="text-[var(--muted)] text-[10px] font-mono border border-[var(--border)] px-1.5 py-0.2 rounded">
+                  <span className="text-[var(--muted)] text-xs font-mono border border-[var(--border)] px-2 py-0.5 rounded">
                     {getNotificationLabel(topDebtor.roast_consent)}
                   </span>
                 )}

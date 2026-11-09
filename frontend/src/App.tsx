@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom';
+import { LayoutDashboard, Terminal, CreditCard, ReceiptText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import { Navbar } from './components/layout/Navbar';
@@ -597,15 +598,40 @@ export function App() {
             </Routes>
           </main>
 
-          {/* Bottom Footer */}
-          <footer className="w-full border-t border-[var(--border)] bg-[var(--canvas)] px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-[var(--muted)] z-20">
+          {/* Bottom Footer (Desktop) */}
+          <footer className="hidden md:flex w-full border-t border-[var(--border)] bg-[var(--canvas)] px-4 sm:px-8 py-2.5 items-center justify-between text-xs font-mono text-[var(--muted)] z-20">
             <div className="flex items-center gap-3">
               <span>TripSheriff</span>
             </div>
-            <div className="text-[10px] sm:text-[11px] text-[var(--muted)]">
+            <div className="text-xs text-[var(--muted)]">
               Traveler: <span className="text-[var(--text)] font-medium">{currentUser.handle || currentUser.name}</span>
             </div>
           </footer>
+
+          {/* Mobile Bottom Navigation Dock */}
+          <nav aria-label="Mobile Navigation" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--canvas)]/95 backdrop-blur-md border-t border-[var(--border)] px-2 py-1.5 flex items-center justify-around">
+            {[
+              { to: '/', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+              { to: '/simulator', label: 'Simulator', icon: <Terminal className="w-4 h-4" /> },
+              { to: '/ledger', label: 'Expenses', icon: <CreditCard className="w-4 h-4" /> },
+              { to: '/payouts', label: 'Payouts', icon: <ReceiptText className="w-4 h-4" /> },
+            ].map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors no-underline ${
+                    isActive
+                      ? 'text-[var(--text)] font-bold bg-[var(--surface-elevated)] border border-[var(--border)]'
+                      : 'text-[var(--muted)] hover:text-[var(--text)]'
+                  }`
+                }
+              >
+                {link.icon}
+                <span>{link.label}</span>
+              </NavLink>
+            ))}
+          </nav>
 
           {/* Checkout & Settlement Drawers */}
           <PayPalCheckoutDrawer
