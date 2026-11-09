@@ -9,7 +9,9 @@ import {
   User, 
   RotateCcw,
   Receipt as ReceiptIcon,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { aiService } from '../../api/services';
 import { Button } from '../ui/Button';
@@ -78,6 +80,10 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
   const [shareInputStrings, setShareInputStrings] = useState<Record<string, string>>({});
   const [isCustomManual, setIsCustomManual] = useState<boolean>(false);
 
+  // Editable bill total & line item prices
+  const [totalInputString, setTotalInputString] = useState<string | null>(null);
+  const [itemPriceInputs, setItemPriceInputs] = useState<Record<number, string>>({});
+
   const [extractedReceipt, setExtractedReceipt] = useState<null | {
     merchant: string;
     currency: string;
@@ -100,12 +106,17 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     if (!extractedReceipt) return {};
     const shares: Record<string, number> = {};
     activeMembers.forEach((m) => { shares[m.user_id] = 0; });
+    const count = Math.max(1, activeMembers.length);
 
     // If receipt has line items, compute from item claims
     if (extractedReceipt.items && extractedReceipt.items.length > 0) {
       let itemsSubtotal = 0;
+      const claimedDirectShares: Record<string, number> = {};
+      activeMembers.forEach((m) => { claimedDirectShares[m.user_id] = 0; });
+
       extractedReceipt.items.forEach((item) => {
         itemsSubtotal += item.priceCents;
+        // If nobody claimed it, item is communal (split among all active members)
         const claimants = item.claimedByUserIds && item.claimedByUserIds.length > 0 
           ? item.claimedByUserIds 
           : allUserIds;
@@ -114,34 +125,86 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
         const rem = item.priceCents % claimCount;
         claimants.forEach((uid, i) => {
           const itemShare = baseShare + (i < rem ? 1 : 0);
-          shares[uid] = (shares[uid] || 0) + itemShare;
+          claimedDirectShares[uid] = (claimedDirectShares[uid] || 0) + itemShare;
         });
       });
 
-      // Proportionally distribute taxes, tips, or unallocated difference to match totalCents exactly
-      const unallocatedCents = extractedReceipt.totalCents - itemsSubtotal;
-      if (unallocatedCents !== 0 && itemsSubtotal > 0) {
-        let distributedExtra = 0;
+      const taxCents = extractedReceipt.taxCents || 0;
+      const tipCents = extractedReceipt.tipCents || 0;
+      const totalTaxTip = taxCents + tipCents;
+
+      // Provisional shares = claimedDirectShares + proportional tax & tip
+      const provisionalShares: Record<string, number> = {};
+      if (itemsSubtotal > 0 && totalTaxTip > 0) {
+        let distributedTaxTip = 0;
         activeMembers.forEach((m, idx) => {
           if (idx === activeMembers.length - 1) {
-            shares[m.user_id] = Math.max(0, (shares[m.user_id] || 0) + (unallocatedCents - distributedExtra));
+            const extra = totalTaxTip - distributedTaxTip;
+            provisionalShares[m.user_id] = (claimedDirectShares[m.user_id] || 0) + extra;
           } else {
-            const userDirect = shares[m.user_id] || 0;
-            const extra = Math.round((userDirect * unallocatedCents) / itemsSubtotal);
-            shares[m.user_id] = Math.max(0, userDirect + extra);
-            distributedExtra += extra;
+            const userSubtotal = claimedDirectShares[m.user_id] || 0;
+            const extra = Math.round((userSubtotal * totalTaxTip) / itemsSubtotal);
+            provisionalShares[m.user_id] = userSubtotal + extra;
+            distributedTaxTip += extra;
           }
         });
+      } else {
+        activeMembers.forEach((m) => {
+          provisionalShares[m.user_id] = claimedDirectShares[m.user_id] || 0;
+        });
       }
-      return shares;
+
+      const totalAllocated = itemsSubtotal + totalTaxTip;
+      const diffToBillTotal = extractedReceipt.totalCents - totalAllocated;
+
+      if (diffToBillTotal === 0) {
+        // Perfect match
+        return provisionalShares;
+      } else if (diffToBillTotal > 0) {
+        // Items + tax + tip are LESS than total (unmatched amount remaining)
+        // Divide remaining unmatched communal amount equally so no individual share is skewed
+        const baseDiff = Math.floor(diffToBillTotal / count);
+        const remDiff = diffToBillTotal % count;
+        activeMembers.forEach((m, idx) => {
+          shares[m.user_id] = (provisionalShares[m.user_id] || 0) + baseDiff + (idx < remDiff ? 1 : 0);
+        });
+        return shares;
+      } else {
+        // Items + tax + tip are GREATER than total (e.g. discounts, coupons, overage)
+        // Scale proportionally without allowing any negative share
+        const provSum = Object.values(provisionalShares).reduce((acc, v) => acc + v, 0);
+        if (provSum > 0 && extractedReceipt.totalCents > 0) {
+          let scaledSum = 0;
+          activeMembers.forEach((m) => {
+            const scaled = Math.floor(((provisionalShares[m.user_id] || 0) * extractedReceipt.totalCents) / provSum);
+            shares[m.user_id] = Math.max(0, scaled);
+            scaledSum += shares[m.user_id];
+          });
+          const remScale = extractedReceipt.totalCents - scaledSum;
+          // Distribute remainder cent-by-cent to members with highest provisional share
+          const sortedMembers = [...activeMembers].sort((a, b) => (provisionalShares[b.user_id] || 0) - (provisionalShares[a.user_id] || 0));
+          for (let i = 0; i < remScale; i++) {
+            const memberId = sortedMembers[i % sortedMembers.length].user_id;
+            shares[memberId] += 1;
+          }
+          return shares;
+        } else {
+          // If total is 0 or provSum is 0
+          const base = Math.floor(extractedReceipt.totalCents / count);
+          const rem = extractedReceipt.totalCents % count;
+          activeMembers.forEach((m, idx) => {
+            shares[m.user_id] = Math.max(0, base + (idx < rem ? 1 : 0));
+          });
+          return shares;
+        }
+      }
     }
 
     // Default even split if no items
-    const count = Math.max(1, activeMembers.length);
     const base = Math.floor(extractedReceipt.totalCents / count);
     const rem = extractedReceipt.totalCents % count;
     activeMembers.forEach((m, idx) => {
-      shares[m.user_id] = base + (idx < rem ? 1 : 0);
+      shares[m.user_id] = Math.max(0, base + (idx < rem ? 1 : 0));
     });
 
     return shares;
@@ -156,6 +219,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     setIsCustomManual(false);
     setCustomSharesCents({});
     setShareInputStrings({});
+    setTotalInputString(null);
+    setItemPriceInputs({});
     try {
       const res = await aiService.uploadReceipt(file, currency);
       const symbol = res.currency_symbol || getCurrencySymbol(currency);
@@ -193,6 +258,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       };
 
       setExtractedReceipt(parsed);
+      setTotalInputString((parsed.totalCents / 100).toFixed(2));
 
       // Prepopulate default shares
       const initialShares: Record<string, number> = {};
@@ -265,178 +331,273 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     });
   };
 
-  // Direct manual custom share amount input handler (fluid typing)
-  const handleCustomShareInputChange = (userId: string, rawValue: string) => {
+  // Line item and bill total editing handlers
+  const handleBillTotalChange = (val: string) => {
+    setTotalInputString(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      const cents = Math.round(num * 100);
+      setExtractedReceipt((prev) => (prev ? { ...prev, totalCents: cents } : null));
+    }
+  };
+
+  const handleBillTotalBlur = () => {
+    if (extractedReceipt) {
+      setTotalInputString((extractedReceipt.totalCents / 100).toFixed(2));
+    }
+  };
+
+  const handleUpdateItemName = (idx: number, newName: string) => {
+    setExtractedReceipt((prev) => {
+      if (!prev) return prev;
+      const nextItems = [...prev.items];
+      nextItems[idx] = { ...nextItems[idx], name: newName };
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  const handleUpdateItemPrice = (idx: number, val: string) => {
+    setItemPriceInputs((prev) => ({ ...prev, [idx]: val }));
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      const cents = Math.round(num * 100);
+      setExtractedReceipt((prev) => {
+        if (!prev) return prev;
+        const nextItems = [...prev.items];
+        nextItems[idx] = { ...nextItems[idx], priceCents: cents };
+        return { ...prev, items: nextItems };
+      });
+    }
+  };
+
+  const handleItemPriceBlur = (idx: number) => {
+    if (extractedReceipt && extractedReceipt.items[idx]) {
+      setItemPriceInputs((prev) => ({
+        ...prev,
+        [idx]: (extractedReceipt.items[idx].priceCents / 100).toFixed(2),
+      }));
+    }
+  };
+
+  const handleDeleteItem = (idx: number) => {
+    setExtractedReceipt((prev) => {
+      if (!prev) return prev;
+      const nextItems = prev.items.filter((_, i) => i !== idx);
+      return { ...prev, items: nextItems };
+    });
+    setItemPriceInputs((prev) => {
+      const copy = { ...prev };
+      delete copy[idx];
+      return copy;
+    });
+  };
+
+  const handleAddNewItem = () => {
+    setExtractedReceipt((prev) => {
+      if (!prev) return prev;
+      const newItem: ExtractedItemDraft = {
+        name: `Item #${prev.items.length + 1}`,
+        priceCents: 0,
+        claimedByUserIds: [...allUserIds],
+      };
+      return { ...prev, items: [...prev.items, newItem] };
+    });
+  };
+
+  // Mismatch calculations
+  const itemsSubtotalCents = extractedReceipt?.items.reduce((sum, it) => sum + (it.priceCents || 0), 0) || 0;
+  const itemsPlusTaxTipCents = itemsSubtotalCents + (extractedReceipt?.taxCents || 0) + (extractedReceipt?.tipCents || 0);
+  const mismatchCents = extractedReceipt ? extractedReceipt.totalCents - itemsPlusTaxTipCents : 0;
+  const hasMismatchNotice = extractedReceipt && extractedReceipt.totalCents > 0 && Math.abs(mismatchCents) > Math.round(extractedReceipt.totalCents * 0.01);
+
+  // Active shares computation
+  const activeShares = useMemo(() => {
+    if (splitMode === 'EQUAL') {
+      const shares: Record<string, number> = {};
+      const count = Math.max(1, activeMembers.length);
+      const base = extractedReceipt ? Math.floor(extractedReceipt.totalCents / count) : 0;
+      const rem = extractedReceipt ? extractedReceipt.totalCents % count : 0;
+      activeMembers.forEach((m, idx) => {
+        shares[m.user_id] = base + (idx < rem ? 1 : 0);
+      });
+      return shares;
+    }
+
+    if (isCustomManual) {
+      return customSharesCents;
+    }
+
+    return computeItemizedShares();
+  }, [splitMode, isCustomManual, customSharesCents, extractedReceipt, activeMembers]);
+
+  // Handle manual typed share edits
+  const handleCustomShareInputChange = (userId: string, valueStr: string) => {
     setIsCustomManual(true);
     setShareInputStrings((prev) => ({
       ...prev,
-      [userId]: rawValue,
+      [userId]: valueStr,
     }));
 
-    const parsedAmount = parseFloat(rawValue);
-    const cents = isNaN(parsedAmount) ? 0 : Math.max(0, Math.round(parsedAmount * 100));
-
-    setCustomSharesCents((prev) => {
-      const baseShares = Object.keys(prev).length > 0 ? { ...prev } : computeItemizedShares();
-      return {
-        ...baseShares,
-        [userId]: cents,
-      };
-    });
+    const parsedNum = parseFloat(valueStr);
+    if (!isNaN(parsedNum) && parsedNum >= 0) {
+      const newCents = Math.round(parsedNum * 100);
+      setCustomSharesCents((prev) => {
+        const updated = { ...prev, [userId]: newCents };
+        // Ensure other members have defaults if missing
+        activeMembers.forEach((m) => {
+          if (updated[m.user_id] === undefined) {
+            updated[m.user_id] = activeShares[m.user_id] || 0;
+          }
+        });
+        return updated;
+      });
+    }
   };
 
-  // Format input string on blur
   const handleCustomShareInputBlur = (userId: string) => {
-    setCustomSharesCents((prev) => {
-      const currentCents = prev[userId] ?? 0;
-      setShareInputStrings((prevStrings) => ({
-        ...prevStrings,
-        [userId]: (currentCents / 100).toFixed(2),
+    setCustomSharesCents((prevCents) => {
+      const cents = prevCents[userId] ?? (activeShares[userId] || 0);
+      setShareInputStrings((prev) => ({
+        ...prev,
+        [userId]: (cents / 100).toFixed(2),
       }));
-      return prev;
+      return prevCents;
     });
   };
 
-  // Exclude or zero out a traveler
-  const handleZeroOutTraveler = (userId: string) => {
-    setIsCustomManual(true);
-    setShareInputStrings((prev) => ({ ...prev, [userId]: '0.00' }));
-    setCustomSharesCents((prev) => {
-      const baseShares = Object.keys(prev).length > 0 ? { ...prev } : computeItemizedShares();
-      return { ...baseShares, [userId]: 0 };
-    });
-  };
-
-  // Assign remaining discrepancy directly to a specific traveler
-  const handleAssignRemainderToTraveler = (userId: string) => {
-    if (!extractedReceipt) return;
-    const currentShares = Object.keys(customSharesCents).length > 0 ? { ...customSharesCents } : computeItemizedShares();
-    const allocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
-    const remaining = extractedReceipt.totalCents - allocated;
-
-    const currentVal = currentShares[userId] || 0;
-    const updatedVal = Math.max(0, currentVal + remaining);
-
-    const updatedShares = { ...currentShares, [userId]: updatedVal };
-    setCustomSharesCents(updatedShares);
-    setIsCustomManual(true);
-
-    const updatedStrings: Record<string, string> = {};
-    activeMembers.forEach((m) => {
-      updatedStrings[m.user_id] = ((updatedShares[m.user_id] || 0) / 100).toFixed(2);
-    });
-    setShareInputStrings(updatedStrings);
-  };
-
-  // Auto-balance remaining cents across other participating travelers
   const handleAutoBalanceRemainder = () => {
     if (!extractedReceipt) return;
-    const currentShares = Object.keys(customSharesCents).length > 0 ? { ...customSharesCents } : computeItemizedShares();
-    const allocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
-    const remaining = extractedReceipt.totalCents - allocated;
-
-    if (remaining === 0) return;
-
-    // Distribute remaining among travelers with non-zero shares (or all travelers)
-    const eligible = activeMembers.filter((m) => (currentShares[m.user_id] || 0) > 0);
-    const targets = eligible.length > 0 ? eligible : activeMembers;
-    const count = targets.length;
-    const baseExtra = Math.floor(remaining / count);
-    const rem = remaining % count;
-
-    targets.forEach((m, idx) => {
-      const extra = baseExtra + (idx < rem ? 1 : 0);
-      currentShares[m.user_id] = Math.max(0, (currentShares[m.user_id] || 0) + extra);
-    });
-
-    // Absorb any integer division residue into first target
-    const finalAllocated = Object.values(currentShares).reduce((acc, c) => acc + c, 0);
-    const finalDiff = extractedReceipt.totalCents - finalAllocated;
-    if (finalDiff !== 0 && targets.length > 0) {
-      currentShares[targets[0].user_id] = Math.max(0, (currentShares[targets[0].user_id] || 0) + finalDiff);
-    }
-
-    setCustomSharesCents(currentShares);
     setIsCustomManual(true);
+    const total = extractedReceipt.totalCents;
+    
+    setCustomSharesCents((prev) => {
+      const currentShares = { ...prev };
+      activeMembers.forEach((m) => {
+        if (currentShares[m.user_id] === undefined) {
+          currentShares[m.user_id] = activeShares[m.user_id] || 0;
+        }
+      });
 
-    const updatedStrings: Record<string, string> = {};
-    activeMembers.forEach((m) => {
-      updatedStrings[m.user_id] = ((currentShares[m.user_id] || 0) / 100).toFixed(2);
+      const currentSum = Object.values(currentShares).reduce((acc, v) => acc + v, 0);
+      const diff = total - currentSum;
+      if (diff === 0) return currentShares;
+
+      // Find member with highest share to absorb difference cleanly
+      let targetUserId = activeMembers[0]?.user_id;
+      let maxVal = -1;
+      activeMembers.forEach((m) => {
+        if ((currentShares[m.user_id] || 0) > maxVal) {
+          maxVal = currentShares[m.user_id] || 0;
+          targetUserId = m.user_id;
+        }
+      });
+
+      if (targetUserId) {
+        currentShares[targetUserId] = Math.max(0, (currentShares[targetUserId] || 0) + diff);
+      }
+
+      // Sync string inputs
+      const newStrings: Record<string, string> = {};
+      activeMembers.forEach((m) => {
+        newStrings[m.user_id] = ((currentShares[m.user_id] || 0) / 100).toFixed(2);
+      });
+      setShareInputStrings(newStrings);
+
+      return currentShares;
     });
-    setShareInputStrings(updatedStrings);
   };
 
-  // Reset custom shares to equal
   const handleResetCustomToEqual = () => {
     if (!extractedReceipt) return;
     setIsCustomManual(false);
-    setShareInputStrings({});
-    if (extractedReceipt.items.length > 0) {
-      splitAllWithEveryone();
-    } else {
-      const initialShares: Record<string, number> = {};
-      const base = Math.floor(extractedReceipt.totalCents / Math.max(1, activeMembers.length));
-      const rem = extractedReceipt.totalCents % Math.max(1, activeMembers.length);
-      activeMembers.forEach((m, i) => {
-        initialShares[m.user_id] = base + (i < rem ? 1 : 0);
-      });
-      setCustomSharesCents(initialShares);
-    }
+    const count = Math.max(1, activeMembers.length);
+    const base = Math.floor(extractedReceipt.totalCents / count);
+    const rem = extractedReceipt.totalCents % count;
+
+    const resetShares: Record<string, number> = {};
+    const resetStrings: Record<string, string> = {};
+    activeMembers.forEach((m, idx) => {
+      const cents = base + (idx < rem ? 1 : 0);
+      resetShares[m.user_id] = cents;
+      resetStrings[m.user_id] = (cents / 100).toFixed(2);
+    });
+
+    setCustomSharesCents(resetShares);
+    setShareInputStrings(resetStrings);
   };
 
-  // Derive active live shares
-  const activeShares: Record<string, number> = useMemo(() => {
-    if (isCustomManual && Object.keys(customSharesCents).length > 0) {
-      return customSharesCents;
-    }
-    return computeItemizedShares();
-  }, [isCustomManual, customSharesCents, extractedReceipt]);
+  const handleZeroOutTraveler = (userId: string) => {
+    setIsCustomManual(true);
+    setCustomSharesCents((prev) => ({
+      ...prev,
+      [userId]: 0,
+    }));
+    setShareInputStrings((prev) => ({
+      ...prev,
+      [userId]: '0.00',
+    }));
+  };
 
-  const totalAllocatedCents = Object.values(activeShares).reduce((a, b) => a + b, 0);
-  const totalDueCents = extractedReceipt?.totalCents || 0;
-  const discrepancyCents = totalDueCents - totalAllocatedCents;
+  const handleAssignRemainderToTraveler = (userId: string) => {
+    if (!extractedReceipt) return;
+    setIsCustomManual(true);
+    const total = extractedReceipt.totalCents;
+    
+    setCustomSharesCents((prev) => {
+      const current = { ...prev };
+      activeMembers.forEach((m) => {
+        if (current[m.user_id] === undefined) {
+          current[m.user_id] = activeShares[m.user_id] || 0;
+        }
+      });
+      let sumOther = 0;
+      activeMembers.forEach((m) => {
+        if (m.user_id !== userId) {
+          sumOther += current[m.user_id] || 0;
+        }
+      });
+      const remainder = Math.max(0, total - sumOther);
+      current[userId] = remainder;
+
+      const newStrings: Record<string, string> = {};
+      activeMembers.forEach((m) => {
+        newStrings[m.user_id] = ((current[m.user_id] || 0) / 100).toFixed(2);
+      });
+      setShareInputStrings(newStrings);
+
+      return current;
+    });
+  };
+
+  // Discrepancy calculations for manual custom mode
+  const totalAllocatedCents = useMemo(() => {
+    return activeMembers.reduce((sum, m) => sum + (activeShares[m.user_id] || 0), 0);
+  }, [activeMembers, activeShares]);
+
+  const discrepancyCents = useMemo(() => {
+    if (!extractedReceipt) return 0;
+    return extractedReceipt.totalCents - totalAllocatedCents;
+  }, [extractedReceipt, totalAllocatedCents]);
 
   const handleConfirm = async () => {
-    if (!extractedReceipt || isSubmitting) return;
-
-    if (splitMode === 'ITEMIZED' && isCustomManual && discrepancyCents !== 0) {
-      setErrorMsg(
-        discrepancyCents > 0
-          ? `Please allocate the remaining ${curSymbol}${(discrepancyCents / 100).toFixed(2)} before confirming.`
-          : `Allocated shares exceed bill total by ${curSymbol}${(Math.abs(discrepancyCents) / 100).toFixed(2)}.`
-      );
-      return;
-    }
-
-    const selectedPayer = paidByUserId || currentUserId || activeMembers[0]?.user_id;
-
-    // In non-manual mode, absorb any tiny integer rounding discrepancy into highest share
-    const finalShares = { ...activeShares };
-    if (!isCustomManual && discrepancyCents !== 0) {
-      const sorted = [...activeMembers].sort((a, b) => (finalShares[b.user_id] || 0) - (finalShares[a.user_id] || 0));
-      const primaryTarget = sorted[0]?.user_id || selectedPayer;
-      finalShares[primaryTarget] = Math.max(0, (finalShares[primaryTarget] || 0) + discrepancyCents);
-    }
-
-    const customSplits = activeMembers.map((m) => ({
-      user_id: m.user_id,
-      owes_cents: finalShares[m.user_id] || 0,
-    }));
-
+    if (!extractedReceipt) return;
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
+      const formattedCustomSplits = activeMembers.map((m) => ({
+        user_id: m.user_id,
+        owes_cents: activeShares[m.user_id] || 0,
+      }));
+
       await onConfirmExpense(
         extractedReceipt.merchant,
         extractedReceipt.totalCents,
-        splitMode,
-        splitMode === 'ITEMIZED' && extractedReceipt.items.length > 0 && !isCustomManual 
-          ? extractedReceipt.items 
-          : undefined,
+        splitMode === 'EQUAL' ? 'EQUAL' : 'ITEMIZED',
+        extractedReceipt.items,
         extractedReceipt.taxCents,
         extractedReceipt.tipCents,
-        selectedPayer,
-        splitMode === 'ITEMIZED' ? customSplits : undefined
+        paidByUserId,
+        formattedCustomSplits
       );
 
       // On success: clear state and close
@@ -444,6 +605,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
       setErrorMsg(null);
       setCustomSharesCents({});
       setShareInputStrings({});
+      setItemPriceInputs({});
+      setTotalInputString(null);
       setIsCustomManual(false);
       onClose();
     } catch (err: any) {
@@ -456,7 +619,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
     }
   };
 
-  const isConfirmDisabled = isSubmitting || (splitMode === 'ITEMIZED' && isCustomManual && discrepancyCents !== 0);
+  const isConfirmDisabled = isSubmitting || !extractedReceipt || extractedReceipt.totalCents <= 0 || (splitMode === 'ITEMIZED' && isCustomManual && discrepancyCents !== 0);
 
   if (!isOpen) return null;
 
@@ -494,7 +657,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 </h3>
                 <p className="text-[11px] text-[var(--muted)] font-mono m-0 mt-0.5">
                   {extractedReceipt 
-                    ? `${activeMembers.length} party members · Custom split configuration` 
+                    ? `${activeMembers.length} party members • Custom split configuration` 
                     : 'Auto-scan paper bills, extract line items, and assign shares'}
                 </p>
               </div>
@@ -655,6 +818,50 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
 
                 {/* Right: Bill Settlement & Traveler Assignment Cockpit */}
                 <div className="lg:col-span-7 space-y-4">
+                  {/* Notice: Significant Mismatch Banner (when items + tax + tip differ by >1% from total) */}
+                  {hasMismatchNotice && (
+                    <div className="p-3.5 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)] flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--owes)]" />
+                      <div className="space-y-1">
+                        <div className="font-semibold leading-relaxed">
+                          Items and tax add up to {curSymbol}{(itemsPlusTaxTipCents / 100).toFixed(2)}, but the bill total is {curSymbol}{(extractedReceipt.totalCents / 100).toFixed(2)}. {curSymbol}{(Math.abs(mismatchCents) / 100).toFixed(2)} is not matched to any item.
+                        </div>
+                        <div className="text-[11px] text-[var(--muted)]">
+                          You can edit the bill total or individual line items below to reconcile before confirming.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bill Overview & Editable Total Header */}
+                  <div className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                        MERCHANT & BILL TOTAL
+                      </div>
+                      <div className="text-sm font-display font-bold text-[var(--text)]">
+                        {extractedReceipt.merchant}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[var(--muted)]">Total:</span>
+                      <div className="flex items-center gap-1 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-lg px-2.5 py-1">
+                        <span className="text-xs font-mono font-bold text-[var(--text)]">{curSymbol}</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={totalInputString ?? (extractedReceipt.totalCents / 100).toFixed(2)}
+                          onChange={(e) => handleBillTotalChange(e.target.value)}
+                          onBlur={handleBillTotalBlur}
+                          aria-label="Edit bill total"
+                          className="w-24 bg-transparent text-xs font-mono font-bold text-[var(--text)] text-right focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Who Paid Section */}
                   <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2">
                     <div className="text-[11px] font-mono text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
@@ -748,54 +955,24 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                     /* Equal Split Breakdown */
                     <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-3">
                       <div className="flex items-center justify-between text-xs font-mono">
-                        <span className="text-[var(--muted)]">PER TRAVELER SHARE:</span>
+                        <span className="text-[var(--muted)]">EACH PERSON OWES</span>
                         <span className="text-base font-bold text-[var(--text)] tabular-nums">
                           {curSymbol}{(perPersonEqualCents / 100).toFixed(2)}
                         </span>
                       </div>
-
-                      <div className="pt-2 border-t border-[var(--border)] space-y-1.5">
-                        <div className="text-[11px] text-[var(--muted)] font-body">
-                          Even split between all {activeMembers.length} travelers:
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                          {activeMembers.map((m) => {
-                            const tag = getMemberTagColor(m.user_id);
-                            return (
-                              <div
-                                key={m.user_id}
-                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)] flex items-center justify-between"
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <span
-                                    style={{
-                                      backgroundColor: tag.bg,
-                                      color: tag.text,
-                                      borderColor: tag.border,
-                                    }}
-                                    className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center"
-                                  >
-                                    {m.name.slice(0, 2).toUpperCase()}
-                                  </span>
-                                  <span className="truncate max-w-[90px]">{m.name}</span>
-                                </div>
-                                <span className="tabular-nums font-semibold">
-                                  {curSymbol}{(perPersonEqualCents / 100).toFixed(2)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      <p className="text-xs text-[var(--muted)] font-body m-0">
+                        Total {curSymbol}{(extractedReceipt.totalCents / 100).toFixed(2)} is split equally across all {activeMembers.length} active travelers.
+                      </p>
                     </div>
                   ) : (
-                    /* Custom Split: Interactive Traveler Shares with Fluid Number Inputs */
-                    <div className="space-y-3">
-                      <div className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2.5">
-                        <div className="flex items-center justify-between text-xs font-mono">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[var(--muted)] font-semibold uppercase tracking-wider">
-                              Custom Traveler Shares:
+                    /* Custom Split & Line Items Configuration */
+                    <div className="space-y-4">
+                      {/* Manual Custom Traveler Shares Box */}
+                      <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-[var(--text)] font-semibold uppercase tracking-wider">
+                              Per-Traveler Share
                             </span>
                             <span className="text-[10px] text-[var(--muted)]">
                               (Type exact amounts below)
@@ -816,7 +993,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                             return (
                               <div
                                 key={m.user_id}
-                                className="px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)] flex items-center justify-between gap-2"
+                                className="flex items-center justify-between p-2 rounded-xl bg-[var(--canvas)] border border-[var(--border)] gap-2"
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span
@@ -825,7 +1002,7 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                       color: tag.text,
                                       borderColor: tag.border,
                                     }}
-                                    className="w-5 h-5 rounded text-[10px] font-bold border flex items-center justify-center shrink-0"
+                                    className="w-5 h-5 rounded-md text-[9px] font-bold border flex items-center justify-center shrink-0"
                                   >
                                     {m.name.slice(0, 2).toUpperCase()}
                                   </span>
@@ -912,23 +1089,23 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Line Items Assignment Section (if items were extracted from bill) */}
-                      {extractedReceipt.items.length > 0 && (
-                        <>
-                          <div className="flex items-center justify-between text-xs font-mono pt-1">
-                            <span className="text-[var(--muted)] uppercase">OR ASSIGN ITEMS TO TRAVELERS:</span>
-                            <button
-                              type="button"
-                              onClick={splitAllWithEveryone}
-                              className="text-[11px] text-[var(--text)] hover:underline cursor-pointer font-mono"
-                            >
-                              Reset All to Everyone
-                            </button>
-                          </div>
+                      {/* Line Items Assignment Section (with editable item names and prices) */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs font-mono pt-1">
+                          <span className="text-[var(--muted)] uppercase">EDIT & ASSIGN ITEMS TO TRAVELERS:</span>
+                          <button
+                            type="button"
+                            onClick={splitAllWithEveryone}
+                            className="text-[11px] text-[var(--text)] hover:underline cursor-pointer font-mono"
+                          >
+                            Reset All to Everyone
+                          </button>
+                        </div>
 
+                        {extractedReceipt.items.length > 0 ? (
                           <div 
                             data-lenis-prevent="true"
-                            className="space-y-2 max-h-[240px] overflow-y-auto overscroll-contain pr-1.5"
+                            className="space-y-2 max-h-[260px] overflow-y-auto overscroll-contain pr-1.5"
                             style={{ overscrollBehavior: 'contain' }}
                           >
                             {extractedReceipt.items.map((item, itemIdx) => {
@@ -937,13 +1114,38 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                                   key={itemIdx}
                                   className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2"
                                 >
-                                  <div className="flex items-center justify-between text-xs font-mono">
-                                    <span className="font-medium text-[var(--text)] truncate max-w-[220px]">
-                                      {item.name}
-                                    </span>
-                                    <span className="font-bold tabular-nums text-[var(--text)] shrink-0">
-                                      {curSymbol}{(item.priceCents / 100).toFixed(2)}
-                                    </span>
+                                  {/* Editable Item Header */}
+                                  <div className="flex items-center justify-between text-xs font-mono gap-2">
+                                    <input
+                                      type="text"
+                                      value={item.name}
+                                      onChange={(e) => handleUpdateItemName(itemIdx, e.target.value)}
+                                      placeholder="Item name"
+                                      aria-label={`Item ${itemIdx + 1} name`}
+                                      className="flex-1 bg-transparent border-b border-transparent hover:border-[var(--border)] focus:border-white/40 text-xs font-mono text-[var(--text)] py-0.5 focus:outline-none font-medium truncate"
+                                    />
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="text-xs text-[var(--muted)] font-mono">{curSymbol}</span>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={itemPriceInputs[itemIdx] ?? (item.priceCents / 100).toFixed(2)}
+                                        onChange={(e) => handleUpdateItemPrice(itemIdx, e.target.value)}
+                                        onBlur={() => handleItemPriceBlur(itemIdx)}
+                                        aria-label={`Item ${itemIdx + 1} price`}
+                                        className="w-20 bg-[var(--surface-elevated)] border border-[var(--border)] rounded px-1.5 py-0.5 text-xs font-mono font-bold text-right text-[var(--text)] tabular-nums focus:border-white/40 focus:outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteItem(itemIdx)}
+                                        title="Delete item"
+                                        aria-label={`Delete ${item.name}`}
+                                        className="p-1 text-[var(--muted)] hover:text-[var(--owes)] cursor-pointer transition-colors"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
                                   </div>
 
                                   {/* Claim chips */}
@@ -982,8 +1184,29 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                               );
                             })}
                           </div>
-                        </>
-                      )}
+                        ) : (
+                          <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center text-xs font-mono text-[var(--muted)]">
+                            No individual line items. Total bill will split equally across travelers.
+                          </div>
+                        )}
+
+                        {/* Add Item Action & Subtotals */}
+                        <div className="flex items-center justify-between pt-1">
+                          <button
+                            type="button"
+                            onClick={handleAddNewItem}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[var(--border)] text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] hover:border-white/30 transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add Line Item</span>
+                          </button>
+                          <div className="text-[11px] font-mono text-[var(--muted)]">
+                            Items: {curSymbol}{(itemsSubtotalCents / 100).toFixed(2)}
+                            {extractedReceipt.taxCents > 0 && ` • Tax: ${curSymbol}${(extractedReceipt.taxCents / 100).toFixed(2)}`}
+                            {extractedReceipt.tipCents > 0 && ` • Tip: ${curSymbol}${(extractedReceipt.tipCents / 100).toFixed(2)}`}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1000,6 +1223,8 @@ export const ReceiptDropModal: React.FC<ReceiptDropModalProps> = ({
                 setErrorMsg(null);
                 setCustomSharesCents({});
                 setShareInputStrings({});
+                setItemPriceInputs({});
+                setTotalInputString(null);
                 setIsCustomManual(false);
               }}
               className="flex items-center gap-1.5 text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
