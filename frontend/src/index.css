@@ -87,6 +87,15 @@
     color: var(--text);
   }
 
+  /* Robust background scroll lock when any dialog or modal is open */
+  html.modal-locked,
+  body.modal-locked {
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    overscroll-behavior: none !important;
+  }
+
   body {
     margin: 0;
     padding: 0;

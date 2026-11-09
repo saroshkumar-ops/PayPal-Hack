@@ -12,7 +12,7 @@ import {
 import type { TripLedger } from '../types';
 import { VirtualTripCard } from '../components/cards/VirtualTripCard';
 import { PaperReceipt } from '../components/bits/PaperReceipt';
-import { Avatar } from '../components/ui/Avatar';
+import { Avatar, getMemberTagColor } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
@@ -395,6 +395,55 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 </div>
               )}
             </div>
+
+            {/* If there is a recorded expense, display the traveler split roster explicitly */}
+            {latestExpense && (
+              <div className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] space-y-2.5">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
+                    <span className="text-[var(--text)] font-semibold uppercase tracking-wider">
+                      {latestExpense.split_type === 'EQUAL' ? 'Equal Bill Allocation' : 'Custom Bill Allocation'}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold tabular-nums text-[var(--text)] font-mono">
+                    {cur}{(latestExpense.amount_cents / 100).toFixed(2)} Total
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {latestExpense.splits.map((s) => {
+                    const m = ledger.members.find((mem) => mem.user_id === s.user_id);
+                    const tag = getMemberTagColor(s.user_id);
+                    const name = m?.name || s.user_id;
+
+                    return (
+                      <div
+                        key={s.user_id}
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--canvas)] border border-[var(--border)] flex items-center justify-between text-xs font-mono"
+                      >
+                        <div className="flex items-center gap-1.5 truncate min-w-0">
+                          <span
+                            style={{
+                              backgroundColor: tag.bg,
+                              color: tag.text,
+                              borderColor: tag.border,
+                            }}
+                            className="w-4 h-4 rounded text-[9px] font-bold border flex items-center justify-center shrink-0"
+                          >
+                            {name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="truncate text-[var(--text)]">{name}</span>
+                        </div>
+                        <span className="font-bold tabular-nums text-[var(--text)] shrink-0 ml-2">
+                          {cur}{(s.owes_cents / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Organizer Payout Treasury Card */}

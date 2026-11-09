@@ -29,47 +29,65 @@ export const LenisProvider: React.FC<LenisProviderProps> = ({ children }) => {
     // Stop Lenis when any modal is open, and freeze body/document scrolling
     const syncModalState = () => {
       const hasOpenModal = Boolean(
-        document.querySelector('[data-modal-open="true"], [data-lenis-prevent], [role="dialog"], .fixed.inset-0.z-50')
+        document.querySelector('[data-modal-open="true"], [role="dialog"], .fixed.inset-0.z-50')
       );
       if (hasOpenModal) {
         lenis.stop();
-        document.body.classList.add('overflow-hidden');
-        document.documentElement.classList.add('overflow-hidden');
+        document.body.classList.add('overflow-hidden', 'modal-locked');
+        document.documentElement.classList.add('overflow-hidden', 'modal-locked');
       } else {
         lenis.start();
-        document.body.classList.remove('overflow-hidden');
-        document.documentElement.classList.remove('overflow-hidden');
+        document.body.classList.remove('overflow-hidden', 'modal-locked');
+        document.documentElement.classList.remove('overflow-hidden', 'modal-locked');
       }
     };
 
     // Strict wheel event isolation: when a modal is open, prevent window scroll chaining
     const handleGlobalWheel = (e: WheelEvent) => {
       const openModal = document.querySelector(
-        '[data-modal-open="true"], [data-lenis-prevent], [role="dialog"], .fixed.inset-0.z-50'
+        '[data-modal-open="true"], [role="dialog"], .fixed.inset-0.z-50'
       );
       if (!openModal) return;
 
       const target = e.target as HTMLElement | null;
-      const scrollable = target?.closest('.overflow-y-auto, .overflow-y-scroll');
+      if (!target || !openModal.contains(target)) {
+        // Pointer is on backdrop or outside modal: block wheel from moving background
+        e.preventDefault();
+        return;
+      }
 
-      // If wheel occurs outside any scrollable container within the modal, prevent background scroll
+      // Check if pointer is inside a scrollable container within the modal
+      const scrollable = target.closest('.overflow-y-auto, .overflow-y-scroll') as HTMLElement | null;
       if (!scrollable || !openModal.contains(scrollable)) {
+        // Pointer is on static header or unscrollable section: block wheel
+        e.preventDefault();
+        return;
+      }
+
+      // Inside scrollable container: prevent scroll chaining when reaching edges
+      const isUp = e.deltaY < 0;
+      const isDown = e.deltaY > 0;
+      const atTop = scrollable.scrollTop <= 0;
+      const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+
+      if ((isUp && atTop) || (isDown && atBottom)) {
         e.preventDefault();
       }
     };
 
-    window.addEventListener('wheel', handleGlobalWheel, { passive: false });
+    // Capture phase ensures we intercept before any chaining occurs
+    window.addEventListener('wheel', handleGlobalWheel, { capture: true, passive: false });
 
     const observer = new MutationObserver(syncModalState);
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      window.removeEventListener('wheel', handleGlobalWheel);
+      window.removeEventListener('wheel', handleGlobalWheel, { capture: true });
       observer.disconnect();
       cancelAnimationFrame(rafId);
       lenis.destroy();
-      document.body.classList.remove('overflow-hidden');
-      document.documentElement.classList.remove('overflow-hidden');
+      document.body.classList.remove('overflow-hidden', 'modal-locked');
+      document.documentElement.classList.remove('overflow-hidden', 'modal-locked');
     };
   }, []);
 
