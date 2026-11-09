@@ -8,7 +8,14 @@ import {
   Check, 
   ChevronRight,
   HelpCircle,
-  X
+  X,
+  Plus,
+  Compass,
+  CreditCard,
+  Sparkles,
+  Users,
+  ShieldCheck,
+  Split
 } from 'lucide-react';
 import type { TripLedger } from '../types';
 import { VirtualTripCard } from '../components/cards/VirtualTripCard';
@@ -18,20 +25,28 @@ import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { getCurrencySymbol } from '../lib/currency';
 import { getNotificationLabel } from '../lib/notifications';
-import { formatPartyName } from '../lib/formatters';
+import { formatPartyName, formatCategoryName } from '../lib/formatters';
 
 interface OverviewPageProps {
   ledger: TripLedger;
+  hasNoParties?: boolean;
+  currentUserName?: string;
   onOpenReceiptModal: () => void;
   onOpenPayoutModal: () => void;
   onOpenAddMemberModal?: () => void;
+  onOpenCreateParty?: () => void;
+  onOpenAllParties?: () => void;
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({
   ledger,
+  hasNoParties = false,
+  currentUserName,
   onOpenReceiptModal,
   onOpenPayoutModal,
   onOpenAddMemberModal,
+  onOpenCreateParty,
+  onOpenAllParties,
 }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
@@ -42,6 +57,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
+
+  const isZeroParty = hasNoParties || !ledger.trip_id || ledger.members.length === 0;
 
   // Compute live financial totals from real ledger data (no placeholders)
   const totalSpendCents = ledger.expenses.reduce((acc, exp) => acc + exp.amount_cents, 0);
@@ -59,7 +76,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
   });
 
   const settledPercentage = totalSpendCents > 0 ? Math.round((settledCents / totalSpendCents) * 100) : 0;
-  const cur = getCurrencySymbol(ledger.currency);
+  const cur = getCurrencySymbol(ledger.currency || 'INR');
 
   const organizer = ledger.members.find((m) => m.role === 'organizer') || ledger.members[0] || {
     user_id: 'organizer',
@@ -117,6 +134,105 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       })
     : [];
 
+  // =========================================================================
+  // ZERO PARTIES EMPTY STATE (First-time user onboarding)
+  // =========================================================================
+  if (isZeroParty) {
+    return (
+      <div className="w-full max-w-4xl mx-auto py-8 sm:py-12 px-4 space-y-8">
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-10 text-center space-y-6 shadow-[0_24px_64px_rgba(0,0,0,0.8)]">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+            <Sparkles className="w-3.5 h-3.5 text-white/80" />
+            <span>Welcome to TripSheriff</span>
+          </div>
+
+          {/* Heading */}
+          <div className="space-y-2 max-w-xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-[var(--text)] tracking-tight m-0">
+              {currentUserName ? `Welcome, ${currentUserName}!` : 'Start Your First Party'}
+            </h1>
+            <p className="text-xs sm:text-sm text-[var(--muted)] font-body leading-relaxed m-0">
+              You don&apos;t have any parties yet. Create a party to invite friends, upload receipts with AI scanning, and calculate instant splits settled directly through PayPal.
+            </p>
+          </div>
+
+          {/* Primary Action: ONE lime-filled button */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {onOpenCreateParty && (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={onOpenCreateParty}
+                icon={<Plus className="w-4 h-4" />}
+                className="w-full sm:w-auto px-6 py-3"
+              >
+                Create Your First Party
+              </Button>
+            )}
+            {onOpenAllParties && (
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={onOpenAllParties}
+                icon={<Compass className="w-4 h-4" />}
+                className="w-full sm:w-auto px-6 py-3"
+              >
+                Browse Parties
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
+              <Users className="w-4 h-4 text-[var(--text)]" />
+            </div>
+            <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">1. Group Parties & Friends</h3>
+            <p className="text-xs text-[var(--muted)] font-body leading-relaxed m-0">
+              Create dedicated parties for group trips, roommate bills, or weekend dinners. Add friends with handles or PayPal emails.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
+              <ReceiptText className="w-4 h-4 text-[var(--text)]" />
+            </div>
+            <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">2. Vision AI Receipt Extraction</h3>
+            <p className="text-xs text-[var(--muted)] font-body leading-relaxed m-0">
+              Drop any paper or digital receipt. Llama-3.2 Vision automatically parses line items, quantities, tax, tip, and total.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
+              <Split className="w-4 h-4 text-[var(--text)]" />
+            </div>
+            <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">3. Fair Custom Splits</h3>
+            <p className="text-xs text-[var(--muted)] font-body leading-relaxed m-0">
+              Split bills equally or let each traveler claim their specific items. Live tallying prevents round-off errors.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4 text-[var(--text)]" />
+            </div>
+            <h3 className="text-sm font-display font-bold text-[var(--text)] m-0">4. Minimum Cash Flow Settlement</h3>
+            <p className="text-xs text-[var(--muted)] font-body leading-relaxed m-0">
+              Our graph solver reduces 10 cross-payments down to the absolute mathematical minimum, settled directly via PayPal.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // ACTIVE PARTY DASHBOARD (Split is present & Uploaded bills are seen)
+  // =========================================================================
   return (
     <div className="space-y-6 w-full max-w-[1560px] mx-auto py-2">
       {/* ================================================================ */}
@@ -125,12 +241,26 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            {/* Active Trip Marker (Off-white pill, strictly no lime dot) */}
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
-              <span className="w-1.5 h-1.5 bg-white/70 rounded-full" />
-              <span className="font-semibold">{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
-              <span className="text-[var(--muted)]">·</span>
-              <span className="text-[var(--muted)]">{ledger.members.length} {ledger.members.length === 1 ? 'traveler' : 'travelers'}</span>
+            {/* Active Trip Marker & Party Switcher Link */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+                <span className="w-1.5 h-1.5 bg-white/70 rounded-full" />
+                <span className="font-semibold">{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
+                <span className="text-[var(--muted)]">·</span>
+                <span className="text-[var(--muted)]">{ledger.members.length} {ledger.members.length === 1 ? 'traveler' : 'travelers'}</span>
+              </div>
+
+              {onOpenAllParties && (
+                <button
+                  type="button"
+                  onClick={onOpenAllParties}
+                  title="Switch or manage your parties"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--canvas)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+                >
+                  <Compass className="w-3 h-3" />
+                  <span>Switch Party</span>
+                </button>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-[var(--text)] tracking-tight leading-none m-0">
@@ -194,7 +324,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
       {/* 2. MAIN WORKSPACE: ROSTER + DIRECTIVES (LEFT) & RECEIPT (RIGHT)  */}
       {/* ================================================================ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN (7 COLS): DIRECTIVES, ROSTER & METRICS */}
+        {/* LEFT COLUMN (7 COLS): DIRECTIVES, ROSTER, UPLOADED BILLS & METRICS */}
         <section className="lg:col-span-7 space-y-6">
           {/* Direct Settlement Directives */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 space-y-4">
@@ -352,6 +482,95 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 );
               })}
             </div>
+          </div>
+
+          {/* ============================================================ */}
+          {/* UPLOADED BILLS & EXPENSES PREVIEW (Directly seen on open)    */}
+          {/* ============================================================ */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[var(--muted)]" />
+                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                  Uploaded Bills ({ledger.expenses.length})
+                </span>
+              </div>
+
+              <Link to="/ledger" className="no-underline">
+                <span className="text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
+                  <span>View All In Expenses</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </Link>
+            </div>
+
+            {ledger.expenses.length === 0 ? (
+              <div className="p-6 rounded-xl bg-[var(--canvas)] border border-dashed border-[var(--border)] text-center space-y-2">
+                <p className="text-xs font-body text-[var(--muted)] m-0">
+                  No bills uploaded for this party yet.
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenReceiptModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--text)] transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <span>Upload Bill Now</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {ledger.expenses.slice(0, 5).map((exp) => {
+                  const payer = ledger.members.find(m => m.user_id === exp.paid_by);
+                  const isAllSettled = exp.splits.every(s => s.paid_status === 'SETTLED');
+
+                  return (
+                    <div
+                      key={exp.expense_id}
+                      className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3 text-xs font-mono"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center shrink-0">
+                          <ReceiptText className="w-3.5 h-3.5 text-[var(--muted)]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[var(--text)] truncate max-w-[200px] sm:max-w-[280px]">
+                            {exp.description}
+                          </div>
+                          <div className="text-xs text-[var(--muted)] flex items-center gap-2">
+                            <span>{new Date(exp.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            <span>·</span>
+                            <span>{formatCategoryName(exp.category)}</span>
+                            <span>·</span>
+                            <span>Paid by {payer?.name || exp.paid_by}</span>
+                            <span>·</span>
+                            <span className="uppercase text-[var(--muted)]">{exp.split_type}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-bold tabular-nums text-sm text-[var(--text)]">
+                          {cur}{(exp.amount_cents / 100).toFixed(2)}
+                        </span>
+                        <StatusPill
+                          status={isAllSettled ? 'paid' : 'pending'}
+                          label={isAllSettled ? 'Settled' : 'Pending'}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {ledger.expenses.length > 5 && (
+                  <div className="pt-2 text-center">
+                    <Link to="/ledger" className="no-underline text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors">
+                      + {ledger.expenses.length - 5} more bills in Expenses tab →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Horizontal Financial Tally Strip (No identical 3-card grid) */}

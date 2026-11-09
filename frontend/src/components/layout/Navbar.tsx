@@ -8,7 +8,9 @@ import {
   Users,
   Maximize2, 
   Minimize2,
-  LogOut 
+  LogOut,
+  Compass,
+  ChevronDown
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { Button } from '../ui/Button';
@@ -19,6 +21,8 @@ interface NavbarProps {
   tripName?: string;
   onOpenReceiptModal: () => void;
   onNewParty?: () => void;
+  onOpenAllParties?: () => void;
+  partyCount?: number;
   currentUser?: AuthResponseDto | null;
   onLogout?: () => void;
 }
@@ -27,6 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   tripName,
   onOpenReceiptModal,
   onNewParty,
+  onOpenAllParties,
+  partyCount,
   currentUser,
   onLogout,
 }) => {
@@ -60,18 +66,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--canvas)] px-4 sm:px-6 lg:px-8 py-3">
       <div className="w-full flex items-center justify-between gap-3">
-        {/* Brand Identity & Active Trip Name */}
+        {/* Brand Identity & Active Trip Name Switcher */}
         <div className="flex items-center gap-3">
           <NavLink to="/" className="no-underline flex items-center">
             <Logo size="md" />
           </NavLink>
 
-          {tripName && (
-            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+          {tripName ? (
+            <button
+              type="button"
+              onClick={onOpenAllParties}
+              title="Click to view all parties or switch"
+              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--text)] transition-colors cursor-pointer"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
               <span className="font-semibold truncate max-w-[160px]">{formatPartyName(tripName)}</span>
-            </div>
-          )}
+              {onOpenAllParties && <ChevronDown className="w-3 h-3 text-[var(--muted)] ml-0.5" />}
+            </button>
+          ) : null}
         </div>
 
         {/* Desktop Navigation Tabs */}
@@ -96,15 +108,34 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Actions & Utilities */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* My Parties Action Button */}
+          {onOpenAllParties && (
+            <button
+              type="button"
+              onClick={onOpenAllParties}
+              title="View all your parties and switch"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <span className="hidden sm:inline">My Parties</span>
+              {typeof partyCount === 'number' && partyCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--muted)]">
+                  {partyCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* New Trip Action Button */}
           {onNewParty && (
             <button
+              type="button"
               onClick={onNewParty}
               title="Create a new trip"
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 text-[var(--muted)]" />
-              <span className="hidden sm:inline">New Trip</span>
+              <span className="hidden sm:inline">New Party</span>
             </button>
           )}
 
@@ -131,6 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
               {onLogout && (
                 <button
+                  type="button"
                   onClick={onLogout}
                   title="Sign Out"
                   className="ml-1 p-0.5 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
@@ -143,6 +175,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Fullscreen Mode Button */}
           <button
+            type="button"
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
             className="flex items-center justify-center p-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"

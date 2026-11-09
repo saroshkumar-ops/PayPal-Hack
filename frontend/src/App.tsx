@@ -14,6 +14,7 @@ import { PayoutModal } from './components/settlement/PayoutModal';
 import { ReceiptDropModal, type ExtractedItemDraft } from './components/bits/ReceiptDropModal';
 import { CreatePartyModal, type PartyMemberDraft } from './components/bits/CreatePartyModal';
 import { AddMemberModal } from './components/bits/AddMemberModal';
+import { AllPartiesModal } from './components/bits/AllPartiesModal';
 import { PayPalCheckoutDrawer } from './components/checkout/PayPalCheckoutDrawer';
 import { LenisProvider } from './components/common/LenisProvider';
 
@@ -27,6 +28,7 @@ import {
   tripService,
   memberService
 } from './api/services';
+import { userPartyService, type UserPartyItem } from './api/userPartyService';
 import type { TripLedger, ChatMessage, PayPalEventLog, ItemClaimDto, CustomSplitDto, AuthResponseDto } from './types';
 import { EMPTY_LEDGER } from './api/mockData';
 import { formatPartyName } from './lib/formatters';
@@ -37,6 +39,10 @@ export function App() {
     return authService.getCurrentUser();
   });
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+  const [isPartyLoading, setIsPartyLoading] = useState<boolean>(true);
+
+  // User's connected parties list
+  const [userParties, setUserParties] = useState<UserPartyItem[]>([]);
 
   const [activeTripId, setActiveTripId] = useState<string | null>(() => {
     return localStorage.getItem('active_trip_id');
@@ -52,6 +58,8 @@ export function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isCreatePartyModalOpen, setIsCreatePartyModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isAllPartiesModalOpen, setIsAllPartiesModalOpen] = useState(false);
+
   const [checkoutDrawer, setCheckoutDrawer] = useState<{
     isOpen: boolean;
     debtorName: string;
@@ -104,57 +112,35 @@ export function App() {
     }
   }, [activeTripId]);
 
-  // Ensure an active party exists for the logged in user
+  // Ensure and discover all parties belonging to the authenticated user
   const ensureUserParty = useCallback(async (user: AuthResponseDto) => {
+    setIsPartyLoading(true);
     try {
-      const savedTripId = localStorage.getItem('active_trip_id');
-      if (savedTripId) {
-        try {
-          const l = await ledgerService.getLedger(savedTripId);
-          if (l && l.trip_id && l.members && l.members.length > 0) {
-            setActiveTripId(savedTripId);
-            setLedger(l);
-            return;
-          }
-        } catch {}
-      }
+      const parties = await userPartyService.getUserParties(user);
+      setUserParties(parties);
 
-      // Check existing trips from backend
-      const trips = await tripService.getAllTrips();
-      if (trips && trips.length > 0) {
-        const lastTrip = trips[trips.length - 1];
-        localStorage.setItem('active_trip_id', lastTrip.trip_id);
-        setActiveTripId(lastTrip.trip_id);
-        const l = await ledgerService.getLedger(lastTrip.trip_id);
-        setLedger(l);
-        return;
-      }
+      if (parties && parties.length > 0) {
+        const savedActive = userPartyService.getActiveTripId(user.user_id);
+        const activeItem = (savedActive && parties.some((p) => p.trip_id === savedActive))
+          ? savedActive
+          : parties[0].trip_id;
 
-      // If no trips exist in backend, create initial party for the user
-      const safeSlug = (user.name || 'User').toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const newTripId = `party_${safeSlug}_${Date.now().toString(36).slice(-4)}`;
-      const tripName = `${user.name || 'User'}'s Party`;
-      await tripService.createTrip({
-        trip_id: newTripId,
-        name: tripName,
-        currency: 'INR',
-      });
-      await memberService.addMember(newTripId, {
-        user_id: user.user_id,
-        name: user.name,
-        handle: user.handle || `@${safeSlug}`,
-        paypal_email: user.paypal_email || user.email,
-        role: 'ORGANIZER',
-        roast_consent: 'SPICY',
-      });
-      localStorage.setItem('active_trip_id', newTripId);
-      setActiveTripId(newTripId);
-      const l = await ledgerService.getLedger(newTripId);
-      setLedger(l);
+        userPartyService.setActiveTripId(user.user_id, activeItem);
+        setActiveTripId(activeItem);
+        await loadData(activeItem);
+      } else {
+        // First-time account with zero parties: clear active trip so onboarding card renders
+        setActiveTripId(null);
+        setLedger(EMPTY_LEDGER);
+      }
     } catch (err) {
       console.warn('ensureUserParty error:', err);
+      setActiveTripId(null);
+      setLedger(EMPTY_LEDGER);
+    } finally {
+      setIsPartyLoading(false);
     }
-  }, []);
+  }, [loadData]);
 
   // Verify auth on mount
   useEffect(() => {
@@ -162,6 +148,7 @@ export function App() {
     if (!token) {
       setCurrentUser(null);
       setIsAuthChecking(false);
+      setIsPartyLoading(false);
       return;
     }
     authService.getProfile()
@@ -173,6 +160,7 @@ export function App() {
           setCurrentUser(null);
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_user');
+          setIsPartyLoading(false);
         }
       })
       .catch(() => {
@@ -182,6 +170,7 @@ export function App() {
           ensureUserParty(cached);
         } else {
           setCurrentUser(null);
+          setIsPartyLoading(false);
         }
       })
       .finally(() => {
@@ -206,10 +195,40 @@ export function App() {
     setCurrentUser(null);
     localStorage.removeItem('active_trip_id');
     setActiveTripId(null);
+    setUserParties([]);
     setLedger(EMPTY_LEDGER);
     setMessages([]);
   };
 
+  // Switch active party
+  const handleSelectParty = async (tripId: string) => {
+    if (!currentUser) return;
+    userPartyService.setActiveTripId(currentUser.user_id, tripId);
+    setActiveTripId(tripId);
+    await loadData(tripId);
+  };
+
+  // Delete a party
+  const handleDeleteParty = async (tripId: string) => {
+    if (!currentUser) return;
+    await userPartyService.deleteUserParty(currentUser.user_id, currentUser.email, tripId);
+    const remaining = userParties.filter((p) => p.trip_id !== tripId);
+    setUserParties(remaining);
+
+    if (activeTripId === tripId) {
+      if (remaining.length > 0) {
+        const nextId = remaining[0].trip_id;
+        userPartyService.setActiveTripId(currentUser.user_id, nextId);
+        setActiveTripId(nextId);
+        await loadData(nextId);
+      } else {
+        setActiveTripId(null);
+        setLedger(EMPTY_LEDGER);
+      }
+    }
+  };
+
+  // Create a new party
   const handleCreateNewParty = async (
     name: string, 
     currency: 'USD' | 'INR',
@@ -250,7 +269,21 @@ export function App() {
       }
     }
 
-    localStorage.setItem('active_trip_id', newTripId);
+    const newPartyItem: UserPartyItem = {
+      trip_id: newTripId,
+      name: name,
+      currency: currency,
+      status: 'ACTIVE',
+      created_at: new Date().toISOString(),
+      membersCount: 1 + (additionalMembers?.length || 0),
+      expensesCount: 0,
+      totalSpendCents: 0,
+      role: 'organizer',
+    };
+
+    userPartyService.saveUserParty(currentUser.user_id, currentUser.email, newPartyItem);
+    setUserParties((prev) => [newPartyItem, ...prev.filter((p) => p.trip_id !== newTripId)]);
+    userPartyService.setActiveTripId(currentUser.user_id, newTripId);
     setActiveTripId(newTripId);
     await loadData(newTripId);
     triggerCelebrationConfetti();
@@ -277,6 +310,13 @@ export function App() {
       await loadData(currentTripId);
       setIsAddMemberModalOpen(false);
       triggerCelebrationConfetti();
+
+      // Refresh party metadata
+      if (currentUser) {
+        userPartyService.getUserParties(currentUser).then((refreshed) => {
+          setUserParties(refreshed);
+        });
+      }
     } catch (err) {
       console.error('Failed to add member to party:', err);
     } finally {
@@ -375,11 +415,10 @@ export function App() {
     try {
       const payerId = paidByUserId || organizerId;
       const allMemberIds = ledger.members && ledger.members.length > 0 
-        ? ledger.members.map(m => m.user_id) 
+        ? ledger.members.map((m) => m.user_id) 
         : [payerId];
 
       if (splitType === 'ITEMIZED') {
-        // Derive exact splits from customSplits passed by modal
         let exactSplits: CustomSplitDto[] = [];
         if (customSplits && customSplits.length > 0) {
           exactSplits = customSplits;
@@ -418,7 +457,6 @@ export function App() {
           }));
         }
 
-        // Before sending, verify the sum equals amountCents and throw a clear error if not:
         const sumSplits = exactSplits.reduce((acc, s) => acc + s.owes_cents, 0);
         if (sumSplits !== amountCents) {
           throw new Error(
@@ -436,7 +474,6 @@ export function App() {
             }))
           : undefined;
 
-        // Send split_type "EXACT" with custom_splits
         await expenseService.createExpense(currentTripId, {
           paid_by: payerId,
           amount_cents: amountCents,
@@ -449,7 +486,6 @@ export function App() {
           tip_cents: tipCents || 0,
         });
       } else {
-        // Equal split across all party members
         await expenseService.createExpense(currentTripId, {
           paid_by: payerId,
           amount_cents: amountCents,
@@ -463,6 +499,13 @@ export function App() {
       await loadData(currentTripId);
       setIsReceiptModalOpen(false);
       triggerCelebrationConfetti();
+
+      // Refresh party metadata in userParties list
+      if (currentUser) {
+        userPartyService.getUserParties(currentUser).then((refreshed) => {
+          setUserParties(refreshed);
+        });
+      }
     } catch (err) {
       console.error('Failed to commit scanned expense:', err);
       throw err;
@@ -492,6 +535,13 @@ export function App() {
     try {
       await expenseService.deleteExpense(currentTripId, expenseId);
       await loadData(currentTripId);
+
+      // Refresh party metadata in userParties list
+      if (currentUser) {
+        userPartyService.getUserParties(currentUser).then((refreshed) => {
+          setUserParties(refreshed);
+        });
+      }
     } catch (err) {
       console.error('Failed to delete expense:', err);
     } finally {
@@ -517,8 +567,8 @@ export function App() {
     );
   }
 
-  // 3. Authenticated: If connecting to party ledger
-  if (!ledger.trip_id || ledger.members.length === 0) {
+  // 3. Authenticated: Initial loading of user parties
+  if (isPartyLoading) {
     return (
       <LenisProvider>
         <div className="min-h-screen bg-[var(--canvas)] flex flex-col items-center justify-center relative font-body text-[var(--text)]">
@@ -526,7 +576,7 @@ export function App() {
             <div className="w-10 h-10 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-center">
               <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             </div>
-            <div className="text-xs font-mono text-[var(--muted)]">Loading trip...</div>
+            <div className="text-xs font-mono text-[var(--muted)]">Loading your parties...</div>
           </div>
         </div>
       </LenisProvider>
@@ -540,9 +590,11 @@ export function App() {
         <div className="min-h-screen bg-[var(--canvas)] text-[var(--text)] flex flex-col font-body selection:bg-white/20 selection:text-white relative">
           {/* Top Navbar */}
           <Navbar
-            tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}
+            tripName={ledger.trip_id ? formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id) : undefined}
             onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
             onNewParty={() => setIsCreatePartyModalOpen(true)}
+            onOpenAllParties={() => setIsAllPartiesModalOpen(true)}
+            partyCount={userParties.length}
             currentUser={currentUser}
             onLogout={handleLogout}
           />
@@ -555,9 +607,13 @@ export function App() {
                 element={
                   <OverviewPage
                     ledger={ledger}
+                    hasNoParties={userParties.length === 0 || !activeTripId}
+                    currentUserName={currentUser?.name}
                     onOpenReceiptModal={() => setIsReceiptModalOpen(true)}
                     onOpenPayoutModal={() => setIsPayoutModalOpen(true)}
                     onOpenAddMemberModal={() => setIsAddMemberModalOpen(true)}
+                    onOpenCreateParty={() => setIsCreatePartyModalOpen(true)}
+                    onOpenAllParties={() => setIsAllPartiesModalOpen(true)}
                   />
                 }
               />
@@ -679,6 +735,16 @@ export function App() {
             onClose={() => setIsAddMemberModalOpen(false)}
             tripName={formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}
             onAddMember={handleAddMemberToCurrentParty}
+          />
+
+          <AllPartiesModal
+            isOpen={isAllPartiesModalOpen}
+            onClose={() => setIsAllPartiesModalOpen(false)}
+            parties={userParties}
+            activeTripId={activeTripId}
+            onSelectParty={handleSelectParty}
+            onDeleteParty={handleDeleteParty}
+            onOpenCreateParty={() => setIsCreatePartyModalOpen(true)}
           />
         </div>
       </BrowserRouter>
