@@ -243,7 +243,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <div className="space-y-3 max-w-2xl">
             {/* Active Trip Marker & Party Switcher Link */}
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-sm font-mono text-[var(--text)]">
                 <span className="w-1.5 h-1.5 bg-white/70 rounded-full" />
                 <span className="font-semibold">{formatPartyName(ledger.trip_name || ledger.name, ledger.trip_id)}</span>
                 <span className="text-[var(--muted)]">·</span>
@@ -255,9 +255,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   type="button"
                   onClick={onOpenAllParties}
                   title="Switch or manage your parties"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--canvas)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--canvas)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
                 >
-                  <Compass className="w-3 h-3" />
+                  <Compass className="w-3.5 h-3.5" />
                   <span>Switch Party</span>
                 </button>
               )}
@@ -267,7 +267,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               Trip Ledger
             </h1>
 
-            <p className="text-xs sm:text-sm text-[var(--muted)] font-body leading-relaxed m-0">
+            <p className="text-sm sm:text-base text-[var(--muted)] font-body leading-relaxed m-0">
               Group spending, net traveler balances, and direct PayPal settlements.
             </p>
           </div>
@@ -277,7 +277,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <button
               type="button"
               onClick={() => setShowHowItWorks(!showHowItWorks)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{showHowItWorks ? 'Close Info' : 'How Settlements Work'}</span>
@@ -340,12 +340,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             </div>
 
             {settlements.length === 0 ? (
-              <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex items-center gap-2.5 text-xs font-mono text-[var(--muted)]">
+              <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex items-center gap-2.5 text-sm font-mono text-[var(--muted)]">
                 <Check className="w-4 h-4 text-[var(--settled)]" />
                 <span>All balances settled. Zero pending transfers.</span>
               </div>
             ) : (
-              <div className="space-y-2 font-mono text-xs">
+              <div className="space-y-2 font-mono text-sm">
                 {settlements.map((s, idx) => {
                   const fromMember = ledger.members.find(m => m.user_id === s.from_user_id);
                   const toMember = ledger.members.find(m => m.user_id === s.to_user_id);
@@ -355,14 +355,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3"
+                      className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3 text-sm"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-[var(--owes)]">{fromName}</span>
+                        <span className="font-semibold text-[var(--owes)] text-sm sm:text-base">{fromName}</span>
                         <ArrowRight className="w-3.5 h-3.5 text-[var(--muted)]" />
-                        <span className="font-semibold text-[var(--text)]">{toName}</span>
+                        <span className="font-semibold text-[var(--text)] text-sm sm:text-base">{toName}</span>
                       </div>
-                      <div className="font-bold tabular-nums text-sm text-[var(--text)]">
+                      <div className="font-bold tabular-nums text-sm sm:text-base text-[var(--text)]">
                         {cur}{(s.amount_cents / 100).toFixed(2)}
                       </div>
                     </div>
@@ -376,10 +376,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                <span className="text-sm font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                   Traveler Balances
                 </span>
-                <span className="text-xs font-mono text-[var(--muted)]">
+                <span className="text-xs sm:text-sm font-mono text-[var(--muted)]">
                   Tap to inspect
                 </span>
               </div>
@@ -388,9 +388,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                 <button
                   type="button"
                   onClick={onOpenAddMemberModal}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--text)] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono text-[var(--text)] transition-colors cursor-pointer"
                 >
-                  <UserPlus className="w-3 h-3 text-[var(--muted)]" />
+                  <UserPlus className="w-3.5 h-3.5 text-[var(--muted)]" />
                   <span>Add Friend</span>
                 </button>
               )}
@@ -433,7 +433,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                       </motion.div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-body font-semibold text-[var(--text)] truncate">
+                          <span className="text-sm sm:text-base font-body font-semibold text-[var(--text)] truncate">
                             {member.name}
                           </span>
                           <span className="text-xs font-mono font-medium uppercase px-2 py-0.5 rounded border border-[var(--border)] text-[var(--muted)]">
@@ -452,7 +452,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                             )}
                           </AnimatePresence>
                         </div>
-                        <div className="text-xs font-mono text-[var(--muted)] truncate">
+                        <div className="text-sm font-mono text-[var(--muted)] truncate">
                           {member.handle}
                         </div>
                       </div>
@@ -460,7 +460,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
                     <div className="text-right shrink-0 font-mono">
                       <div
-                        className={`text-xs font-bold tabular-nums ${
+                        className={`text-sm sm:text-base font-bold tabular-nums ${
                           isCreditor
                             ? 'text-[var(--settled)]'
                             : isDebtor
@@ -474,7 +474,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                           ? `-${cur}${(Math.abs(netCents) / 100).toFixed(2)}`
                           : `${cur}0.00`}
                       </div>
-                      <div className="text-xs text-[var(--muted)]">
+                      <div className="text-xs sm:text-sm text-[var(--muted)]">
                         {isCreditor ? 'is owed' : isDebtor ? 'owes' : 'settled'}
                       </div>
                     </div>
@@ -491,13 +491,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-[var(--muted)]" />
-                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                <span className="text-sm font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                   Uploaded Bills ({ledger.expenses.length})
                 </span>
               </div>
 
               <Link to="/ledger" className="no-underline">
-                <span className="text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
+                <span className="text-sm font-mono text-[var(--muted)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
                   <span>View All In Expenses</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
@@ -506,13 +506,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
             {ledger.expenses.length === 0 ? (
               <div className="p-6 rounded-xl bg-[var(--canvas)] border border-dashed border-[var(--border)] text-center space-y-2">
-                <p className="text-xs font-body text-[var(--muted)] m-0">
+                <p className="text-sm font-body text-[var(--muted)] m-0">
                   No bills uploaded for this party yet.
                 </p>
                 <button
                   type="button"
                   onClick={onOpenReceiptModal}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--text)] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono text-[var(--text)] transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 text-[var(--muted)]" />
                   <span>Upload Bill Now</span>
@@ -527,17 +527,17 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                   return (
                     <div
                       key={exp.expense_id}
-                      className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3 text-xs font-mono"
+                      className="p-3.5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3 text-sm font-mono"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center shrink-0">
-                          <ReceiptText className="w-3.5 h-3.5 text-[var(--muted)]" />
+                        <div className="w-8 h-8 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center shrink-0">
+                          <ReceiptText className="w-4 h-4 text-[var(--muted)]" />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-[var(--text)] truncate max-w-[200px] sm:max-w-[280px]">
+                          <div className="font-semibold text-sm sm:text-base text-[var(--text)] truncate max-w-[200px] sm:max-w-[280px]">
                             {exp.description}
                           </div>
-                          <div className="text-xs text-[var(--muted)] flex items-center gap-2">
+                          <div className="text-xs sm:text-sm text-[var(--muted)] flex items-center gap-2">
                             <span>{new Date(exp.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                             <span>·</span>
                             <span>{formatCategoryName(exp.category)}</span>
@@ -550,7 +550,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-bold tabular-nums text-sm text-[var(--text)]">
+                        <span className="font-bold tabular-nums text-sm sm:text-base text-[var(--text)]">
                           {cur}{(exp.amount_cents / 100).toFixed(2)}
                         </span>
                         <StatusPill
@@ -564,7 +564,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
 
                 {ledger.expenses.length > 5 && (
                   <div className="pt-2 text-center">
-                    <Link to="/ledger" className="no-underline text-xs font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors">
+                    <Link to="/ledger" className="no-underline text-sm font-mono text-[var(--muted)] hover:text-[var(--text)] transition-colors">
                       + {ledger.expenses.length - 5} more bills in Expenses tab →
                     </Link>
                   </div>
@@ -576,27 +576,27 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           {/* Horizontal Financial Tally Strip (No identical 3-card grid) */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 grid grid-cols-3 divide-x divide-[var(--border)] font-mono text-center">
             <div className="px-3 space-y-1">
-              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Total Bills</div>
+              <div className="text-xs sm:text-sm uppercase text-[var(--muted)] tracking-wider font-semibold">Total Bills</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--text)] tabular-nums">
                 {cur}{(totalSpendCents / 100).toFixed(2)}
               </div>
-              <div className="text-xs text-[var(--muted)] font-medium">{ledger.expenses.length} logged</div>
+              <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">{ledger.expenses.length} logged</div>
             </div>
 
             <div className="px-3 space-y-1">
-              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Settled</div>
+              <div className="text-xs sm:text-sm uppercase text-[var(--muted)] tracking-wider font-semibold">Settled</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--settled)] tabular-nums">
                 {settledPercentage}%
               </div>
-              <div className="text-xs text-[var(--muted)] font-medium">{cur}{(settledCents / 100).toFixed(2)} paid</div>
+              <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">{cur}{(settledCents / 100).toFixed(2)} paid</div>
             </div>
 
             <div className="px-3 space-y-1">
-              <div className="text-xs uppercase text-[var(--muted)] tracking-wider font-semibold">Outstanding</div>
+              <div className="text-xs sm:text-sm uppercase text-[var(--muted)] tracking-wider font-semibold">Outstanding</div>
               <div className="text-xl sm:text-2xl font-display font-extrabold text-[var(--owes)] tabular-nums">
                 {cur}{(pendingCents / 100).toFixed(2)}
               </div>
-              <div className="text-xs text-[var(--muted)] font-medium">pending shares</div>
+              <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">pending shares</div>
             </div>
           </div>
         </section>
@@ -608,11 +608,11 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
-                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
+                <span className="text-sm font-mono font-semibold uppercase tracking-wider text-[var(--text)]">
                   Latest Scanned Bill
                 </span>
               </div>
-              <span className="text-xs font-mono text-[var(--muted)]">
+              <span className="text-xs sm:text-sm font-mono text-[var(--muted)]">
                 {latestExpense ? 'Physical Receipt' : 'No Bills Yet'}
               </span>
             </div>
@@ -722,13 +722,13 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
           </div>
 
           {/* Focused Traveler Profile Card */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-3 font-mono text-xs">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 space-y-3 font-mono text-sm">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
-              <div className="flex items-center gap-2">
-                <Avatar userId={activeFocusMember.user_id} name={activeFocusMember.name} size="sm" />
+              <div className="flex items-center gap-2.5">
+                <Avatar userId={activeFocusMember.user_id} name={activeFocusMember.name} size="md" />
                 <div>
-                  <div className="font-body font-semibold text-[var(--text)]">{activeFocusMember.name}</div>
-                  <div className="text-xs text-[var(--muted)] font-mono">{activeFocusMember.handle}</div>
+                  <div className="text-sm sm:text-base font-body font-semibold text-[var(--text)]">{activeFocusMember.name}</div>
+                  <div className="text-sm text-[var(--muted)] font-mono">{activeFocusMember.handle}</div>
                 </div>
               </div>
               <StatusPill
@@ -737,7 +737,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
               />
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
+            <div className="space-y-2 text-sm font-mono">
               <div className="flex justify-between text-[var(--muted)]">
                 <span>Net Balance:</span>
                 <span className="font-bold text-[var(--text)] tabular-nums">

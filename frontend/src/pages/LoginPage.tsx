@@ -150,8 +150,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <>
                 {/* Name */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-[var(--muted)]" />
                     <span>Full Name</span>
                   </label>
                   <input
@@ -159,15 +159,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Alex Chen"
-                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
+                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
                     required
                   />
                 </div>
 
                 {/* Handle */}
                 <div className="space-y-1.5">
-                  <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                    <AtSign className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                    <AtSign className="w-4 h-4 text-[var(--muted)]" />
                     <span>Trip Handle (optional)</span>
                   </label>
                   <input
@@ -175,7 +175,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
                     placeholder="@alex"
-                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                    className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                   />
                 </div>
               </>
@@ -183,8 +183,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {/* Email Address */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                <Mail className="w-4 h-4 text-[var(--muted)]" />
                 <span>Email Address</span>
               </label>
               <input
@@ -192,15 +192,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="traveler@example.com"
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 required
               />
             </div>
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-[var(--muted)]" />
                 <span>Password</span>
               </label>
               <input
@@ -208,7 +208,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 required
               />
             </div>
@@ -216,8 +216,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {mode === 'register' && (
               /* PayPal Email */
               <div className="space-y-1.5">
-                <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-[var(--muted)]" />
+                <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4 text-[var(--muted)]" />
                   <span>PayPal Receiver Email (optional)</span>
                 </label>
                 <input
@@ -225,7 +225,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   value={paypalEmail}
                   onChange={(e) => setPaypalEmail(e.target.value)}
                   placeholder="alex.paypal@example.com"
-                  className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
                 />
               </div>
             )}

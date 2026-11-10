@@ -148,13 +148,13 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             {/* Trip Name */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body">Trip Name</label>
+              <label className="text-sm font-medium text-[var(--text)] font-body">Trip Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Goa Trip 2026, Tokyo Food Tour"
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
                 autoFocus
                 required
               />
@@ -162,43 +162,43 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
 
             {/* Currency Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body">Currency</label>
+              <label className="text-sm font-medium text-[var(--text)] font-body">Currency</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setCurrency('INR')}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-mono font-medium transition-all cursor-pointer ${
                     currency === 'INR'
                       ? 'bg-[var(--surface-elevated)] border-white/30 text-[var(--text)] font-semibold'
                       : 'bg-[var(--canvas)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
                   }`}
                 >
-                  <IndianRupee className="w-3.5 h-3.5" />
+                  <IndianRupee className="w-4 h-4" />
                   <span>Rupees (INR)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setCurrency('USD')}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-mono font-medium transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-mono font-medium transition-all cursor-pointer ${
                     currency === 'USD'
                       ? 'bg-[var(--surface-elevated)] border-white/30 text-[var(--text)] font-semibold'
                       : 'bg-[var(--canvas)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
                   }`}
                 >
-                  <DollarSign className="w-3.5 h-3.5" />
+                  <DollarSign className="w-4 h-4" />
                   <span>Dollars (USD)</span>
                 </button>
               </div>
             </div>
 
             {/* Trip Members / Add Friends Section */}
-            <div className="space-y-2 pt-1 border-t border-[var(--border)]">
+            <div className="space-y-2.5 pt-1 border-t border-[var(--border)]">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[var(--text)] font-body flex items-center gap-1.5">
-                  <UserPlus className="w-3.5 h-3.5 text-[var(--muted)]" />
+                <label className="text-sm font-semibold text-[var(--text)] font-body flex items-center gap-1.5">
+                  <UserPlus className="w-4 h-4 text-[var(--muted)]" />
                   <span>Add Friends to Trip</span>
                 </label>
-                <span className="text-xs font-mono text-[var(--muted)]">
+                <span className="text-sm font-mono text-[var(--muted)]">
                   {members.length + 1} Total {members.length === 0 ? 'Member' : 'Members'}
                 </span>
               </div>
@@ -216,7 +216,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                     }
                   }}
                   placeholder="Friend's Name"
-                  className="flex-1 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30"
+                  className="flex-1 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-body focus:outline-none focus:border-white/30"
                 />
                 <input
                   type="text"
@@ -229,23 +229,23 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                     }
                   }}
                   placeholder="PayPal Email or @handle"
-                  className="w-full sm:w-44 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30"
+                  className="w-full sm:w-48 bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30"
                 />
                 <button
                   type="button"
                   onClick={handleAddFriend}
                   disabled={!friendName.trim()}
-                  className="px-3.5 py-2 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono font-medium text-[var(--text)] transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono font-medium text-[var(--text)] transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shrink-0"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <Plus className="w-4 h-4 text-[var(--muted)]" />
                   <span>Add</span>
                 </button>
               </div>
 
               {/* Added Members Chips List */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1">
                 {/* Current User (Organizer) Chip: neutral off-white marker */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] text-sm font-mono text-[var(--text)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
                   <span>{organizerName} (Organizer)</span>
                 </div>
@@ -254,11 +254,11 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                 {members.map((m, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--canvas)] border border-[var(--border)] text-xs font-mono text-[var(--text)]"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--canvas)] border border-[var(--border)] text-sm font-mono text-[var(--text)]"
                   >
                     <span>{m.name}</span>
                     {m.handle && (
-                      <span className="text-xs text-[var(--muted)] font-mono">{m.handle}</span>
+                      <span className="text-sm text-[var(--muted)] font-mono">{m.handle}</span>
                     )}
                     <button
                       type="button"
@@ -267,7 +267,7 @@ export const CreatePartyModal: React.FC<CreatePartyModalProps> = ({
                       title="Remove"
                       aria-label={`Remove ${m.name}`}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}

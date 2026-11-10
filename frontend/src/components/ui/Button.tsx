@@ -26,9 +26,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none rounded-xl';
 
     const sizeStyles = {
-      sm: 'text-xs px-3 py-1.5 gap-1.5 font-mono font-medium',
-      md: 'text-xs sm:text-sm px-4 py-2.5 gap-2 font-body font-semibold tracking-tight',
-      lg: 'text-sm sm:text-base px-6 py-3.5 gap-2.5 font-body font-bold tracking-tight',
+      sm: 'text-xs sm:text-sm px-3.5 py-1.5 gap-1.5 font-mono font-medium',
+      md: 'text-sm sm:text-base px-4 py-2.5 gap-2 font-body font-semibold tracking-tight',
+      lg: 'text-base sm:text-lg px-6 py-3.5 gap-2.5 font-body font-bold tracking-tight',
     };
 
     const variantStyles = {

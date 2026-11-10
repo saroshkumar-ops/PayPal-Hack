@@ -204,7 +204,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-xs leading-tight truncate">
+                      <div className="font-semibold text-sm leading-tight truncate">
                         {(item.quantity || item.qty || 1) > 1 && item.unitPriceCents ? (
                           `${item.quantity || item.qty} x ${item.name} @ ${(item.unitPriceCents / 100).toFixed(2)} = ${(item.priceCents / 100).toFixed(2)}`
                         ) : (
@@ -212,16 +212,16 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                         )}
                       </div>
                       {claimedCount === 1 ? (
-                        <div className="text-xs opacity-80 font-body">
+                        <div className="text-xs sm:text-sm opacity-80 font-body">
                           Claimed by {members.find(m => m.user_id === item.claimedByUserIds?.[0])?.name.split(' ')[0] || '1 traveler'}
                         </div>
                       ) : claimedCount > 1 ? (
-                        <div className="text-xs opacity-80 tabular-nums">
+                        <div className="text-xs sm:text-sm opacity-80 tabular-nums">
                           {cur}{(perPersonCents / 100).toFixed(2)} each ({claimedCount} shares)
                         </div>
                       ) : null}
                     </div>
-                    <div className="font-bold tabular-nums shrink-0 text-xs">
+                    <div className="font-bold tabular-nums shrink-0 text-sm">
                       {cur}{(item.priceCents / 100).toFixed(2)}
                     </div>
                   </div>
@@ -259,28 +259,28 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
         </div>
 
         {/* Calculations / Subtotal / Tax / Total */}
-        <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1 text-xs">
-          <div className="flex justify-between text-xs font-medium opacity-85">
+        <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1 text-sm">
+          <div className="flex justify-between text-sm font-medium opacity-85">
             <span>SUBTOTAL</span>
             <span className="tabular-nums">{cur}{(subtotalCents / 100).toFixed(2)}</span>
           </div>
 
           {taxCents > 0 && (
-            <div className="flex justify-between text-xs font-medium opacity-85">
+            <div className="flex justify-between text-sm font-medium opacity-85">
               <span>TAX</span>
               <span className="tabular-nums">{cur}{(taxCents / 100).toFixed(2)}</span>
             </div>
           )}
 
           {tipCents > 0 && (
-            <div className="flex justify-between text-xs font-medium opacity-85">
+            <div className="flex justify-between text-sm font-medium opacity-85">
               <span>TIP</span>
               <span className="tabular-nums">{cur}{(tipCents / 100).toFixed(2)}</span>
             </div>
           )}
 
           {roundOffCents !== undefined && roundOffCents !== 0 && (
-            <div className="flex justify-between text-xs font-medium opacity-85">
+            <div className="flex justify-between text-sm font-medium opacity-85">
               <span>ROUND-OFF</span>
               <span className="tabular-nums">
                 {roundOffCents > 0 ? '+' : '-'}{cur}{(Math.abs(roundOffCents) / 100).toFixed(2)}
@@ -288,7 +288,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
             </div>
           )}
 
-          <div className="flex justify-between text-sm font-black border-t-2 border-[var(--receipt-ink)] pt-1.5 mt-1">
+          <div className="flex justify-between text-base font-black border-t-2 border-[var(--receipt-ink)] pt-1.5 mt-1">
             <span>TOTAL DUE</span>
             <span className="tabular-nums">{cur}{(totalCents / 100).toFixed(2)}</span>
           </div>
@@ -296,7 +296,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
           {/* Traveler Allocation Printed on Receipt */}
           {computedSplits.length > 0 && (
             <div className="border-t border-dashed border-[var(--receipt-ink)]/30 pt-2 space-y-1">
-              <div className="flex justify-between text-xs font-bold uppercase tracking-wider opacity-75">
+              <div className="flex justify-between text-xs sm:text-sm font-bold uppercase tracking-wider opacity-75">
                 <span>TRAVELER SHARES</span>
                 <span>{splitType}</span>
               </div>
@@ -314,7 +314,7 @@ export const PaperReceipt: React.FC<PaperReceiptProps> = ({
                       duration: 0.4,
                       ease: 'easeInOut',
                     }}
-                    className="flex justify-between text-xs font-mono"
+                    className="flex justify-between text-sm font-mono"
                   >
                     <span className="opacity-80 truncate max-w-[190px]">{s.name}:</span>
                     <span className="font-bold tabular-nums">{cur}{(s.owes_cents / 100).toFixed(2)}</span>

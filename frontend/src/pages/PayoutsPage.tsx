@@ -166,22 +166,22 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
 
           {/* Balance Callout */}
           <div className="p-5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] text-center space-y-1">
-            <div className="text-xs uppercase font-mono tracking-wider text-[var(--muted)] font-semibold">
+            <div className="text-xs sm:text-sm uppercase font-mono tracking-wider text-[var(--muted)] font-semibold">
               AVAILABLE TO PAYOUT
             </div>
             <div className="text-3xl sm:text-4xl font-display font-extrabold text-[var(--text)] tabular-nums font-mono">
               {cur}{(organizerOwedCents / 100).toFixed(2)}
             </div>
-            <div className="text-xs text-[var(--muted)] font-mono font-medium">
+            <div className="text-sm text-[var(--muted)] font-mono font-medium">
               Total Settled: {cur}{(settledCents / 100).toFixed(2)}
             </div>
           </div>
 
           {/* Beneficiary Details with PayPal Reveal Micro-Interaction */}
-          <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-2.5 text-xs font-mono">
+          <div className="p-4 sm:p-5 rounded-xl bg-[var(--canvas)] border border-[var(--border)] space-y-3 text-sm font-mono">
             <div className="flex justify-between items-center text-[var(--muted)]">
               <span>Organizer:</span>
-              <span className="text-[var(--text)] font-body font-semibold">
+              <span className="text-[var(--text)] font-body font-semibold text-sm sm:text-base">
                 {organizer.name} ({organizer.handle})
               </span>
             </div>
@@ -190,7 +190,7 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
             <div className="flex justify-between items-center text-[var(--muted)] pt-2 border-t border-[var(--border)]">
               <span>PayPal Account:</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[var(--text)] font-semibold truncate max-w-[190px]">
+                <span className="text-[var(--text)] font-semibold truncate max-w-[210px] text-sm">
                   {organizer.paypal_email || 'Not configured'}
                 </span>
                 {organizer.paypal_email && (
@@ -201,18 +201,18 @@ export const PayoutsPage: React.FC<PayoutsPageProps> = ({
                     className="p-1 rounded bg-[var(--surface-elevated)] hover:bg-white/10 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
                   >
                     {copiedEmail ? (
-                      <Check className="w-3.5 h-3.5 text-[var(--settled)]" />
+                      <Check className="w-4 h-4 text-[var(--settled)]" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-4 h-4" />
                     )}
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-[var(--muted)] pt-1 border-t border-[var(--border)]">
+            <div className="flex justify-between items-center text-[var(--muted)] pt-2 border-t border-[var(--border)]">
               <span>Payout Method:</span>
-              <span className="text-[var(--text)]">Direct PayPal Balance</span>
+              <span className="text-[var(--text)] text-sm">Direct PayPal Balance</span>
             </div>
           </div>
 

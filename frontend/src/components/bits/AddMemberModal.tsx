@@ -83,7 +83,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 <h3 id="add-member-title" className="text-base font-display font-bold text-[var(--text)] m-0">
                   Add Member
                 </h3>
-                <p className="text-xs text-[var(--muted)] font-body m-0 mt-0.5">
+                <p className="text-sm text-[var(--muted)] font-body m-0 mt-0.5">
                   Add a friend to {formatPartyName(tripName) || 'this trip'}
                 </p>
               </div>
@@ -100,22 +100,22 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-xs font-mono text-[var(--owes)]">
+              <div className="p-3.5 rounded-xl bg-[var(--owes)]/10 border border-[var(--owes)]/30 text-sm font-mono text-[var(--owes)]">
                 {errorMsg}
               </div>
             )}
 
             {/* Friend's Name */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                <User className="w-4 h-4 text-[var(--muted)]" />
                 <span>Friend's Name</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-body focus:outline-none focus:border-white/30 transition-colors"
                 autoFocus
                 required
               />
@@ -123,29 +123,29 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
             {/* Handle / Username */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                <AtSign className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                <AtSign className="w-4 h-4 text-[var(--muted)]" />
                 <span>Username (optional)</span>
               </label>
               <input
                 type="text"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value)}
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
               />
             </div>
 
             {/* PayPal Email */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[var(--muted)] font-body flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[var(--muted)]" />
+              <label className="text-sm font-medium text-[var(--text)] font-body flex items-center gap-1.5">
+                <Mail className="w-4 h-4 text-[var(--muted)]" />
                 <span>PayPal Email (optional)</span>
               </label>
               <input
                 type="email"
                 value={paypalEmail}
                 onChange={(e) => setPaypalEmail(e.target.value)}
-                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text)] font-mono focus:outline-none focus:border-white/30 transition-colors"
               />
             </div>
 

@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={onOpenAllParties}
               title="Click to view all parties or switch"
-              className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-xs font-mono text-[var(--text)] transition-colors cursor-pointer"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] hover:bg-white/10 border border-[var(--border)] text-sm font-mono text-[var(--text)] transition-colors cursor-pointer"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
               <span className="font-semibold truncate max-w-[160px]">{formatPartyName(tripName)}</span>
@@ -93,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-body transition-all no-underline ${
+                `flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-body transition-all no-underline ${
                   isActive
                     ? 'bg-[var(--surface-elevated)] text-[var(--text)] font-semibold border border-[var(--border)]'
                     : 'text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/[0.04]'
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={onOpenAllParties}
               title="View all your parties and switch"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-sm font-mono font-medium transition-all cursor-pointer"
             >
               <Compass className="w-3.5 h-3.5 text-[var(--muted)]" />
               <span className="hidden sm:inline">My Parties</span>
@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={onNewParty}
               title="Create a new trip"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-xs font-mono font-medium transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--text)] text-sm font-mono font-medium transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 text-[var(--muted)]" />
               <span className="hidden sm:inline">New Party</span>
@@ -153,11 +153,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Authentication Status / Sign In */}
           {currentUser ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs font-mono text-[var(--text)]">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-sm font-mono text-[var(--text)]">
               <div className="w-5 h-5 rounded-full bg-[var(--surface-elevated)] border border-white/20 flex items-center justify-center text-xs text-[var(--text)] font-bold">
                 {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <span className="truncate max-w-[90px] font-medium hidden sm:inline">
+              <span className="truncate max-w-[110px] font-medium hidden sm:inline">
                 {currentUser.handle || currentUser.name}
               </span>
               {onLogout && (

@@ -191,7 +191,7 @@ export const AllPartiesModal: React.FC<AllPartiesModalProps> = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-xs font-mono text-[var(--muted)] truncate m-0">
+                          <p className="text-sm font-mono text-[var(--muted)] truncate m-0">
                             ID: {party.trip_id} · Currency: {party.currency || 'INR'}
                           </p>
                         </div>
@@ -245,13 +245,13 @@ export const AllPartiesModal: React.FC<AllPartiesModalProps> = ({
                       {!isConfirmingDelete && (
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--border)]">
                           {/* Metrics chips */}
-                          <div className="flex items-center gap-3 sm:gap-4 text-xs font-mono text-[var(--muted)]">
+                          <div className="flex items-center gap-3 sm:gap-4 text-sm font-mono text-[var(--muted)]">
                             <span className="flex items-center gap-1.5">
-                              <Users className="w-3.5 h-3.5" />
+                              <Users className="w-4 h-4" />
                               <strong className="text-[var(--text)] font-semibold">{party.membersCount || 1}</strong> {party.membersCount === 1 ? 'member' : 'members'}
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <ReceiptText className="w-3.5 h-3.5" />
+                              <ReceiptText className="w-4 h-4" />
                               <strong className="text-[var(--text)] font-semibold">{party.expensesCount || 0}</strong> {party.expensesCount === 1 ? 'bill' : 'bills'}
                             </span>
                             <span className="hidden sm:inline text-[var(--text)] font-semibold">

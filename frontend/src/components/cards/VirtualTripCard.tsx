@@ -98,14 +98,14 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
             {/* Footer: Organizer Receiver & Action */}
             <div className="flex items-end justify-between pt-3 border-t border-[var(--border)]">
               <div className="min-w-0 pr-2">
-                <div className="text-xs uppercase tracking-wider text-[var(--muted)] font-mono font-medium">
+                <div className="text-xs sm:text-sm uppercase tracking-wider text-[var(--muted)] font-mono font-medium">
                   Receiver
                 </div>
-                <div className="text-xs font-body font-semibold text-[var(--text)] truncate max-w-[170px]">
+                <div className="text-sm sm:text-base font-body font-semibold text-[var(--text)] truncate max-w-[170px]">
                   {organizerName}
                 </div>
                 {organizerEmail && (
-                  <div className="text-xs text-[var(--muted)] font-mono truncate max-w-[170px]">
+                  <div className="text-xs sm:text-sm text-[var(--muted)] font-mono truncate max-w-[170px]">
                     {organizerEmail}
                   </div>
                 )}
@@ -119,10 +119,10 @@ export const VirtualTripCard: React.FC<VirtualTripCardProps> = ({
                   onPayout();
                 }}
                 disabled={balanceCents <= 0}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--paypal)] hover:brightness-105 disabled:opacity-30 disabled:cursor-not-allowed text-[var(--canvas)] text-xs font-body font-bold transition-all cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--paypal)] hover:brightness-105 disabled:opacity-30 disabled:cursor-not-allowed text-[var(--canvas)] text-sm font-body font-bold transition-all cursor-pointer shrink-0"
               >
                 <span>Payout</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <ArrowUpRight className="w-4 h-4" />
               </button>
             </div>
           </div>

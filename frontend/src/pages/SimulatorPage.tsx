@@ -241,29 +241,29 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div className="text-sm font-display font-bold text-[var(--text)]">Conversational Bill Entry</div>
-                  <p className="text-xs text-[var(--muted)] font-body max-w-xs mx-auto m-0 leading-relaxed">
+                  <p className="text-sm text-[var(--muted)] font-body max-w-xs mx-auto m-0 leading-relaxed">
                     Type expenses naturally. The assistant extracts payers, amounts, and splits.
                   </p>
                 </div>
 
                 {/* Example Quick Prompts */}
                 <div className="space-y-2 pt-2 text-left">
-                  <div className="text-xs text-[var(--muted)] uppercase tracking-wider font-semibold">Tap to paste example:</div>
+                  <div className="text-xs sm:text-sm text-[var(--muted)] uppercase tracking-wider font-semibold">Tap to paste example:</div>
                   <button
                     type="button"
                     onClick={() => setInputText(`Paid 120 for dinner split with @${friendFirstName}`)}
-                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-xs text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-3 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-sm text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Paid 120 for dinner split with @{friendFirstName}"</span>
-                    <span className="text-[var(--muted)] text-xs font-mono font-medium">Use</span>
+                    <span className="text-[var(--muted)] text-sm font-mono font-medium">Use</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setInputText(`Fronted 60 for airport taxi split equally`)}
-                    className="w-full p-2.5 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-xs text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
+                    className="w-full p-3 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] text-left text-sm text-[var(--text)] transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span>"Fronted 60 for airport taxi split equally"</span>
-                    <span className="text-[var(--muted)] text-xs font-mono font-medium">Use</span>
+                    <span className="text-[var(--muted)] text-sm font-mono font-medium">Use</span>
                   </button>
                 </div>
               </div>
@@ -279,28 +279,28 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({
                     className={`flex flex-col ${isSheriff ? 'items-start' : 'items-end'}`}
                   >
                     <div className="flex items-center gap-2 mb-1 px-1">
-                      <span className="text-xs font-mono font-semibold text-[var(--muted)]">
+                      <span className="text-sm font-mono font-semibold text-[var(--muted)]">
                         {msg.sender_name}
                       </span>
-                      <span className="text-xs font-mono text-[var(--muted)]">
+                      <span className="text-xs sm:text-sm font-mono text-[var(--muted)]">
                         {msg.timestamp}
                       </span>
                     </div>
 
                     <div
-                      className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed border ${
+                      className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed border ${
                         isSheriff
                           ? 'bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--text)]'
                           : 'bg-[var(--canvas)] border-white/20 text-[var(--text)]'
                       }`}
                     >
                       {msg.badge && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-semibold uppercase mb-2 bg-[var(--canvas)] text-[var(--text)] border border-[var(--border)]">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs sm:text-sm font-mono font-semibold uppercase mb-2 bg-[var(--canvas)] text-[var(--text)] border border-[var(--border)]">
                           <span>{msg.badge}</span>
                         </div>
                       )}
 
-                      <div className="whitespace-pre-line font-body text-xs">{msg.text}</div>
+                      <div className="whitespace-pre-line font-body text-sm leading-relaxed">{msg.text}</div>
 
                       {/* PayPal Settlement Actions (Real PayPal touchpoints) */}
                       {msg.buttons && msg.buttons.length > 0 && (
